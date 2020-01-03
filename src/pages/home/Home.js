@@ -29,20 +29,24 @@ export default class Home extends Component {
         this.state = {
             conversations: [
                 {
-                    parties: [{identifier: '+994 55 283 97 19', pic: 'test'}, {identifier: 'Fraser Geddes', pic: 'test'}],
+                    parties: [{identifier: 'Terrorist', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg'}, {identifier: 'Fraser Geddes', pic: 'test'}],
                     messages:[
                         {
                             from: '+994 55 283 97 19',
-                            content: 'Hello testing message',
+                            content: 'Wanna hear a joke?',
                             when: ''
                         }, {
                             from: 'Fraser Geddes',
-                            content: 'Another message',
+                            content: 'wot',
+                            when: ''
+                        }, {
+                            from: '+994 55 283 97 19',
+                            content: 'boom!',
                             when: ''
                         }
                     ]
                 }, {
-                    parties: [{identifier: '+69 27 163 22 10', pic: 'test'}, {identifier: 'Fraser Geddes', pic: 'test'}],
+                    parties: [{identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg'}, {identifier: 'Fraser Geddes', pic: 'test'}],
                     messages:[
                         {
                             from: '+994 55 283 97 19',

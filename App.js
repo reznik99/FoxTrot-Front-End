@@ -24,7 +24,7 @@ const AppNavigator = createStackNavigator({
             screen: Conversation,
             navigationOptions: ({ navigation }) => ({
                 title: 'Someones number/name',
-                header: <HeaderConversation navigation={navigation} allowBack={true}/>
+                header: <HeaderConversation navigation={navigation} data={navigation.state.params.data} allowBack={true}/>
             })
         }, NewConversation: {
             screen: NewConversation,

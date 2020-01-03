@@ -28,7 +28,7 @@ export default class ConversationPeek extends Component {
             <TouchableOpacity style={styles.conversationPeek}
                               onPress={() => this.props.navigation.navigate('Conversation', {data: this.props.data})}>
                 <View>
-                    <Image source={require('../res/default_avatar.jpg')} /* {uri: this.props.data.parties[0].pic} */
+                    <Image source={{uri: this.props.data.parties[0].pic}}
                            style={styles.profilePic}
                            PlaceholderContent={<ActivityIndicator />} />
                 </View>

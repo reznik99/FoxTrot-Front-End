@@ -23,7 +23,7 @@ class HeaderConversation extends Component {
                             :
                             null
                     }
-                    <Text style={styles.topBarText}>{navigation.state.params.data.from}</Text>
+                    <Text style={styles.topBarText}>{navigation.state.params.data.parties[0].identifier}</Text>
                 </View>
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity style={styles.button}>

@@ -52,8 +52,7 @@ class Conversation extends Component{
         return(
             <ImageBackground source={require('../../res/background.jpg')} style={styles.container}>
 
-                <ScrollView style={styles.messageContainer}
-                            ref={ref => this.scrollView = ref}
+                <ScrollView style={styles.messageContainer} ref={ref => this.scrollView = ref}
                             onContentSizeChange={(contentWidth, contentHeight)=>{
                                 this.scrollView.scrollToEnd({animated: true});
                             }}>
