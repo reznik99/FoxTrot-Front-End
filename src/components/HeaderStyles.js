@@ -31,6 +31,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15
     }, wider:{
         overflow: 'visible'
+    }, profileBtn: {
+        flexDirection: 'row',
+        alignItems: 'center'
+    },profilePicContainer: {
+        overflow: "hidden",
+        borderRadius: Platform.OS === 'ios' ? 150/2 : 150,
+        marginRight: 8
+    },profilePic: {
+        width: 40,
+        height: 40,
+        borderRadius: Platform.OS === 'ios' ? 150/2 : 150,
     }
 });
 

@@ -9,11 +9,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 10
-    }, profilePic: {
-        borderRadius: 100,
+    }, profilePicContainer: {
+        overflow: "hidden",
+        borderRadius: Platform.OS === 'ios' ? 150/2 : 150,
+        marginRight: 20
+    },profilePic: {
         width: 60,
         height: 60,
-        marginRight: 20
+        borderRadius: Platform.OS === 'ios' ? 150/2 : 150,
     }
 });
 
@@ -27,7 +30,7 @@ export default class ConversationPeek extends Component {
         return (
             <TouchableOpacity style={styles.conversationPeek}
                               onPress={() => this.props.navigation.navigate('Conversation', {data: this.props.data})}>
-                <View>
+                <View style={styles.profilePicContainer}>
                     <Image source={{uri: this.props.data.parties[0].pic}}
                            style={styles.profilePic}
                            PlaceholderContent={<ActivityIndicator />} />

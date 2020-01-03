@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
-import { Text, View, TouchableOpacity, StyleSheet } from 'react-native';
+import {Text, View, TouchableOpacity, StyleSheet, ActivityIndicator} from 'react-native';
 
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {faVideo, faPhoneAlt, faBars, faArrowLeft} from '@fortawesome/free-solid-svg-icons'
 import styles from "./HeaderStyles";
+import {Image} from "react-native-elements";
 
 class HeaderConversation extends Component {
     constructor(props){
@@ -23,7 +24,14 @@ class HeaderConversation extends Component {
                             :
                             null
                     }
-                    <Text style={styles.topBarText}>{navigation.state.params.data.parties[0].identifier}</Text>
+                    <TouchableOpacity style={styles.profileBtn}>
+                        <View style={styles.profilePicContainer}>
+                            <Image source={{uri: this.props.data.parties[0].pic}}
+                                   style={styles.profilePic}
+                                   PlaceholderContent={<ActivityIndicator />}/>
+                        </View>
+                        <Text style={styles.topBarText}>{navigation.state.params.data.parties[0].identifier}</Text>
+                    </TouchableOpacity>
                 </View>
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity style={styles.button}>
