@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
-import {View, ScrollView, StyleSheet, ActivityIndicator, Text, TouchableOpacity} from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import ConversationPeek from '../../components/ConversationPeek';
-import { Image } from 'react-native-elements';
 
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
+
+import userData from './../../store/userData';
 
 const styles = StyleSheet.create({
     wrapper: {
@@ -27,80 +28,34 @@ export default class Home extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            conversations: [
-                {
-                    parties: [{identifier: 'Terrorist', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg'}, {identifier: 'Fraser Geddes', pic: 'test'}],
-                    messages:[
-                        {
-                            from: '+994 55 283 97 19',
-                            content: 'Wanna hear a joke?',
-                            when: ''
-                        }, {
-                            from: 'Fraser Geddes',
-                            content: 'wot',
-                            when: ''
-                        }, {
-                            from: '+994 55 283 97 19',
-                            content: 'boom!',
-                            when: ''
-                        }
-                    ]
-                }, {
-                    parties: [{identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg'}, {identifier: 'Fraser Geddes', pic: 'test'}],
-                    messages:[
-                        {
-                            from: '+994 55 283 97 19',
-                            content: 'Hello testing message',
-                            when: ''
-                        }, {
-                            from: 'Fraser Geddes',
-                            content: 'catch up soon!',
-                            when: ''
-                        },{
-                            from: '+994 55 283 97 19',
-                            content: 'Hello testing message',
-                            when: ''
-                        }, {
-                            from: 'Fraser Geddes',
-                            content: 'catch up soon!',
-                            when: ''
-                        },{
-                            from: '+994 55 283 97 19',
-                            content: 'Hello testing message',
-                            when: ''
-                        }, {
-                            from: 'Fraser Geddes',
-                            content: 'catch up soon!',
-                            when: ''
-                        },{
-                            from: '+994 55 283 97 19',
-                            content: 'Hello testing message',
-                            when: ''
-                        }, {
-                            from: 'Fraser Geddes',
-                            content: 'catch up soon!',
-                            when: ''
-                        },{
-                            from: '+994 55 283 97 19',
-                            content: 'Hello testing message',
-                            when: ''
-                        }, {
-                            from: 'Fraser Geddes',
-                            content: 'catch up soon!',
-                            when: ''
-                        }, {
-                            from: 'Fraser Geddes',
-                            content: 'catch up soon!',
-                            when: ''
-                        }, {
-                            from: 'Fraser Geddes',
-                            content: 'catch up soon!',
-                            when: '14: 02'
-                        }
-                    ]
-                },
-            ]
+            conversations: []
         };
+    }
+
+    componentDidMount() {
+        userData.subscribe(this.messageCallback);
+        this.reloadConvos();
+    }
+
+    reloadConvos = () => {
+        const convos = []
+        userData.getAllConversations().forEach((value, key, map) => {
+            convos.push(value);
+        });
+        this.setState({
+            conversations: convos.sort((c1, c2) => {
+                if (c1.messages.length <= 0)
+                    return -1;
+                if (c2.messages.length <= 0)
+                    return 1;
+
+                return c1.messages[c1.messages.length - 1].when < c2.messages[c2.messages.length - 1].when ? 1 : -1
+            })
+        });
+    }
+
+    messageCallback = () => {
+        this.reloadConvos();
     }
 
     render() {
@@ -108,14 +63,16 @@ export default class Home extends Component {
             <View style={styles.wrapper}>
                 <ScrollView>
                     {
-                        this.state.conversations.map(
-                            (convo, index) =>
-                                (<ConversationPeek data={convo} key={index} navigation={this.props.navigation}/>)
-                        )
+                        this.state.conversations.length > 0
+                            ? this.state.conversations.map(
+                                (convo, index) =>
+                                    (<ConversationPeek data={convo} key={index} navigation={this.props.navigation} />)
+                            )
+                            : <ActivityIndicator />
                     }
                 </ScrollView>
                 <TouchableOpacity style={styles.newMessageBtn} onPress={() => this.props.navigation.navigate('NewConversation')}>
-                    <FontAwesomeIcon size={25} icon={faEnvelope} style={{color:'#fff'}}/>
+                    <FontAwesomeIcon size={25} icon={faEnvelope} style={{ color: '#fff' }} />
                 </TouchableOpacity>
             </View>
         );

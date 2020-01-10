@@ -1,9 +1,11 @@
 
 import React, { Component } from "react";
-import {ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground } from "react-native";
 
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons";
+
+import userData from './../../store/userData';
 
 const styles = StyleSheet.create({
     container: {
@@ -23,6 +25,9 @@ const styles = StyleSheet.create({
     }, sent: {
         alignSelf: 'flex-end',
         backgroundColor: '#abed87'
+    }, system: {
+        alignSelf: 'center',
+        backgroundColor: 'gray'
     }, inputContainer: {
         height: "10%",
         flexDirection: 'row',
@@ -41,42 +46,59 @@ const styles = StyleSheet.create({
     }
 });
 
-class Conversation extends Component{
-    constructor(props){
+class Conversation extends Component {
+    constructor(props) {
         super(props);
+
+        this.state = {
+            message: '',
+        }
     }
 
-    render(){
+    sendMessage = (data) => {
+        // Send Message
+        userData.sendMessage(data.parties[0].identifier, {
+            content: this.state.message,
+            from: userData.self.identifier,
+            when: Date.now()
+        });
+        // Clear input
+        this.textInput.clear()
+        this.setState({ message: '' });
+    }
+
+    render() {
         const { navigation } = this.props;
         const data = navigation.state.params.data;
-        return(
+        return (
             <ImageBackground source={require('../../res/background.jpg')} style={styles.container}>
 
                 <ScrollView style={styles.messageContainer} ref={ref => this.scrollView = ref}
-                            onContentSizeChange={(contentWidth, contentHeight)=>{
-                                this.scrollView.scrollToEnd({animated: true});
-                            }}>
+                    onContentSizeChange={(contentWidth, contentHeight) => {
+                        this.scrollView.scrollToEnd({ animated: true });
+                    }}>
                     {
-                        data ? data.messages.map( (packet, index) => {
+                        data && data.messages ? data.messages.map((packet, index) => {
                             return packet.from === 'Fraser Geddes'
-                                ?<Text key={index} style={[styles.message, styles.sent]}>{ packet.content }</Text>
-                                :<Text key={index} style={[styles.message, styles.received]}>{ packet.content }</Text>
-                        }) : <Text>No messages</Text>
+                                ? <Text key={index} style={[styles.message, styles.sent]}>{packet.content}</Text>
+                                : <Text key={index} style={[styles.message, styles.received]}>{packet.content}</Text>
+                        }) : <Text style={[styles.message, styles.system]} >No messages</Text>
                     }
                 </ScrollView>
 
                 <View style={styles.inputContainer}>
                     <TouchableOpacity style={styles.button}>
-                        <FontAwesomeIcon icon={ faEllipsisH } size={20} style={styles.buttonIcon}/>
+                        <FontAwesomeIcon icon={faEllipsisH} size={20} style={styles.buttonIcon} />
                     </TouchableOpacity>
                     <TextInput placeholder="Type a message"
-                               onChangeText={ TextInputValue =>
-                                   this.setState({username : TextInputValue }) }
-                               underlineColorAndroid='transparent'
-                               style={styles.input}
+                        ref={input => { this.textInput = input }}
+                        onChangeText={TextInputValue =>
+                            this.setState({ message: TextInputValue })}
+                        underlineColorAndroid='transparent'
+                        style={styles.input}
                     />
-                    <TouchableOpacity style={styles.button}>
-                        <FontAwesomeIcon icon={ faPaperPlane } size={20} style={styles.buttonIcon}/>
+                    <TouchableOpacity style={styles.button} onPress={() => this.sendMessage(data)}>
+                        <FontAwesomeIcon icon={faPaperPlane} size={20} style={styles.buttonIcon} />
                     </TouchableOpacity>
                 </View>
 
