@@ -19,7 +19,7 @@ class HeaderConversation extends Component {
                     {
                         this.props.allowBack ?
                             <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
-                                <FontAwesomeIcon icon={ faArrowLeft } size={22} style={styles.topBarText}/>
+                                <FontAwesomeIcon icon={ faArrowLeft } size={20} style={styles.topBarText}/>
                             </TouchableOpacity>
                             :
                             null
