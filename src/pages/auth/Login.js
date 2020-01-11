@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
-import { Text, View, TextInput, TouchableOpacity, AsyncStorage } from 'react-native';
+import { Text, View, TextInput, TouchableOpacity, AsyncStorage, ActivityIndicator } from 'react-native';
 
 import axios from 'axios';
+import qs from 'qs';
 import styles from './style';
 
 export default class Login extends Component {
@@ -29,28 +30,22 @@ export default class Login extends Component {
         } else {
             try {
                 // Send data to server
-                const response = await axios.post('http://localhost:1234/login', {
-                    username,
-                    password,
-                });
-                // if response is accpeted, store JWT 
+                const response = await axios.post('http://10.0.2.2:1234/login', qs.stringify({
+                    username: username,
+                    password: password
+                })
+                );
+
+                // No error code thrown. Save JWT
                 await AsyncStorage.setItem('JWT', response.data.token);
-                
+
                 this.setState({ loading: false });
                 return this.props.navigation.navigate('Home');
 
             } catch (error) {
-                console.error(error.response.data);
-                if (error.response.data === 'bad username'
-                    || error.response.data === 'passwords do not match') {
-                    this.setState({
-                        message: error.response.data, loading: false
-                    });
-                } else {
-                    this.setState({
-                        message: error, loading: false
-                    });
-                }
+                this.setState({
+                    message: error.response.data, loading: false
+                });
             }
         }
     }
@@ -78,8 +73,12 @@ export default class Login extends Component {
                         style={styles.input}
                     />
                     <TouchableOpacity style={styles.button} onPress={() => this.login()}>
-                        <Text style={styles.buttonText}>Login</Text>
+                        {this.state.loading
+                            ? <ActivityIndicator />
+                            : <Text style={styles.buttonText}>Login</Text>
+                        }
                     </TouchableOpacity>
+
                     <Text style={styles.subTitle}>Or</Text>
                     <TouchableOpacity style={[styles.button, styles.buttonCyan]}
                         onPress={() => this.props.navigation.navigate('Signup')}>
