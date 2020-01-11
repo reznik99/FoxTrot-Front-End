@@ -19,10 +19,10 @@ export default class Login extends Component {
 
     login = async () => {
         if (this.state.loading) return;
-
-        this.setState({ loading: true });
+        
         const { username, password } = this.state;
-
+        this.setState({ loading: true });
+        
         if (username === '' || password === '') {
             this.setState({
                 message: 'Textfields cannot be blank!', loading: false
@@ -33,7 +33,11 @@ export default class Login extends Component {
                 const response = await axios.post('http://10.0.2.2:1234/login', qs.stringify({
                     username: username,
                     password: password
-                })
+                }), {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                }
                 );
 
                 // No error code thrown. Save JWT
