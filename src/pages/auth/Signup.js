@@ -10,7 +10,7 @@ export default class Login extends Component {
         super(props);
 
         this.state = {
-            username: '',
+            phone_no: '',
             password: '',
             re_password: '',
             loading: false,
@@ -27,10 +27,10 @@ export default class Login extends Component {
     signup = async () => {
         if (this.state.loading) return;
 
-        const { username, password, re_password } = this.state;
+        const { phone_no, password, re_password } = this.state;
         this.setState({ loading: true });
 
-        if (username === '' || password === '' || re_password === '') {
+        if (phone_no === '' || password === '' || re_password === '') {
             this.showError('Textfields cannot be blank!');
         } else if (password !== re_password) {
             this.showError('Passwords do not match!');
@@ -38,7 +38,7 @@ export default class Login extends Component {
             try {
                 // Send data to server
                 const response = await axios.post('http://10.0.2.2:1234/signup', qs.stringify({
-                    username: username,
+                    phone_no: phone_no,
                     password: password
                 }), {
                     headers: { "Content-Type": "application/x-www-form-urlencoded" }
@@ -65,9 +65,9 @@ export default class Login extends Component {
                 </View>
                 <View style={styles.container}>
                     {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
-                    <TextInput placeholder="Enter User name"
+                    <TextInput placeholder="Enter Phone number"
                         onChangeText={TextInputValue =>
-                            this.setState({ username: TextInputValue })}
+                            this.setState({ phone_no: TextInputValue })}
                         underlineColorAndroid='transparent'
                         style={styles.input}
                     />
