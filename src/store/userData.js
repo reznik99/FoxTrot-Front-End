@@ -16,7 +16,7 @@ const userData = {
     },
     createConversation: (party) => {
         userData.conversations.set(party.identifier, {
-            parties: [party, {identifier: self.identifier, pic: self.pic}],
+            parties: [party, self],
             messages: []
         });
         userData.callCallbacks();

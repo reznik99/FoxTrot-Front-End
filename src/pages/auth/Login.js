@@ -19,38 +19,35 @@ export default class Login extends Component {
 
     login = async () => {
         if (this.state.loading) return;
-        
+
         const { phone_no, password } = this.state;
         this.setState({ loading: true });
-        
+
         if (phone_no === '' || password === '') {
             this.setState({
                 message: 'Textfields cannot be blank!', loading: false
             });
         } else {
-            try {
-                // Send data to server
-                const response = await axios.post('http://10.0.2.2:1234/login', qs.stringify({
-                    phone_no: phone_no,
-                    password: password
-                }), {
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    }
-                }
-                );
-
+            // Send data to server
+            axios.post('http://francescogorini.com:1234/login', qs.stringify({
+                phone_no: phone_no,
+                password: password
+            }), {
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            }).then((response) => {
                 // No error code thrown. Save JWT
-                await AsyncStorage.setItem('JWT', response.data.token);
+                AsyncStorage.setItem('JWT', response.data.token)
+                    .then(() => {
+                        this.setState({ loading: false });
+                        return this.props.navigation.navigate('Home');
+                    });
 
-                this.setState({ loading: false });
-                return this.props.navigation.navigate('Home');
-
-            } catch (error) {
+            }, (error) => {
+                console.log(error);
                 this.setState({
                     message: error.response.data, loading: false
                 });
-            }
+            });
         }
     }
 
@@ -63,7 +60,7 @@ export default class Login extends Component {
                 </View>
                 <View style={styles.container}>
                     {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
-                    <TextInput placeholder="Enter User name"
+                    <TextInput placeholder="Enter Phone"
                         onChangeText={TextInputValue =>
                             this.setState({ phone_no: TextInputValue })}
                         underlineColorAndroid='transparent'

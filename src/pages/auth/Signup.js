@@ -35,24 +35,20 @@ export default class Login extends Component {
         } else if (password !== re_password) {
             this.showError('Passwords do not match!');
         } else {
-            try {
-                // Send data to server
-                const response = await axios.post('http://10.0.2.2:1234/signup', qs.stringify({
-                    phone_no: phone_no,
-                    password: password
-                }), {
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" }
-                }
-                );
-
+            // Send data to server
+            axios.post('http://francescogorini.com:1234/signup', qs.stringify({
+                phone_no: phone_no,
+                password: password
+            }), {
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            }).then((response) => {
                 // No error code thrown. Signup successful
 
                 this.setState({ loading: false });
                 return this.props.navigation.navigate('Login');
-
-            } catch (error) {
+            }, (error) => {
                 this.showError(error.response.data);
-            }
+            });
         }
     }
 

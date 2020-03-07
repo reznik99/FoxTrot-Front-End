@@ -64,12 +64,13 @@ class NewConversation extends Component {
                 newResults.push(value);
             }
         });
+        //fake delay
         setTimeout(() => this.setState({ loading: false }),
             250
         );
 
         // Sort results
-        this.setState(prevState => ({ results: newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1) }))
+        this.setState({ results: newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1) });
 
     }
 
