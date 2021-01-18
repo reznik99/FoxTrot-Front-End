@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, View, TextInput, TouchableOpacity, AsyncStorage, ActivityIndicator } from 'react-native';
+import { Text, View, TextInput, TouchableOpacity, AsyncStorage, ActivityIndicator, Keyboard } from 'react-native';
 
 import axios from 'axios';
 import qs from 'qs';
@@ -17,16 +17,20 @@ export default class Login extends Component {
         }
     }
 
+    showError = (msg) => {
+        this.setState({
+            message: msg, loading: false
+        });
+    }
+
     login = async () => {
         if (this.state.loading) return;
-
+        Keyboard.dismiss()
         const { phone_no, password } = this.state;
         this.setState({ loading: true });
 
         if (phone_no === '' || password === '') {
-            this.setState({
-                message: 'Textfields cannot be blank!', loading: false
-            });
+            this.showError('Textfields cannot be blank!');
         } else {
             // Send data to server
             axios.post('http://francescogorini.com:1234/login', qs.stringify({
@@ -44,9 +48,7 @@ export default class Login extends Component {
 
             }, (error) => {
                 console.log(error);
-                this.setState({
-                    message: error.response.data, loading: false
-                });
+                this.showError(error.response.data);
             });
         }
     }
@@ -60,13 +62,13 @@ export default class Login extends Component {
                 </View>
                 <View style={styles.container}>
                     {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
-                    <TextInput placeholder="Enter Phone"
+                    <TextInput placeholder="Phone no."
                         onChangeText={TextInputValue =>
                             this.setState({ phone_no: TextInputValue })}
                         underlineColorAndroid='transparent'
                         style={styles.input}
                     />
-                    <TextInput placeholder="Enter password"
+                    <TextInput placeholder="Password"
                         onChangeText={TextInputValue =>
                             this.setState({ password: TextInputValue })}
                         underlineColorAndroid='transparent'

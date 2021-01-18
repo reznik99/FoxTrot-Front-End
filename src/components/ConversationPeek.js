@@ -23,19 +23,12 @@ const styles = StyleSheet.create({
 export default class ConversationPeek extends Component {
     constructor(props) {
         super(props);
-
-        this.state = {
-            currentTime: Date.now()
-        }
     }
 
-    componentDidMount() {
-        setInterval(() =>
-            this.setState({ currentTime: Date.now() }), 30000);
-    }
 
     render() {
         const lastMessage = this.props.data.messages[this.props.data.messages.length - 1] || { content: "", when: "" };
+        let time = Date.now();
         return (
             <TouchableOpacity style={styles.conversationPeek}
                 onPress={() => this.props.navigation.navigate('Conversation', { data: this.props.data })}>
@@ -50,11 +43,11 @@ export default class ConversationPeek extends Component {
                 </View>
                 <View style={{ alignSelf: "flex-start" }}>
                     {
-                        parseInt((this.state.currentTime - lastMessage.when) / 1000) > 60
-                        ? parseInt((this.state.currentTime - lastMessage.when) / 1000 / 60) > 60
-                        ? <Text>{parseInt((this.state.currentTime - lastMessage.when) / 1000 / 60 / 60)}h ago</Text>
-                        : <Text>{parseInt((this.state.currentTime - lastMessage.when) / 1000 / 60)}m ago</Text>
-                        : <Text>{'<'}1 m ago</Text>
+                        parseInt((time - lastMessage.when) / 1000) > 60
+                            ? parseInt((time - lastMessage.when) / 1000 / 60) > 60
+                                ? <Text>{parseInt((time - lastMessage.when) / 1000 / 60 / 60)}h ago</Text>
+                                : <Text>{parseInt((time - lastMessage.when) / 1000 / 60)}m ago</Text>
+                            : <Text>{'<'}1 m ago</Text>
                     }
                 </View>
             </TouchableOpacity>
