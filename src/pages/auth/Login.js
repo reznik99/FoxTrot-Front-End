@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import { Text, View, TextInput, TouchableOpacity, AsyncStorage, ActivityIndicator, Keyboard } from 'react-native';
 
-import axios from 'axios';
-import qs from 'qs';
-import styles from './style';
+import axios from 'axios'
+import styles from './style'
 
 export default class Login extends Component {
     constructor(props) {
@@ -33,10 +32,10 @@ export default class Login extends Component {
             this.showError('Textfields cannot be blank!');
         } else {
             // Send data to server
-            axios.post('http://francescogorini.com:1234/login', qs.stringify({
+            axios.post('http://francescogorini.com:1234/login', {
                 phone_no: phone_no,
                 password: password
-            }), {
+            }, {
                 headers: { "Content-Type": "application/x-www-form-urlencoded" }
             }).then((response) => {
                 // No error code thrown. Save JWT

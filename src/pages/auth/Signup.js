@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import { Text, View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 
-import axios from 'axios';
-import qs from 'qs';
+import axios from 'axios'
 import styles from './style'
 
 export default class Login extends Component {
@@ -36,10 +35,10 @@ export default class Login extends Component {
             this.showError('Passwords do not match!');
         } else {
             // Send data to server
-            axios.post('http://francescogorini.com:1234/signup', qs.stringify({
+            axios.post('http://francescogorini.com:1234/signup', {
                 phone_no: phone_no,
                 password: password
-            }), {
+            }, {
                 headers: { "Content-Type": "application/x-www-form-urlencoded" }
             }).then((response) => {
                 // No error code thrown. Signup successful
