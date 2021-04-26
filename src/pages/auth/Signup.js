@@ -38,8 +38,6 @@ export default class Login extends Component {
             axios.post('http://francescogorini.com:1234/signup', {
                 phone_no: phone_no,
                 password: password
-            }, {
-                headers: { "Content-Type": "application/x-www-form-urlencoded" }
             }).then((response) => {
                 // No error code thrown. Signup successful
 
