@@ -23,31 +23,30 @@ export default class Login extends Component {
     }
 
     login = async () => {
-        if (this.state.loading) return;
-        Keyboard.dismiss()
-        const { phone_no, password } = this.state;
-        this.setState({ loading: true });
+        const { phone_no, password, loading } = this.state;
 
+        if (loading) return;
         if (phone_no === '' || password === '') {
             this.showError('Textfields cannot be blank!');
-        } else {
-            // Send data to server
-            axios.post('http://francescogorini.com:1234/login', {
-                phone_no: phone_no,
-                password: password
-            }).then((response) => {
-                // No error code thrown. Save JWT
-                AsyncStorage.setItem('JWT', response.data.token)
-                    .then(() => {
-                        this.setState({ loading: false });
-                        return this.props.navigation.navigate('Home');
-                    });
-
-            }, (error) => {
-                console.log(error);
-                this.showError(error.response.data);
-            });
+            return;
         }
+
+        this.setState({ loading: true });
+        Keyboard.dismiss()
+
+        axios.post('http://francescogorini.com:1234/login', {
+            phone_no: phone_no,
+            password: password
+        }).then(async (response) => {
+            // No error code thrown. Save JWT
+            await AsyncStorage.setItem('JWT', response.data.token)
+            return this.props.navigation.navigate('Home');
+        }).catch(err => {
+            console.log(err);
+            this.showError(err.response.data);
+        }).finally(() => {
+            this.setState({ loading: false });
+        });
     }
 
     render() {
@@ -74,11 +73,10 @@ export default class Login extends Component {
                     />
                     <TouchableOpacity style={styles.button} onPress={() => this.login()}>
                         {this.state.loading
-                            ? <ActivityIndicator />
+                            ? <ActivityIndicator color="#00FFFF" />
                             : <Text style={styles.buttonText}>Login</Text>
                         }
                     </TouchableOpacity>
-
                     <Text style={styles.subTitle}>Or</Text>
                     <TouchableOpacity style={[styles.button, styles.buttonCyan]}
                         onPress={() => this.props.navigation.navigate('Signup')}>

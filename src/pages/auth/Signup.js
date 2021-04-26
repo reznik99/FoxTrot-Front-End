@@ -40,12 +40,12 @@ export default class Login extends Component {
                 password: password
             }).then((response) => {
                 // No error code thrown. Signup successful
-
-                this.setState({ loading: false });
                 return this.props.navigation.navigate('Login');
-            }, (error) => {
+            }).catch(err => {
                 this.showError(error.response.data);
-            });
+            }).finally(() => {
+                this.setState({ loading: false });
+            })
         }
     }
 
