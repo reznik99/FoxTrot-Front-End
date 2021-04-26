@@ -68,7 +68,7 @@ export default class Home extends Component {
                                 (convo, index) =>
                                     (<ConversationPeek data={convo} key={index} navigation={this.props.navigation} />)
                             )
-                            : <ActivityIndicator />
+                            : <ActivityIndicator color="#00FFFF" />
                     }
                 </ScrollView>
                 <TouchableOpacity style={styles.newMessageBtn} onPress={() => this.props.navigation.navigate('NewConversation')}>

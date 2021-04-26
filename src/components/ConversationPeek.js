@@ -35,7 +35,7 @@ export default class ConversationPeek extends Component {
                 <View style={styles.profilePicContainer}>
                     <Image source={{ uri: this.props.data.parties[0].pic }}
                         style={styles.profilePic}
-                        PlaceholderContent={<ActivityIndicator />} />
+                        PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                 </View>
                 <View style={{ flex: 1 }}>
                     <Text>{this.props.data.parties[0].identifier}</Text>

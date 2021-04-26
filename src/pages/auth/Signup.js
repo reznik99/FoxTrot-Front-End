@@ -80,7 +80,7 @@ export default class Login extends Component {
                     />
                     <TouchableOpacity style={[styles.button, styles.buttonCyan]} onPress={() => this.signup()}>
                         {this.state.loading
-                            ? <ActivityIndicator />
+                            ? <ActivityIndicator color="#00FFFF" />
                             : <Text style={styles.buttonText}>Signup</Text>
                         }
                     </TouchableOpacity>

@@ -36,14 +36,14 @@ export default class ContactPeek extends Component {
             <TouchableOpacity style={styles.profilePeek}
                 onPress={() => {
                     // If conversation doesn't exist, create one
-                    conversation 
-                    ? this.props.navigation.navigate('Conversation', { data: conversation })
-                    : this.props.navigation.navigate('Conversation', { data: userData.createConversation(data) });
+                    conversation
+                        ? this.props.navigation.navigate('Conversation', { data: conversation })
+                        : this.props.navigation.navigate('Conversation', { data: userData.createConversation(data) });
                 }}>
                 <View style={styles.profilePicContainer}>
                     <Image source={{ uri: data.pic }}
                         style={styles.profilePic}
-                        PlaceholderContent={<ActivityIndicator />} />
+                        PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                 </View>
                 <View style={{ flex: 1 }}>
                     <Text>{data.identifier}</Text>
