@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import ConversationPeek from '../../components/ConversationPeek';
 
@@ -8,7 +8,7 @@ import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 
 import userData from './../../store/userData';
 
-const crypto = require('../../libs/crypto');
+import { RSA } from 'react-native-rsa-native';
 
 const styles = StyleSheet.create({
     wrapper: {
@@ -40,34 +40,26 @@ export default class Home extends Component {
         userData.subscribe(this.reloadConvos);
         this.reloadConvos();
         // Load user private keys or generate them (if first time login) 
-        this.setState({ loading: true })
+        this.setState({ loading: true, loading_msg: "Loading cryptographic keys" })
         AsyncStorage.getItem('rsa-user-keys', (err, keys) => {
-            if (err || keys === "") {
-                const { privateKey, publicKey } = generateRSAKeys()
-                userData.self.rsa_keys = { privateKey, publicKey }
-                console.log(userData.self.rsa_keys)
-                AsyncStorage.setItem('rsa-user-keys', JSON.stringify(userData.self.rsa_keys), () => this.setState({ loading: false }))
+            if (!keys || err) {
+                console.log("Generating rsa-keys")
+                this.setState({ loading: true, loading_msg: "Generating cryptographic keys" })
+                RSA.generateKeys(4096) // set key size
+                    .then(keys => {
+                        console.log('4096 public:', keys.public); // the public key
+                        userData.self.rsa_keys = { privateKey: keys.private, publicKey: keys.public }
+                        AsyncStorage.setItem('rsa-user-keys', JSON.stringify(userData.self.rsa_keys), () => this.setState({ loading: false, loading_msg: "" }))
+                    });
             }
             else {
+                console.log("Loaded rsa-keys from storage")
                 userData.self.rsa_keys = JSON.parse(keys)
-                this.setState({ loading: false })
+                this.setState({ loading: false, loading_msg: "" })
             }
         })
     }
 
-    generateRSAKeys = () => {
-        return crypto.generateKeyPairSync('rsa', {
-            modulusLength: 2048,
-            publicKeyEncoding: {
-                type: 'spki',
-                format: 'pem'
-            },
-            privateKeyEncoding: {
-                type: 'pkcs8',
-                format: 'pem'
-            }
-        });
-    }
 
     reloadConvos = () => {
         const convos = []
@@ -88,20 +80,30 @@ export default class Home extends Component {
 
     render() {
         return (
+
             <View style={styles.wrapper}>
-                <ScrollView>
-                    {
-                        this.state.conversations.length > 0
-                            ? this.state.conversations.map(
-                                (convo, index) =>
-                                    (<ConversationPeek data={convo} key={index} navigation={this.props.navigation} />)
-                            )
-                            : <ActivityIndicator color="#00FFFF" />
-                    }
-                </ScrollView>
-                <TouchableOpacity style={styles.newMessageBtn} onPress={() => this.props.navigation.navigate('NewConversation')}>
-                    <FontAwesomeIcon size={25} icon={faEnvelope} style={{ color: '#fff' }} />
-                </TouchableOpacity>
+                {
+                    this.state.loading
+                        ? <>
+                            <Text>{this.state.loading_msg}</Text>
+                            <ActivityIndicator color="#00FFFF" />
+                        </>
+                        : <>
+                            <ScrollView>
+                                {
+                                    this.state.conversations.length > 0
+                                        ? this.state.conversations.map(
+                                            (convo, index) =>
+                                                (<ConversationPeek data={convo} key={index} navigation={this.props.navigation} />)
+                                        )
+                                        : <Text>No Conversations.</Text>
+                                }
+                            </ScrollView>
+                            <TouchableOpacity style={styles.newMessageBtn} onPress={() => this.props.navigation.navigate('NewConversation')}>
+                                <FontAwesomeIcon size={25} icon={faEnvelope} style={{ color: '#fff' }} />
+                            </TouchableOpacity>
+                        </>
+                }
             </View>
         );
     }

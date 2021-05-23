@@ -4,6 +4,7 @@
     "private": true,
     "scripts": {
         "android": "react-native run-android",
+        "log-android": "react-native log-android",
         "ios": "react-native run-ios",
         "start": "react-native start",
         "test": "jest",
@@ -22,6 +23,7 @@
         "react-native-elements": "^1.2.7",
         "react-native-gesture-handler": "^1.9.0",
         "react-native-reanimated": "^1.13.2",
+        "react-native-rsa-native": "^2.0.3",
         "react-native-screens": "^2.16.1",
         "react-native-svg": "^9.13.6",
         "react-native-vector-icons": "^6.7.0",
