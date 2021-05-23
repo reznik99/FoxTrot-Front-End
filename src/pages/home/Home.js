@@ -33,7 +33,7 @@ export default class Home extends Component {
     }
 
     componentDidMount() {
-        userData.subscribe(this.messageCallback);
+        userData.subscribe(this.reloadConvos);
         this.reloadConvos();
     }
 
@@ -52,10 +52,6 @@ export default class Home extends Component {
                 return c1.messages[c1.messages.length - 1].when < c2.messages[c2.messages.length - 1].when ? 1 : -1
             })
         });
-    }
-
-    messageCallback = () => {
-        this.reloadConvos();
     }
 
     render() {

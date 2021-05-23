@@ -42,7 +42,7 @@ export default class Login extends Component {
                 // No error code thrown. Signup successful
                 return this.props.navigation.navigate('Login');
             }).catch(err => {
-                this.showError(error.response.data);
+                this.showError(err.response?.data);
             }).finally(() => {
                 this.setState({ loading: false });
             })
@@ -78,12 +78,11 @@ export default class Login extends Component {
                         secureTextEntry={true}
                         style={styles.input}
                     />
-                    <TouchableOpacity style={[styles.button, styles.buttonCyan]} onPress={() => this.signup()}>
-                        {this.state.loading
-                            ? <ActivityIndicator color="#00FFFF" />
-                            : <Text style={styles.buttonText}>Signup</Text>
-                        }
-                    </TouchableOpacity>
+                    {this.state.loading
+                        ? <TouchableOpacity style={[styles.button, styles.buttonCyan]}><ActivityIndicator color="#00FFFF" /></TouchableOpacity>
+                        : <TouchableOpacity style={[styles.button, styles.buttonCyan]} onPress={() => this.signup()}><Text style={styles.buttonText}>Signup</Text></TouchableOpacity>
+                    }
+
                     <Text style={styles.subTitle}>Or</Text>
                     <TouchableOpacity style={styles.button}
                         onPress={() => this.props.navigation.navigate('Login')}>

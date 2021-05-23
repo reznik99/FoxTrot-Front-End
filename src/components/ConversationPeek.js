@@ -47,7 +47,7 @@ export default class ConversationPeek extends Component {
                             ? parseInt((time - lastMessage.when) / 1000 / 60) > 60
                                 ? <Text>{parseInt((time - lastMessage.when) / 1000 / 60 / 60)}h ago</Text>
                                 : <Text>{parseInt((time - lastMessage.when) / 1000 / 60)}m ago</Text>
-                            : <Text>{'<'}1 m ago</Text>
+                            : <Text>{'<'}1m ago</Text>
                     }
                 </View>
             </TouchableOpacity>

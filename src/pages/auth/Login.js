@@ -42,11 +42,10 @@ export default class Login extends Component {
             await AsyncStorage.setItem('JWT', response.data.token)
             return this.props.navigation.navigate('Home');
         }).catch(err => {
-            console.log(err);
-            this.showError(err.response.data);
+            this.showError(err.response?.data);
         }).finally(() => {
             this.setState({ loading: false });
-        });
+        })
     }
 
     render() {
@@ -71,12 +70,11 @@ export default class Login extends Component {
                         secureTextEntry={true}
                         style={styles.input}
                     />
-                    <TouchableOpacity style={styles.button} onPress={() => this.login()}>
-                        {this.state.loading
-                            ? <ActivityIndicator color="#00FFFF" />
-                            : <Text style={styles.buttonText}>Login</Text>
-                        }
-                    </TouchableOpacity>
+                    {this.state.loading
+                        ? <TouchableOpacity style={styles.button}><ActivityIndicator color="#00FFFF" /></TouchableOpacity>
+                        : <TouchableOpacity style={styles.button} onPress={() => this.login()}><Text style={styles.buttonText}>Login</Text></TouchableOpacity>
+                    }
+
                     <Text style={styles.subTitle}>Or</Text>
                     <TouchableOpacity style={[styles.button, styles.buttonCyan]}
                         onPress={() => this.props.navigation.navigate('Signup')}>
