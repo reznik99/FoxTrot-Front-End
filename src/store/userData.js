@@ -1,5 +1,5 @@
 import axios from 'axios'
-
+import AsyncStorage from '@react-native-community/async-storage';
 
 const userData = {
     self: {
@@ -30,6 +30,16 @@ const userData = {
         userData.conversations.get(identifier).messages.push(message);
         userData.callCallbacks();
     },
+    addContact: async (contact) => {
+        try {
+            userData.contacts.set(contact.nickname || contact.phone_no, contact)
+            await axios.post('http://francescogorini.com:1234/addContact', contact, userData.getConfig())
+        }
+        catch (error) {
+            userData.contacts.delete(contact.nickname || contact.phone_no)
+            return "Failed to add contact, check your connection!"
+        }
+    },
     // getters
     getConversation: (identifier) => {
         return userData.conversations.get(identifier);
@@ -40,29 +50,47 @@ const userData = {
     getContacts: () => {
         return userData.contacts;
     },
+    searchUsers: async (prefix) => {
+        try {
+            const users = await axios.get(`http://francescogorini.com:1234/searchUsers/?prefix=${prefix}`, userData.getConfig())
+            return users.data || []
+        } catch (error) {
+            console.error(error)
+            return []
+        }
+    },
     // update
     subscribe: (callback) => {
         userData.callbacks.push(callback);
     },
     callCallbacks: () => {
-        for (let callback of userData.callbacks) {
-            callback();
-        }
+        userData.callbacks.forEach(callback => callback());
     },
     preformSync: async () => {
         try {
-            const config = {
-                headers: { "Authorization": `JWT ${userData.self.JWT}` }
-            }
-
-            console.log(config)
-            const contacts = await axios.get('http://francescogorini.com:1234/getContacts', config)
-            contacts.array.forEach(contact => {
+            // Load user contacts
+            const contacts = await axios.get('http://francescogorini.com:1234/getContacts', userData.getConfig())
+            contacts.data.forEach(contact => {
                 userData.contacts.set(contact.nickname || contact.phone_no, contact)
             });
+            // Load user conversations
+
         } catch (error) {
             console.error(error)
         }
+    },
+    readStateFromStorage: async () => {
+        console.log('Reading keys from local storage into store')
+        const keys = await AsyncStorage.getItem('rsa-user-keys')
+        userData.self.rsa_keys = JSON.parse(keys);
+
+        console.log('Reading JWT from local storage into store')
+        const JWT = await AsyncStorage.getItem('JWT')
+        userData.self.JWT = JWT;
+    },
+    getConfig: () => {
+        // Send JWT Token to authorize requests
+        return { headers: { "Authorization": `JWT ${userData.self.JWT}` } }
     }
 }
 
