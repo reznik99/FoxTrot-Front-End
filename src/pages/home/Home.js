@@ -33,6 +33,7 @@ export default class Home extends Component {
         this.state = {
             conversations: [],
             loading: false,
+            loading_msg: ''
         };
     }
 
@@ -40,7 +41,7 @@ export default class Home extends Component {
         userData.subscribe(this.reloadConvos);
         this.reloadConvos();
 
-        // Load user private keys or generate them (if first time login) 
+        // Load user private keys or generate them (if first time login)
         try {
             this.setState({ loading: true, loading_msg: "Loading cryptographic keys" })
 
@@ -53,7 +54,6 @@ export default class Home extends Component {
             console.log("Generating rsa-keys")
 
             const keys = await RSA.generateKeys(4096)
-            console.log('4096 public:', keys.public);
             userData.self.rsa_keys = { privateKey: keys.private, publicKey: keys.public }
             await AsyncStorage.setItem('rsa-user-keys', JSON.stringify(userData.self.rsa_keys))
 
