@@ -1,9 +1,12 @@
+import axios from 'axios'
+
 
 const userData = {
     self: {
         identifier: 'Fraser Geddes',
         pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg',
-        rsa_keys: {}
+        rsa_keys: {},
+        JWT: "",
     },
 
     conversations: new Map(),
@@ -44,6 +47,21 @@ const userData = {
     callCallbacks: () => {
         for (let callback of userData.callbacks) {
             callback();
+        }
+    },
+    preformSync: async () => {
+        try {
+            const config = {
+                headers: { "Authorization": `JWT ${userData.self.JWT}` }
+            }
+
+            console.log(config)
+            const contacts = await axios.get('http://francescogorini.com:1234/getContacts', config)
+            contacts.array.forEach(contact => {
+                userData.contacts.set(contact.nickname || contact.phone_no, contact)
+            });
+        } catch (error) {
+            console.error(error)
         }
     }
 }

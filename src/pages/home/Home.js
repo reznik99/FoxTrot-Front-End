@@ -38,6 +38,8 @@ export default class Home extends Component {
     }
 
     async componentDidMount() {
+        if (this.state.loading) return
+
         userData.subscribe(this.reloadConvos);
         this.reloadConvos();
 
@@ -58,6 +60,7 @@ export default class Home extends Component {
             await AsyncStorage.setItem('rsa-user-keys', JSON.stringify(userData.self.rsa_keys))
 
         } finally {
+            await userData.preformSync()
             this.setState({ loading: false, loading_msg: "" })
         }
     }
@@ -85,10 +88,11 @@ export default class Home extends Component {
 
             <View style={styles.wrapper}>
                 {
-                    this.state.loading
-                        ? <> <Text>{this.state.loading_msg}</Text>
+                    this.state.loading == true
+                        ? <View>
+                            <Text>{this.state.loading_msg}</Text>
                             <ActivityIndicator color="#00FFFF" />
-                        </>
+                        </View>
                         : <>
                             <ScrollView>
                                 {
