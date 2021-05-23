@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
 import ConversationPeek from '../../components/ConversationPeek';
 
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 
 import userData from './../../store/userData';
+
+const crypto = require('../../libs/crypto');
 
 const styles = StyleSheet.create({
     wrapper: {
@@ -28,13 +31,42 @@ export default class Home extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            conversations: []
+            conversations: [],
+            loading: false,
         };
     }
 
     componentDidMount() {
         userData.subscribe(this.reloadConvos);
         this.reloadConvos();
+        // Load user private keys or generate them (if first time login) 
+        this.setState({ loading: true })
+        AsyncStorage.getItem('rsa-user-keys', (err, keys) => {
+            if (err || keys === "") {
+                const { privateKey, publicKey } = generateRSAKeys()
+                userData.self.rsa_keys = { privateKey, publicKey }
+                console.log(userData.self.rsa_keys)
+                AsyncStorage.setItem('rsa-user-keys', JSON.stringify(userData.self.rsa_keys), () => this.setState({ loading: false }))
+            }
+            else {
+                userData.self.rsa_keys = JSON.parse(keys)
+                this.setState({ loading: false })
+            }
+        })
+    }
+
+    generateRSAKeys = () => {
+        return crypto.generateKeyPairSync('rsa', {
+            modulusLength: 2048,
+            publicKeyEncoding: {
+                type: 'spki',
+                format: 'pem'
+            },
+            privateKeyEncoding: {
+                type: 'pkcs8',
+                format: 'pem'
+            }
+        });
     }
 
     reloadConvos = () => {
