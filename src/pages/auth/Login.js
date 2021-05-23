@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import { Text, View, TextInput, TouchableOpacity, AsyncStorage, ActivityIndicator, Keyboard } from 'react-native';
-
+import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, Keyboard } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
 import axios from 'axios'
 import styles from './style'
 
