@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 import { Image } from 'react-native-elements';
+
+import userData from './../store/userData';
 
 const styles = StyleSheet.create({
     conversationPeek: {
@@ -33,12 +35,12 @@ export default class ConversationPeek extends Component {
             <TouchableOpacity style={styles.conversationPeek}
                 onPress={() => this.props.navigation.navigate('Conversation', { data: this.props.data })}>
                 <View style={styles.profilePicContainer}>
-                    <Image source={{ uri: this.props.data.parties[0].pic }}
+                    <Image source={{ uri: this.props.data.parties[0].pic || userData.defaultAvatar }}
                         style={styles.profilePic}
                         PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text>{this.props.data.parties[0].identifier}</Text>
+                    <Text>{this.props.data.parties[0].identifier || this.props.data.parties[0].phone_no}</Text>
                     <Text>{lastMessage.content}</Text>
                 </View>
                 <View style={{ alignSelf: "flex-start" }}>

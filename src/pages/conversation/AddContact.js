@@ -54,6 +54,7 @@ class AddContact extends Component {
     searchUsers = async (newPrefix) => {
         // UX
         this.setState({ loading: true, prefix: newPrefix });
+        if (newPrefix.length <= 2) return
 
         // Load data
         const newResults = await userData.searchUsers(newPrefix);
@@ -71,6 +72,7 @@ class AddContact extends Component {
                 {/* Search */}
                 <View style={styles.searchContainer}>
                     <TextInput placeholder="Search contacts"
+                        value={this.state.prefix}
                         onChangeText={TextInputValue => this.searchUsers(TextInputValue)}
                         underlineColorAndroid='transparent'
                         style={styles.input}

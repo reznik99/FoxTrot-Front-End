@@ -9,6 +9,8 @@ const userData = {
         JWT: "",
     },
 
+    defaultAvatar: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg',
+
     conversations: new Map(),
     contacts: new Map(),
     callbacks: [],
@@ -52,7 +54,7 @@ const userData = {
     },
     searchUsers: async (prefix) => {
         try {
-            const users = await axios.get(`http://francescogorini.com:1234/searchUsers/?prefix=${prefix}`, userData.getConfig())
+            const users = await axios.get(`http://francescogorini.com:1234/searchUsers/${prefix}`, userData.getConfig())
             return users.data || []
         } catch (error) {
             console.error(error)
