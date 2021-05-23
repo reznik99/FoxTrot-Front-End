@@ -36,28 +36,30 @@ export default class Home extends Component {
         };
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         userData.subscribe(this.reloadConvos);
         this.reloadConvos();
+
         // Load user private keys or generate them (if first time login) 
-        this.setState({ loading: true, loading_msg: "Loading cryptographic keys" })
-        AsyncStorage.getItem('rsa-user-keys', (err, keys) => {
-            if (!keys || err) {
-                console.log("Generating rsa-keys")
-                this.setState({ loading: true, loading_msg: "Generating cryptographic keys" })
-                RSA.generateKeys(4096) // set key size
-                    .then(keys => {
-                        console.log('4096 public:', keys.public); // the public key
-                        userData.self.rsa_keys = { privateKey: keys.private, publicKey: keys.public }
-                        AsyncStorage.setItem('rsa-user-keys', JSON.stringify(userData.self.rsa_keys), () => this.setState({ loading: false, loading_msg: "" }))
-                    });
-            }
-            else {
-                console.log("Loaded rsa-keys from storage")
-                userData.self.rsa_keys = JSON.parse(keys)
-                this.setState({ loading: false, loading_msg: "" })
-            }
-        })
+        try {
+            this.setState({ loading: true, loading_msg: "Loading cryptographic keys" })
+
+            const keys = await AsyncStorage.getItem('rsa-user-keys')
+            console.log("Loaded rsa-keys from storage")
+            userData.self.rsa_keys = JSON.parse(keys)
+
+        } catch (e) {
+            this.setState({ loading: true, loading_msg: "Generating cryptographic keys" })
+            console.log("Generating rsa-keys")
+
+            const keys = await RSA.generateKeys(4096)
+            console.log('4096 public:', keys.public);
+            userData.self.rsa_keys = { privateKey: keys.private, publicKey: keys.public }
+            await AsyncStorage.setItem('rsa-user-keys', JSON.stringify(userData.self.rsa_keys))
+
+        } finally {
+            this.setState({ loading: false, loading_msg: "" })
+        }
     }
 
 
@@ -84,8 +86,7 @@ export default class Home extends Component {
             <View style={styles.wrapper}>
                 {
                     this.state.loading
-                        ? <>
-                            <Text>{this.state.loading_msg}</Text>
+                        ? <> <Text>{this.state.loading_msg}</Text>
                             <ActivityIndicator color="#00FFFF" />
                         </>
                         : <>
