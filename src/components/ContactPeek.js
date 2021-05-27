@@ -31,7 +31,7 @@ export default class ContactPeek extends Component {
 
     render() {
         const { navigation, data } = this.props;
-        let conversation = userData.getConversation(data.identifier);
+        let conversation = userData.getConversation(data.identifier || data.phone_no);
         return (
             <TouchableOpacity style={styles.profilePeek}
                 onPress={() => {
@@ -41,15 +41,15 @@ export default class ContactPeek extends Component {
                         : this.props.navigation.navigate('Conversation', { data: userData.createConversation(data) });
                 }}>
                 <View style={styles.profilePicContainer}>
-                    <Image source={{ uri: data.pic }}
+                    <Image source={{ uri: data.pic || userData.defaultAvatar }}
                         style={styles.profilePic}
                         PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text>{data.identifier}</Text>
+                    <Text>{data.identifier || data.phone_no}</Text>
                 </View>
                 <View>
-                    <Text>{data.lastActive} ago</Text>
+                    <Text>{data.lastActive ? userData.humanTime(data.lastActive) : null}</Text>
                 </View>
             </TouchableOpacity>
         );

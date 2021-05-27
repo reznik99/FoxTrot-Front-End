@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
 
 });
 
-class NewConversation extends Component {
+class AddContact extends Component {
     constructor(props) {
         super(props);
 
@@ -49,29 +49,20 @@ class NewConversation extends Component {
     componentDidMount() {
         // Should load all contacts from storage
         this.setState({ loading: false })
-        // Display all contacts
-        this.searchContact(this.state.prefix);
     }
 
-    searchContact = (newPrefix) => {
+    searchUsers = async (newPrefix) => {
         // UX
         this.setState({ loading: true, prefix: newPrefix });
+        if (newPrefix.length <= 2) return
 
         // Load data
-        const newResults = [];
-        userData.getContacts().forEach((value, key, map) => {
-            if (value.identifier.toLowerCase().startsWith(newPrefix.toLowerCase())) {
-                newResults.push(value);
-            }
-        });
-        //fake delay
-        setTimeout(() => this.setState({ loading: false }),
-            250
-        );
+        const newResults = await userData.searchUsers(newPrefix);
+        console.log("RESULTS:")
+        console.log(newResults)
 
         // Sort results
-        this.setState({ results: newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1) });
-
+        this.setState({ results: newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1), loading: false });
     }
 
     render() {
@@ -81,7 +72,8 @@ class NewConversation extends Component {
                 {/* Search */}
                 <View style={styles.searchContainer}>
                     <TextInput placeholder="Search contacts"
-                        onChangeText={TextInputValue => this.searchContact(TextInputValue)}
+                        value={this.state.prefix}
+                        onChangeText={TextInputValue => this.searchUsers(TextInputValue)}
                         underlineColorAndroid='transparent'
                         style={styles.input}
                     />
@@ -100,15 +92,10 @@ class NewConversation extends Component {
                     }
 
                 </ScrollView>
-
-                {/* Add contact */}
-                <TouchableOpacity style={styles.newContactBtn} onPress={() => this.props.navigation.navigate('AddContact')}>
-                    <FontAwesomeIcon size={25} icon={faUserPlus} style={{ color: '#fff' }} />
-                </TouchableOpacity>
             </View>
         );
     }
 
 }
 
-export default NewConversation;
+export default AddContact;

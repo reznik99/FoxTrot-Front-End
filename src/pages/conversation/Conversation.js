@@ -79,7 +79,7 @@ class Conversation extends Component {
                     }}>
                     {
                         data && data.messages ? data.messages.map((packet, index) => {
-                            return packet.from === 'Fraser Geddes'
+                            return packet.from === userData.self.identifier
                                 ? <Text key={index} style={[styles.message, styles.sent]}>{packet.content}</Text>
                                 : <Text key={index} style={[styles.message, styles.received]}>{packet.content}</Text>
                         }) : <Text style={[styles.message, styles.system]} >No messages</Text>

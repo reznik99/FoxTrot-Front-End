@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import { Text, View, TextInput, TouchableOpacity, AsyncStorage, ActivityIndicator, Keyboard } from 'react-native';
-
+import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, Keyboard } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
 import axios from 'axios'
 import styles from './style'
 
@@ -58,12 +58,14 @@ export default class Login extends Component {
                 <View style={styles.container}>
                     {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
                     <TextInput placeholder="Phone no."
+                        value={this.state.phone_no}
                         onChangeText={TextInputValue =>
                             this.setState({ phone_no: TextInputValue })}
                         underlineColorAndroid='transparent'
                         style={styles.input}
                     />
                     <TextInput placeholder="Password"
+                        value={this.state.password}
                         onChangeText={TextInputValue =>
                             this.setState({ password: TextInputValue })}
                         underlineColorAndroid='transparent'
