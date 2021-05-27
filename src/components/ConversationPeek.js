@@ -30,7 +30,6 @@ export default class ConversationPeek extends Component {
 
     render() {
         const lastMessage = this.props.data.messages[this.props.data.messages.length - 1] || { content: "", when: "" };
-        let time = Date.now();
         return (
             <TouchableOpacity style={styles.conversationPeek}
                 onPress={() => this.props.navigation.navigate('Conversation', { data: this.props.data })}>
@@ -44,13 +43,7 @@ export default class ConversationPeek extends Component {
                     <Text>{lastMessage.content}</Text>
                 </View>
                 <View style={{ alignSelf: "flex-start" }}>
-                    {
-                        parseInt((time - lastMessage.when) / 1000) > 60
-                            ? parseInt((time - lastMessage.when) / 1000 / 60) > 60
-                                ? <Text>{parseInt((time - lastMessage.when) / 1000 / 60 / 60)}h ago</Text>
-                                : <Text>{parseInt((time - lastMessage.when) / 1000 / 60)}m ago</Text>
-                            : <Text>{'<'}1m ago</Text>
-                    }
+                    <Text>{lastMessage.when != "" ? userData.humanTime(lastMessage.when) : null}</Text>
                 </View>
             </TouchableOpacity>
         );

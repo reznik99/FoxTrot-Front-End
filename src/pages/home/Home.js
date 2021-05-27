@@ -62,20 +62,15 @@ export default class Home extends Component {
 
 
     reloadConvos = () => {
-        const convos = []
-        userData.getAllConversations().forEach((value, key, map) => {
-            convos.push(value);
-        });
-        this.setState({
-            conversations: convos.sort((c1, c2) => {
-                if (c1.messages.length <= 0)
-                    return -1;
-                if (c2.messages.length <= 0)
-                    return 1;
+        const convos = userData.getAllConversations().sort((c1, c2) => {
+            if (!c1.messages || c1.messages.length <= 0)
+                return -1;
+            if (!c2.messages || c2.messages.length <= 0)
+                return 1;
 
-                return c1.messages[c1.messages.length - 1].when < c2.messages[c2.messages.length - 1].when ? 1 : -1
-            })
-        });
+            return c1.messages[c1.messages.length - 1].when < c2.messages[c2.messages.length - 1].when ? 1 : -1
+        })
+        this.setState({ conversations: convos });
     }
 
     render() {
