@@ -107,6 +107,9 @@ const userData = {
     },
     preformSync: async () => {
         try {
+            // Clean up cached messages
+            userData.conversations = new Map()
+
             // Upload user public key
             if (userData.self.sync_pubKey) {
                 userData.self.sync_pubKey = false
@@ -127,7 +130,7 @@ const userData = {
                     content: message.message,
                     from: userData.self.identifier,
                     to: message.phone_no,
-                    when: message.sent_at,
+                    sent_at: message.sent_at,
                     seen: message.seen
                 });
             })
@@ -168,7 +171,8 @@ const userData = {
 
     humanTime: (lastTime) => {
         let time = Date.now()
-        let diff = time - parseInt(lastTime)
+        let msgTime = new Date(lastTime).valueOf()
+        let diff = time - msgTime
         return diff / 1000 > 60
             ? diff / 1000 / 60 > 60
                 ? `${parseInt(diff / 1000 / 60 / 60)} h ago`

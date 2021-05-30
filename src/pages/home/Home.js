@@ -71,7 +71,7 @@ export default class Home extends Component {
             if (!c2.messages || c2.messages.length <= 0)
                 return 1;
 
-            return c1.messages[c1.messages.length - 1].when < c2.messages[c2.messages.length - 1].when ? 1 : -1
+            return c1.messages[c1.messages.length - 1].sent_at < c2.messages[c2.messages.length - 1].sent_at ? 1 : -1
         })
         this.setState({ conversations: convos });
     }
