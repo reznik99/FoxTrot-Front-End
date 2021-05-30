@@ -6,6 +6,7 @@ const userData = {
         identifier: 'Francesco',
         pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg',
         rsa_keys: {},
+        sync_pubKey: false,
         JWT: "",
     },
 
@@ -42,6 +43,15 @@ const userData = {
             return "Failed to add contact, check your connection!"
         }
     },
+    setJWToken: async (token) => {
+        userData.self.JWT = token
+        await userData.writeDataToStorage('JWT', token)
+    },
+    setKeys: async (keyPair) => {
+        userData.self.sync_pubKey = true
+        userData.self.rsa_keys = keyPair
+        await userData.writeDataToStorage('rsa-user-keys', JSON.stringify(keyPair))
+    },
     // getters
     getConversation: (identifier) => {
         return userData.conversations.get(identifier);
@@ -70,6 +80,11 @@ const userData = {
     },
     preformSync: async () => {
         try {
+            // Upload user public key
+            if (userData.self.sync_pubKey) {
+                userData.self.sync_pubKey = false
+                await axios.post('http://francescogorini.com:1234/savePublicKey', { publicKey: userData.self.rsa_keys.publicKey }, userData.getConfig())
+            }
             // Load user contacts
             const contacts = await axios.get('http://francescogorini.com:1234/getContacts', userData.getConfig())
             contacts.data.forEach(contact => {
@@ -89,6 +104,22 @@ const userData = {
         console.log('Reading JWT from local storage into store')
         const JWT = await AsyncStorage.getItem('JWT')
         userData.self.JWT = JWT;
+
+        if (keys == null || JWT == null) throw new Error('Missing creds in storage. Generate them')
+    },
+    writeDataToStorage: async (key, data) => {
+        try {
+            await AsyncStorage.setItem(key, data)
+        } catch (err) {
+            console.log(err)
+        }
+    },
+    deleteFromStorage: async (key) => {
+        try {
+            await AsyncStorage.removeItem(key)
+        } catch (err) {
+            console.log(err)
+        }
     },
     getConfig: () => {
         // Send JWT Token to authorize requests
