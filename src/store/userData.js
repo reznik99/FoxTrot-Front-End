@@ -31,16 +31,17 @@ const userData = {
     },
     sendMessage: async (user, message) => {
         try {
-            await axios.post('http://francescogorini.com:1234/sendMessage', { message: message, contact_id: user.id }, userData.getConfig())
             let msg = {
                 content: message,
                 from: userData.self.identifier,
                 to: user.phone_no,
-                when: Date.now(),
+                sent_at: Date.now(),
                 seen: false
             }
-
             userData.getConversation(user.phone_no).messages.push(msg);
+
+            await axios.post('http://francescogorini.com:1234/sendMessage', { message: message, contact_id: user.id }, userData.getConfig())
+
             userData.callCallbacks();
         }
         catch (error) {
@@ -71,6 +72,13 @@ const userData = {
     // getters
     getConversation: (identifier) => {
         return userData.conversations.get(identifier);
+    },
+    getOrCreateConversation: (identifier) => {
+        let convo = userData.conversations.has(identifier.phone_no)
+        if (!convo) {
+            userData.createConversation(identifier)
+        }
+        return userData.getConversation(identifier.phone_no)
     },
     getAllConversations: () => {
         return [...userData.conversations.values()];
@@ -106,14 +114,23 @@ const userData = {
             }
             // Load user contacts
             const contacts = await axios.get('http://francescogorini.com:1234/getContacts', userData.getConfig())
-            console.log(`Contact data recieved ${JSON.stringify(contacts.data)}`)
 
             contacts.data.forEach(contact => {
                 userData.contacts.set(contact.nickname || contact.phone_no, contact)
             });
+
             // Load user conversations
+            const messages = await axios.get('http://francescogorini.com:1234/getConversations', userData.getConfig())
 
-
+            messages.data.forEach(message => {
+                userData.getOrCreateConversation({ phone_no: message.phone_no, id: message.contact_id }).messages.push({
+                    content: message.message,
+                    from: userData.self.identifier,
+                    to: message.phone_no,
+                    when: message.sent_at,
+                    seen: message.seen
+                });
+            })
 
         } catch (error) {
             console.error(error)
@@ -159,85 +176,5 @@ const userData = {
             : 'just now'
     }
 }
-
-// var seconds = Date.now() - 10000000;
-
-// Data should be loaded from database
-// userData.conversations.set('Mr Bean', {
-//     parties: [{ identifier: 'Mr Bean', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg' }, { identifier: self.identifier, pic: self.pic }],
-//     messages: [
-//         {
-//             from: '+994 55 283 97 19',
-//             content: 'Wanna hear a joke?',
-//             when: seconds
-//         }, {
-//             from: 'Francesco',
-//             content: 'Hi my name is Grant',
-//             when: seconds
-//         }, {
-//             from: '+994 55 283 97 19',
-//             content: 'meet at starbuck Dixon at 6:45?',
-//             when: seconds
-//         }
-//     ]
-// });
-// userData.conversations.set('+69 27 163 22 10', {
-//     parties: [{ identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' }, { identifier: self.identifier, pic: self.pic }],
-//     messages: [
-//         {
-//             from: '+994 55 283 97 19',
-//             content: 'Hello testing message',
-//             when: seconds
-//         }, {
-//             from: 'Francesco',
-//             content: 'catch up soon!',
-//             when: seconds
-//         }, {
-//             from: '+994 55 283 97 19',
-//             content: 'Hello testing message',
-//             when: seconds
-//         }, {
-//             from: 'Francesco',
-//             content: 'catch up soon!',
-//             when: seconds
-//         }, {
-//             from: '+994 55 283 97 19',
-//             content: 'Hello testing message',
-//             when: seconds
-//         }, {
-//             from: 'Francesco',
-//             content: 'catch up soon!',
-//             when: seconds
-//         }, {
-//             from: '+994 55 283 97 19',
-//             content: 'Hello testing message',
-//             when: seconds
-//         }, {
-//             from: 'Francesco',
-//             content: 'catch up soon!',
-//             when: seconds
-//         }, {
-//             from: '+994 55 283 97 19',
-//             content: 'Hello testing message',
-//             when: seconds
-//         }, {
-//             from: 'Francesco',
-//             content: 'catch up soon!',
-//             when: seconds
-//         }, {
-//             from: 'Francesco',
-//             content: 'catch up soon!',
-//             when: seconds
-//         }, {
-//             from: 'Francesco',
-//             content: 'catch up soon!',
-//             when: seconds
-//         }
-//     ]
-// });
-// userData.contacts.set('+69 27 163 22 10', { identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
-// userData.contacts.set('Mr Bean', { identifier: 'Mr Bean', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg' });
-// userData.contacts.set('Mom', { identifier: 'Mom', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
-// userData.contacts.set('Rufus', { identifier: 'Rufus', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
 
 export default userData;

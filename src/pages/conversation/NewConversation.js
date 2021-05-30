@@ -99,10 +99,8 @@ class NewConversation extends Component {
                                     return <ContactPeek data={res} key={index} navigation={navigation}
                                         onSelect={() => {
                                             // If conversation doesn't exist, create one
-                                            let conversation = userData.getConversation(res.identifier || res.phone_no)
-                                            conversation
-                                                ? navigation.navigate('Conversation', { data: conversation })
-                                                : navigation.navigate('Conversation', { data: userData.createConversation(res) })
+                                            let conversation = userData.getOrCreateConversation(res.identifier || res.phone_no)
+                                            navigation.navigate('Conversation', { data: conversation })
                                         }} />
                                 })
                                 : <Text style={styles.errorMsg}>No results</Text>
