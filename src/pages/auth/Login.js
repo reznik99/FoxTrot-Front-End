@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, Keyboard } from 'react-native';
-import AsyncStorage from '@react-native-community/async-storage';
 import axios from 'axios'
 import styles from './style'
+import userData from './../../store/userData';
 
 export default class Login extends Component {
     constructor(props) {
@@ -39,7 +39,7 @@ export default class Login extends Component {
             password: password
         }).then(async (response) => {
             // No error code thrown. Save JWT
-            await AsyncStorage.setItem('JWT', response.data.token)
+            await userData.setJWToken(response.data.token)
             return this.props.navigation.navigate('Home');
         }).catch(err => {
             this.showError(err.response?.data);

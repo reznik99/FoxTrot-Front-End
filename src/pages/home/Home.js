@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
-import AsyncStorage from '@react-native-community/async-storage';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 
@@ -41,6 +40,8 @@ export default class Home extends Component {
         // Load user private keys or generate them (if first time login)
         this.setState({ loading: true, loading_msg: "Loading cryptographic keys..." })
         try {
+            // to test key generation
+            // await userData.deleteFromStorage('rsa-user-keys')
             await userData.readStateFromStorage()
         } catch (e) {
             this.setState({ loading_msg: "Generating cryptographic keys..." })
@@ -48,14 +49,13 @@ export default class Home extends Component {
             const keys = await RSA.generateKeys(4096)
             this.setState({ loading_msg: "Storing cryptographic keys..." })
 
-            userData.self.rsa_keys = { privateKey: keys.private, publicKey: keys.public }
-            await AsyncStorage.setItem('rsa-user-keys', JSON.stringify(userData.self.rsa_keys))
+            await userData.setKeys({ privateKey: keys.private, publicKey: keys.public })
 
         } finally {
             this.setState({ loading_msg: "Loading messages..." })
             await userData.preformSync()
-            userData.subscribe(this.reloadConvos);
-            this.reloadConvos();
+            userData.subscribe(this.reloadConvos)
+            this.reloadConvos()
             this.setState({ loading: false, loading_msg: "" })
         }
     }
