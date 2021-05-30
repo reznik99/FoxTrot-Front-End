@@ -54,13 +54,15 @@ class NewConversation extends Component {
     }
 
     searchContact = (newPrefix) => {
+        newPrefix = newPrefix.toLowerCase()
         // UX
         this.setState({ loading: true, prefix: newPrefix });
 
         // Load data
         const newResults = [];
         userData.getContacts().forEach((value, key, map) => {
-            if (value.identifier.toLowerCase().startsWith(newPrefix.toLowerCase())) {
+            if (value.identifier?.toLowerCase().startsWith(newPrefix)
+                || value.phone_no?.toLowerCase().startsWith(newPrefix)) {
                 newResults.push(value);
             }
         });
@@ -94,7 +96,14 @@ class NewConversation extends Component {
                             ? <ActivityIndicator size="large" color='#fc501c' />
                             : this.state.results && this.state.results.length > 0
                                 ? this.state.results.map((res, index) => {
-                                    return <ContactPeek data={res} key={index} navigation={navigation} />
+                                    return <ContactPeek data={res} key={index} navigation={navigation}
+                                        onSelect={() => {
+                                            // If conversation doesn't exist, create one
+                                            let conversation = userData.getConversation(res.identifier || res.phone_no)
+                                            conversation
+                                                ? navigation.navigate('Conversation', { data: conversation })
+                                                : navigation.navigate('Conversation', { data: userData.createConversation(res) })
+                                        }} />
                                 })
                                 : <Text style={styles.errorMsg}>No results</Text>
                     }

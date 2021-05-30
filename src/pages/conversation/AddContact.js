@@ -86,7 +86,10 @@ class AddContact extends Component {
                             ? <ActivityIndicator size="large" color='#fc501c' />
                             : this.state.results && this.state.results.length > 0
                                 ? this.state.results.map((res, index) => {
-                                    return <ContactPeek data={res} key={index} navigation={navigation} />
+                                    return <ContactPeek data={res} key={index} navigation={navigation} onSelect={async () => {
+                                        await userData.addContact(res)
+                                        navigation.navigate('Conversation', { data: userData.createConversation(res) })
+                                    }} />
                                 })
                                 : <Text style={styles.errorMsg}>No results</Text>
                     }

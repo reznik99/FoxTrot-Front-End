@@ -60,6 +60,10 @@ export default class Home extends Component {
         }
     }
 
+    componentWillUnmount() {
+        userData.unsubscribe(this.reloadConvos)
+    }
+
 
     reloadConvos = () => {
         const convos = userData.getAllConversations().sort((c1, c2) => {

@@ -22,24 +22,30 @@ const userData = {
         userData.callCallbacks();
     },
     createConversation: (party) => {
-        userData.conversations.set(party.identifier, {
+        userData.conversations.set(party.phone_no, {
             parties: [party, self],
             messages: []
         });
         userData.callCallbacks();
-        return userData.getConversation(party.identifier);
+        return userData.getConversation(party.phone_no);
     },
-    sendMessage: (identifier, message) => {
-        userData.conversations.get(identifier).messages.push(message);
+    sendMessage: (user, message) => {
+        let msg = {
+            content: message,
+            from: userData.self.identifier,
+            when: Date.now()
+        }
+
+        userData.conversations.get(user).messages.push(msg);
         userData.callCallbacks();
     },
     addContact: async (contact) => {
         try {
+            await axios.post('http://francescogorini.com:1234/addContact', { id: contact.id }, userData.getConfig())
             userData.contacts.set(contact.nickname || contact.phone_no, contact)
-            await axios.post('http://francescogorini.com:1234/addContact', contact, userData.getConfig())
         }
         catch (error) {
-            userData.contacts.delete(contact.nickname || contact.phone_no)
+            console.error(`Failed to add contact ${contact.phone_no}`)
             return "Failed to add contact, check your connection!"
         }
     },
@@ -75,6 +81,9 @@ const userData = {
     subscribe: (callback) => {
         userData.callbacks.push(callback);
     },
+    unsubscribe: (callback) => {
+        userData.callbacks.splice(callback);
+    },
     callCallbacks: () => {
         userData.callbacks.forEach(callback => callback());
     },
@@ -87,6 +96,8 @@ const userData = {
             }
             // Load user contacts
             const contacts = await axios.get('http://francescogorini.com:1234/getContacts', userData.getConfig())
+            console.log(`Contact data recieved ${JSON.stringify(contacts.data)}`)
+            userData.contacts = new Map()
             contacts.data.forEach(contact => {
                 userData.contacts.set(contact.nickname || contact.phone_no, contact)
             });
@@ -137,84 +148,84 @@ const userData = {
     }
 }
 
-var seconds = Date.now() - 10000000;
+// var seconds = Date.now() - 10000000;
 
 // Data should be loaded from database
-userData.conversations.set('Mr Bean', {
-    parties: [{ identifier: 'Mr Bean', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg' }, { identifier: self.identifier, pic: self.pic }],
-    messages: [
-        {
-            from: '+994 55 283 97 19',
-            content: 'Wanna hear a joke?',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'Hi my name is Grant',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'meet at starbuck Dixon at 6:45?',
-            when: seconds
-        }
-    ]
-});
-userData.conversations.set('+69 27 163 22 10', {
-    parties: [{ identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' }, { identifier: self.identifier, pic: self.pic }],
-    messages: [
-        {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }
-    ]
-});
-userData.contacts.set('+69 27 163 22 10', { identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
-userData.contacts.set('Mr Bean', { identifier: 'Mr Bean', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg' });
-userData.contacts.set('Mom', { identifier: 'Mom', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
-userData.contacts.set('Rufus', { identifier: 'Rufus', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
+// userData.conversations.set('Mr Bean', {
+//     parties: [{ identifier: 'Mr Bean', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg' }, { identifier: self.identifier, pic: self.pic }],
+//     messages: [
+//         {
+//             from: '+994 55 283 97 19',
+//             content: 'Wanna hear a joke?',
+//             when: seconds
+//         }, {
+//             from: 'Francesco',
+//             content: 'Hi my name is Grant',
+//             when: seconds
+//         }, {
+//             from: '+994 55 283 97 19',
+//             content: 'meet at starbuck Dixon at 6:45?',
+//             when: seconds
+//         }
+//     ]
+// });
+// userData.conversations.set('+69 27 163 22 10', {
+//     parties: [{ identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' }, { identifier: self.identifier, pic: self.pic }],
+//     messages: [
+//         {
+//             from: '+994 55 283 97 19',
+//             content: 'Hello testing message',
+//             when: seconds
+//         }, {
+//             from: 'Francesco',
+//             content: 'catch up soon!',
+//             when: seconds
+//         }, {
+//             from: '+994 55 283 97 19',
+//             content: 'Hello testing message',
+//             when: seconds
+//         }, {
+//             from: 'Francesco',
+//             content: 'catch up soon!',
+//             when: seconds
+//         }, {
+//             from: '+994 55 283 97 19',
+//             content: 'Hello testing message',
+//             when: seconds
+//         }, {
+//             from: 'Francesco',
+//             content: 'catch up soon!',
+//             when: seconds
+//         }, {
+//             from: '+994 55 283 97 19',
+//             content: 'Hello testing message',
+//             when: seconds
+//         }, {
+//             from: 'Francesco',
+//             content: 'catch up soon!',
+//             when: seconds
+//         }, {
+//             from: '+994 55 283 97 19',
+//             content: 'Hello testing message',
+//             when: seconds
+//         }, {
+//             from: 'Francesco',
+//             content: 'catch up soon!',
+//             when: seconds
+//         }, {
+//             from: 'Francesco',
+//             content: 'catch up soon!',
+//             when: seconds
+//         }, {
+//             from: 'Francesco',
+//             content: 'catch up soon!',
+//             when: seconds
+//         }
+//     ]
+// });
+// userData.contacts.set('+69 27 163 22 10', { identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
+// userData.contacts.set('Mr Bean', { identifier: 'Mr Bean', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg' });
+// userData.contacts.set('Mom', { identifier: 'Mom', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
+// userData.contacts.set('Rufus', { identifier: 'Rufus', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
 
 export default userData;
