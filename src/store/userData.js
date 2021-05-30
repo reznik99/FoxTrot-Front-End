@@ -29,15 +29,25 @@ const userData = {
         userData.callCallbacks();
         return userData.getConversation(party.phone_no);
     },
-    sendMessage: (user, message) => {
-        let msg = {
-            content: message,
-            from: userData.self.identifier,
-            when: Date.now()
-        }
+    sendMessage: async (user, message) => {
+        try {
+            await axios.post('http://francescogorini.com:1234/sendMessage', { message: message, contact_id: user.id }, userData.getConfig())
+            let msg = {
+                content: message,
+                from: userData.self.identifier,
+                to: user.phone_no,
+                when: Date.now(),
+                seen: false
+            }
 
-        userData.conversations.get(user).messages.push(msg);
-        userData.callCallbacks();
+            userData.getConversation(user.phone_no).messages.push(msg);
+            userData.callCallbacks();
+        }
+        catch (error) {
+            console.error(`Failed to send message to ${user.phone_no}`)
+            console.error(error)
+            return "Failed to send message, check your connection!"
+        }
     },
     addContact: async (contact) => {
         try {
@@ -97,11 +107,13 @@ const userData = {
             // Load user contacts
             const contacts = await axios.get('http://francescogorini.com:1234/getContacts', userData.getConfig())
             console.log(`Contact data recieved ${JSON.stringify(contacts.data)}`)
-            userData.contacts = new Map()
+
             contacts.data.forEach(contact => {
                 userData.contacts.set(contact.nickname || contact.phone_no, contact)
             });
             // Load user conversations
+
+
 
         } catch (error) {
             console.error(error)

@@ -55,9 +55,9 @@ class Conversation extends Component {
         }
     }
 
-    sendMessage = (data) => {
+    sendMessage = async (data) => {
         // Send Message
-        userData.sendMessage(data.parties[0].phone_no, this.state.message);
+        await userData.sendMessage(data.parties[0], this.state.message);
         // Clear input
         this.textInput.clear()
         this.setState({ message: '' });

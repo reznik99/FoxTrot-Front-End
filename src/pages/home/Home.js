@@ -40,8 +40,7 @@ export default class Home extends Component {
         // Load user private keys or generate them (if first time login)
         this.setState({ loading: true, loading_msg: "Loading cryptographic keys..." })
         try {
-            // to test key generation
-            // await userData.deleteFromStorage('rsa-user-keys')
+            // await userData.deleteFromStorage('rsa-user-keys') // to test key generation
             await userData.readStateFromStorage()
         } catch (e) {
             this.setState({ loading_msg: "Generating cryptographic keys..." })
