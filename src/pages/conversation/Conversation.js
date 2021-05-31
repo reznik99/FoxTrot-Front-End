@@ -55,13 +55,9 @@ class Conversation extends Component {
         }
     }
 
-    sendMessage = (data) => {
+    sendMessage = async (data) => {
         // Send Message
-        userData.sendMessage(data.parties[0].identifier, {
-            content: this.state.message,
-            from: userData.self.identifier,
-            when: Date.now()
-        });
+        await userData.sendMessage(data.parties[0], this.state.message);
         // Clear input
         this.textInput.clear()
         this.setState({ message: '' });
@@ -79,9 +75,9 @@ class Conversation extends Component {
                     }}>
                     {
                         data && data.messages ? data.messages.map((packet, index) => {
-                            return packet.from === userData.self.identifier
-                                ? <Text key={index} style={[styles.message, styles.sent]}>{packet.content}</Text>
-                                : <Text key={index} style={[styles.message, styles.received]}>{packet.content}</Text>
+                            return packet.sender === userData.self.phone_no
+                                ? <Text key={index} style={[styles.message, styles.sent]}>{packet.message}</Text>
+                                : <Text key={index} style={[styles.message, styles.received]}>{packet.message}</Text>
                         }) : <Text style={[styles.message, styles.system]} >No messages</Text>
                     }
                 </ScrollView>

@@ -29,7 +29,7 @@ export default class ConversationPeek extends Component {
 
 
     render() {
-        const lastMessage = this.props.data.messages[this.props.data.messages.length - 1] || { content: "", when: "" };
+        const lastMessage = this.props.data.messages[this.props.data.messages.length - 1] || { content: "", sent_at: "" };
         return (
             <TouchableOpacity style={styles.conversationPeek}
                 onPress={() => this.props.navigation.navigate('Conversation', { data: this.props.data })}>
@@ -40,10 +40,10 @@ export default class ConversationPeek extends Component {
                 </View>
                 <View style={{ flex: 1 }}>
                     <Text>{this.props.data.parties[0].identifier || this.props.data.parties[0].phone_no}</Text>
-                    <Text>{lastMessage.content}</Text>
+                    <Text>{lastMessage.message}</Text>
                 </View>
                 <View style={{ alignSelf: "flex-start" }}>
-                    <Text>{lastMessage.when != "" ? userData.humanTime(lastMessage.when) : null}</Text>
+                    <Text>{lastMessage.sent_at != "" ? userData.humanTime(lastMessage.sent_at) : null}</Text>
                 </View>
             </TouchableOpacity>
         );

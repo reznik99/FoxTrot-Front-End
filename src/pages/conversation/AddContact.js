@@ -57,12 +57,10 @@ class AddContact extends Component {
         if (newPrefix.length <= 2) return
 
         // Load data
-        const newResults = await userData.searchUsers(newPrefix);
-        console.log("RESULTS:")
-        console.log(newResults)
+        const newResults = await userData.searchUsers(newPrefix)
 
         // Sort results
-        this.setState({ results: newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1), loading: false });
+        this.setState({ results: newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1), loading: false })
     }
 
     render() {
@@ -86,7 +84,10 @@ class AddContact extends Component {
                             ? <ActivityIndicator size="large" color='#fc501c' />
                             : this.state.results && this.state.results.length > 0
                                 ? this.state.results.map((res, index) => {
-                                    return <ContactPeek data={res} key={index} navigation={navigation} />
+                                    return <ContactPeek data={res} key={index} navigation={navigation} onSelect={async () => {
+                                        await userData.addContact(res)
+                                        navigation.navigate('Conversation', { data: userData.createConversation(res) })
+                                    }} />
                                 })
                                 : <Text style={styles.errorMsg}>No results</Text>
                     }

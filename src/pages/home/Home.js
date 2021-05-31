@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
+import { View, ScrollView, RefreshControl, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 
@@ -30,6 +30,7 @@ export default class Home extends Component {
         this.state = {
             conversations: [],
             loading: false,
+            syncing: false,
             loading_msg: ''
         };
     }
@@ -40,8 +41,7 @@ export default class Home extends Component {
         // Load user private keys or generate them (if first time login)
         this.setState({ loading: true, loading_msg: "Loading cryptographic keys..." })
         try {
-            // to test key generation
-            // await userData.deleteFromStorage('rsa-user-keys')
+            // await userData.deleteFromStorage('rsa-user-keys') // to test key generation
             await userData.readStateFromStorage()
         } catch (e) {
             this.setState({ loading_msg: "Generating cryptographic keys..." })
@@ -60,6 +60,10 @@ export default class Home extends Component {
         }
     }
 
+    componentWillUnmount() {
+        userData.unsubscribe(this.reloadConvos)
+    }
+
 
     reloadConvos = () => {
         const convos = userData.getAllConversations().sort((c1, c2) => {
@@ -68,9 +72,16 @@ export default class Home extends Component {
             if (!c2.messages || c2.messages.length <= 0)
                 return 1;
 
-            return c1.messages[c1.messages.length - 1].when < c2.messages[c2.messages.length - 1].when ? 1 : -1
+            return c1.messages[c1.messages.length - 1].sent_at < c2.messages[c2.messages.length - 1].sent_at ? 1 : -1
         })
         this.setState({ conversations: convos });
+    }
+
+    reload = async () => {
+        this.setState({ syncing: true })
+        await userData.preformSync();
+        this.reloadConvos()
+        this.setState({ syncing: false })
     }
 
     render() {
@@ -84,12 +95,11 @@ export default class Home extends Component {
                             <ActivityIndicator color="#00FFFF" size="large" />
                         </View>
                         : <>
-                            <ScrollView>
+                            <ScrollView refreshControl={<RefreshControl refreshing={this.state.syncing} onRefresh={this.reload} />}>
                                 {
                                     this.state.conversations.length > 0
-                                        ? this.state.conversations.map(
-                                            (convo, index) =>
-                                                (<ConversationPeek data={convo} key={index} navigation={this.props.navigation} />)
+                                        ? this.state.conversations.map((convo, index) =>
+                                            (<ConversationPeek data={convo} key={index} navigation={this.props.navigation} />)
                                         )
                                         : <Text>No Conversations.</Text>
                                 }

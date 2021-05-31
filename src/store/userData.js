@@ -3,11 +3,10 @@ import AsyncStorage from '@react-native-community/async-storage';
 
 const userData = {
     self: {
-        identifier: 'Francesco',
-        pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg',
+        phone_no: '',
+        JWT: '',
         rsa_keys: {},
         sync_pubKey: false,
-        JWT: "",
     },
 
     defaultAvatar: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg',
@@ -22,28 +21,47 @@ const userData = {
         userData.callCallbacks();
     },
     createConversation: (party) => {
-        userData.conversations.set(party.identifier, {
+        userData.conversations.set(party.phone_no, {
             parties: [party, self],
             messages: []
         });
         userData.callCallbacks();
-        return userData.getConversation(party.identifier);
+        return userData.getConversation(party.phone_no);
     },
-    sendMessage: (identifier, message) => {
-        userData.conversations.get(identifier).messages.push(message);
-        userData.callCallbacks();
+    sendMessage: async (user, message) => {
+        try {
+            let msg = {
+                message: message,
+                sender: userData.self.phone_no,
+                reciever: user.phone_no,
+                sent_at: Date.now(),
+                seen: false
+            }
+            userData.getConversation(user.phone_no).messages.push(msg);
+
+            await axios.post('http://francescogorini.com:1234/sendMessage', { message: message, contact_id: user.id }, userData.getConfig())
+
+            userData.callCallbacks();
+        }
+        catch (error) {
+            console.error(`Failed to send message to ${user.phone_no}`)
+            console.error(error)
+            return "Failed to send message, check your connection!"
+        }
     },
     addContact: async (contact) => {
         try {
+            await axios.post('http://francescogorini.com:1234/addContact', { id: contact.id }, userData.getConfig())
             userData.contacts.set(contact.nickname || contact.phone_no, contact)
-            await axios.post('http://francescogorini.com:1234/addContact', contact, userData.getConfig())
         }
         catch (error) {
-            userData.contacts.delete(contact.nickname || contact.phone_no)
+            console.error(`Failed to add contact ${contact.phone_no}`)
             return "Failed to add contact, check your connection!"
         }
     },
-    setJWToken: async (token) => {
+    setJWToken: async (token, phone_no) => {
+        userData.self.phone_no = phone_no
+        await userData.writeDataToStorage('user', phone_no)
         userData.self.JWT = token
         await userData.writeDataToStorage('JWT', token)
     },
@@ -55,6 +73,13 @@ const userData = {
     // getters
     getConversation: (identifier) => {
         return userData.conversations.get(identifier);
+    },
+    getOrCreateConversation: (identifier) => {
+        let convo = userData.conversations.has(identifier.phone_no)
+        if (!convo) {
+            userData.createConversation(identifier)
+        }
+        return userData.getConversation(identifier.phone_no)
     },
     getAllConversations: () => {
         return [...userData.conversations.values()];
@@ -75,11 +100,17 @@ const userData = {
     subscribe: (callback) => {
         userData.callbacks.push(callback);
     },
+    unsubscribe: (callback) => {
+        userData.callbacks.splice(callback);
+    },
     callCallbacks: () => {
         userData.callbacks.forEach(callback => callback());
     },
     preformSync: async () => {
         try {
+            // Clean up cached messages
+            userData.conversations = new Map()
+
             // Upload user public key
             if (userData.self.sync_pubKey) {
                 userData.self.sync_pubKey = false
@@ -87,10 +118,23 @@ const userData = {
             }
             // Load user contacts
             const contacts = await axios.get('http://francescogorini.com:1234/getContacts', userData.getConfig())
+
             contacts.data.forEach(contact => {
                 userData.contacts.set(contact.nickname || contact.phone_no, contact)
             });
+
             // Load user conversations
+            const messages = await axios.get('http://francescogorini.com:1234/getConversations', userData.getConfig())
+            messages.data = messages.data.sort((msg1, msg2) => {
+                let date1 = new Date(msg1.sent_at);
+                let date2 = new Date(msg2.sent_at);
+                return date1 - date2
+            })
+
+            messages.data.forEach(message => {
+                let other = message.sender === userData.self.phone_no ? { phone_no: message.reciever, id: message.reciever_id } : { phone_no: message.sender, id: message.sender_id }
+                userData.getOrCreateConversation(other).messages.push(message)
+            })
 
         } catch (error) {
             console.error(error)
@@ -105,7 +149,13 @@ const userData = {
         const JWT = await AsyncStorage.getItem('JWT')
         userData.self.JWT = JWT;
 
-        if (keys == null || JWT == null) throw new Error('Missing creds in storage. Generate them')
+        console.log('Reading userInfo from local storage into store')
+        const phone_no = await AsyncStorage.getItem('user')
+        userData.self.phone_no = phone_no;
+
+        if (keys == null) throw new Error('Missing keys in storage. Generate them')
+        if (JWT == null) throw new Error('User not authenticated. Re-login')
+        if (phone_no == null) throw new Error('Device out of sync. Preform Sync')
     },
     writeDataToStorage: async (key, data) => {
         try {
@@ -128,7 +178,8 @@ const userData = {
 
     humanTime: (lastTime) => {
         let time = Date.now()
-        let diff = time - parseInt(lastTime)
+        let msgTime = new Date(lastTime).valueOf()
+        let diff = time - msgTime
         return diff / 1000 > 60
             ? diff / 1000 / 60 > 60
                 ? `${parseInt(diff / 1000 / 60 / 60)} h ago`
@@ -136,85 +187,5 @@ const userData = {
             : 'just now'
     }
 }
-
-var seconds = Date.now() - 10000000;
-
-// Data should be loaded from database
-userData.conversations.set('Mr Bean', {
-    parties: [{ identifier: 'Mr Bean', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg' }, { identifier: self.identifier, pic: self.pic }],
-    messages: [
-        {
-            from: '+994 55 283 97 19',
-            content: 'Wanna hear a joke?',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'Hi my name is Grant',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'meet at starbuck Dixon at 6:45?',
-            when: seconds
-        }
-    ]
-});
-userData.conversations.set('+69 27 163 22 10', {
-    parties: [{ identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' }, { identifier: self.identifier, pic: self.pic }],
-    messages: [
-        {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: '+994 55 283 97 19',
-            content: 'Hello testing message',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }, {
-            from: 'Francesco',
-            content: 'catch up soon!',
-            when: seconds
-        }
-    ]
-});
-userData.contacts.set('+69 27 163 22 10', { identifier: '+69 27 163 22 10', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
-userData.contacts.set('Mr Bean', { identifier: 'Mr Bean', pic: 'https://i.ytimg.com/vi/s7B7KQLi_Z8/maxresdefault.jpg' });
-userData.contacts.set('Mom', { identifier: 'Mom', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
-userData.contacts.set('Rufus', { identifier: 'Rufus', pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg' });
 
 export default userData;
