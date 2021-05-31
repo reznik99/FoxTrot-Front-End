@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
+import { View, ScrollView, RefreshControl, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 
@@ -30,6 +30,7 @@ export default class Home extends Component {
         this.state = {
             conversations: [],
             loading: false,
+            syncing: false,
             loading_msg: ''
         };
     }
@@ -76,6 +77,13 @@ export default class Home extends Component {
         this.setState({ conversations: convos });
     }
 
+    reload = async () => {
+        this.setState({ syncing: true })
+        await userData.preformSync();
+        this.reloadConvos()
+        this.setState({ syncing: false })
+    }
+
     render() {
         return (
 
@@ -87,12 +95,11 @@ export default class Home extends Component {
                             <ActivityIndicator color="#00FFFF" size="large" />
                         </View>
                         : <>
-                            <ScrollView>
+                            <ScrollView refreshControl={<RefreshControl refreshing={this.state.syncing} onRefresh={this.reload} />}>
                                 {
                                     this.state.conversations.length > 0
-                                        ? this.state.conversations.map(
-                                            (convo, index) =>
-                                                (<ConversationPeek data={convo} key={index} navigation={this.props.navigation} />)
+                                        ? this.state.conversations.map((convo, index) =>
+                                            (<ConversationPeek data={convo} key={index} navigation={this.props.navigation} />)
                                         )
                                         : <Text>No Conversations.</Text>
                                 }
