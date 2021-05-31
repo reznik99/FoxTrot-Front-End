@@ -56,11 +56,12 @@ class Conversation extends Component {
     }
 
     sendMessage = async (data) => {
+        if (this.state.message.trim() === "") return
         // Send Message
-        await userData.sendMessage(data.parties[0], this.state.message);
+        await userData.sendMessage(data.parties[0], this.state.message)
         // Clear input
         this.textInput.clear()
-        this.setState({ message: '' });
+        this.setState({ message: '' })
     }
 
     render() {
