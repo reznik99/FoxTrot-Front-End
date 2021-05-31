@@ -49,6 +49,10 @@ const userData = {
             return "Failed to send message, check your connection!"
         }
     },
+    readMessage: (contact) => {
+        userData.getConversation(contact.phone_no).messages.forEach(msg => msg.seen = true)
+        userData.callCallbacks()
+    },
     addContact: async (contact) => {
         try {
             await axios.post('http://francescogorini.com:1234/addContact', { id: contact.id }, userData.getConfig())
