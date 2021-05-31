@@ -39,7 +39,7 @@ export default class Login extends Component {
             password: password
         }).then(async (response) => {
             // No error code thrown. Save JWT
-            await userData.setJWToken(response.data.token)
+            await userData.setJWToken(response.data.token, phone_no)
             return this.props.navigation.navigate('Home');
         }).catch(err => {
             this.showError(err.response?.data);

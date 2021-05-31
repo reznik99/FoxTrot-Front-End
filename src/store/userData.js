@@ -3,11 +3,10 @@ import AsyncStorage from '@react-native-community/async-storage';
 
 const userData = {
     self: {
-        identifier: 'Francesco',
-        pic: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg',
+        phone_no: '',
+        JWT: '',
         rsa_keys: {},
         sync_pubKey: false,
-        JWT: "",
     },
 
     defaultAvatar: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg',
@@ -32,9 +31,9 @@ const userData = {
     sendMessage: async (user, message) => {
         try {
             let msg = {
-                content: message,
-                from: userData.self.identifier,
-                to: user.phone_no,
+                message: message,
+                sender: userData.self.phone_no,
+                reciever: user.phone_no,
                 sent_at: Date.now(),
                 seen: false
             }
@@ -60,7 +59,9 @@ const userData = {
             return "Failed to add contact, check your connection!"
         }
     },
-    setJWToken: async (token) => {
+    setJWToken: async (token, phone_no) => {
+        userData.self.phone_no = phone_no
+        await userData.writeDataToStorage('user', phone_no)
         userData.self.JWT = token
         await userData.writeDataToStorage('JWT', token)
     },
@@ -124,15 +125,15 @@ const userData = {
 
             // Load user conversations
             const messages = await axios.get('http://francescogorini.com:1234/getConversations', userData.getConfig())
+            messages.data = messages.data.sort((msg1, msg2) => {
+                let date1 = new Date(msg1.sent_at);
+                let date2 = new Date(msg2.sent_at);
+                return date1 - date2
+            })
 
             messages.data.forEach(message => {
-                userData.getOrCreateConversation({ phone_no: message.phone_no, id: message.contact_id }).messages.push({
-                    content: message.message,
-                    from: userData.self.identifier,
-                    to: message.phone_no,
-                    sent_at: message.sent_at,
-                    seen: message.seen
-                });
+                let other = message.sender === userData.self.phone_no ? { phone_no: message.reciever, id: message.reciever_id } : { phone_no: message.sender, id: message.sender_id }
+                userData.getOrCreateConversation(other).messages.push(message)
             })
 
         } catch (error) {
@@ -148,7 +149,13 @@ const userData = {
         const JWT = await AsyncStorage.getItem('JWT')
         userData.self.JWT = JWT;
 
-        if (keys == null || JWT == null) throw new Error('Missing creds in storage. Generate them')
+        console.log('Reading userInfo from local storage into store')
+        const phone_no = await AsyncStorage.getItem('user')
+        userData.self.phone_no = phone_no;
+
+        if (keys == null) throw new Error('Missing keys in storage. Generate them')
+        if (JWT == null) throw new Error('User not authenticated. Re-login')
+        if (phone_no == null) throw new Error('Device out of sync. Preform Sync')
     },
     writeDataToStorage: async (key, data) => {
         try {

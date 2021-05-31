@@ -57,12 +57,10 @@ class AddContact extends Component {
         if (newPrefix.length <= 2) return
 
         // Load data
-        const newResults = await userData.searchUsers(newPrefix);
-        console.log("RESULTS:")
-        console.log(newResults)
+        const newResults = await userData.searchUsers(newPrefix)
 
         // Sort results
-        this.setState({ results: newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1), loading: false });
+        this.setState({ results: newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1), loading: false })
     }
 
     render() {
