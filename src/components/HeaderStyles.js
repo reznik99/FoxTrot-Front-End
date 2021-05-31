@@ -1,13 +1,13 @@
-import {StyleSheet} from "react-native";
+import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
     topBar: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#fc501c",
+        backgroundColor: '#1F1D21',//"#fc501c",
         paddingVertical: 5,
-    }, backAndTitle:{
-        flexDirection:'row',
+    }, backAndTitle: {
+        flexDirection: 'row',
         justifyContent: 'flex-start',
         alignItems: 'center',
         width: '50%',
@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
     }, topBarText: {
         color: '#fff',
         fontSize: 15,
-    }, buttonContainer:{
+    }, buttonContainer: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-around",
@@ -25,23 +25,23 @@ const styles = StyleSheet.create({
         padding: 10,
         justifyContent: 'center',
         alignItems: 'center'
-    }, rightFloat:{
+    }, rightFloat: {
         justifyContent: "flex-end",
     }, padded: {
         paddingHorizontal: 15
-    }, wider:{
+    }, wider: {
         overflow: 'visible'
     }, profileBtn: {
         flexDirection: 'row',
         alignItems: 'center'
-    },profilePicContainer: {
+    }, profilePicContainer: {
         overflow: "hidden",
-        borderRadius: Platform.OS === 'ios' ? 150/2 : 150,
+        borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
         marginRight: 8
-    },profilePic: {
+    }, profilePic: {
         width: 40,
         height: 40,
-        borderRadius: Platform.OS === 'ios' ? 150/2 : 150,
+        borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
     }
 });
 

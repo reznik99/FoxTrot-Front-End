@@ -140,6 +140,8 @@ const userData = {
                 userData.getOrCreateConversation(other).messages.push(message)
             })
 
+            userData.callCallbacks()
+
         } catch (error) {
             console.error(error)
         }
@@ -181,9 +183,11 @@ const userData = {
     },
 
     humanTime: (lastTime) => {
-        let time = Date.now()
-        let msgTime = new Date(lastTime).valueOf()
-        let diff = time - msgTime
+        if (!lastTime) return null
+
+        let now = Date.now()
+        let diff = now - new Date(lastTime).valueOf()
+
         return diff / 1000 > 60
             ? diff / 1000 / 60 > 60
                 ? `${parseInt(diff / 1000 / 60 / 60)} h ago`

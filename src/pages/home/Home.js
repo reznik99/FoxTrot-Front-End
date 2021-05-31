@@ -3,16 +3,13 @@ import { View, ScrollView, RefreshControl, StyleSheet, ActivityIndicator, Toucha
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 
+import { RSA } from 'react-native-rsa-native';
 import ConversationPeek from '../../components/ConversationPeek';
 import userData from './../../store/userData';
-import { RSA } from 'react-native-rsa-native';
+import globalStyle from "../../global/globalStyle";
 
 const styles = StyleSheet.create({
-    wrapper: {
-        flex: 1,
-        width: "100%",
-        height: "100%",
-    }, newMessageBtn: {
+    newMessageBtn: {
         alignSelf: 'flex-end',
         padding: 20,
         margin: 20,
@@ -53,9 +50,8 @@ export default class Home extends Component {
 
         } finally {
             this.setState({ loading_msg: "Loading messages..." })
-            await userData.preformSync()
             userData.subscribe(this.reloadConvos)
-            this.reloadConvos()
+            await userData.preformSync()
             this.setState({ loading: false, loading_msg: "" })
         }
     }
@@ -79,15 +75,14 @@ export default class Home extends Component {
 
     reload = async () => {
         this.setState({ syncing: true })
-        await userData.preformSync();
-        this.reloadConvos()
+        await userData.preformSync()
         this.setState({ syncing: false })
     }
 
     render() {
         return (
 
-            <View style={styles.wrapper}>
+            <View style={globalStyle.wrapper}>
                 {
                     this.state.loading == true
                         ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

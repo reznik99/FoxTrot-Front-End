@@ -1,37 +1,12 @@
-import React, { Component } from "react";
-import { Text, View, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import React, { Component } from "react"
+import { Text, View, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native"
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
-import ContactPeek from './../../components/ContactPeek';
-import userData from './../../store/userData';
+import ContactPeek from './../../components/ContactPeek'
+import userData from './../../store/userData'
+import globalStyle from "../../global/globalStyle"
 
 const styles = StyleSheet.create({
-    wrapper: {
-        flex: 1,
-        width: "100%",
-        height: "100%",
-    }, searchContainer: {
-        alignItems: 'center'
-    }, input: {
-        textAlign: 'center',
-        width: '70%',
-        margin: 10,
-        height: 40,
-        borderRadius: 5,
-        fontSize: 17,
-    }, errorMsg: {
-        color: 'red',
-        textAlign: 'center',
-        fontSize: 20
-    }, newContactBtn: {
-        alignSelf: 'flex-end',
-        padding: 20,
-        margin: 20,
-        borderRadius: 100,
-        backgroundColor: '#00a000',//'#627894',
-        shadowColor: "#000",
-        elevation: 12,
-    }
 
 });
 
@@ -66,14 +41,14 @@ class AddContact extends Component {
     render() {
         const { navigation } = this.props;
         return (
-            <View style={styles.wrapper}>
+            <View style={globalStyle.wrapper}>
                 {/* Search */}
-                <View style={styles.searchContainer}>
+                <View style={globalStyle.searchContainer}>
                     <TextInput placeholder="Search contacts"
                         value={this.state.prefix}
                         onChangeText={TextInputValue => this.searchUsers(TextInputValue)}
                         underlineColorAndroid='transparent'
-                        style={styles.input}
+                        style={globalStyle.input}
                     />
                 </View>
 
@@ -89,7 +64,7 @@ class AddContact extends Component {
                                         navigation.navigate('Conversation', { data: userData.createConversation(res) })
                                     }} />
                                 })
-                                : <Text style={styles.errorMsg}>No results</Text>
+                                : <Text style={globalStyle.errorMsg}>No results</Text>
                     }
 
                 </ScrollView>

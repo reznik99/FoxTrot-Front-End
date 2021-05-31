@@ -3,6 +3,7 @@ import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'rea
 import { Image } from 'react-native-elements';
 
 import userData from './../store/userData';
+import globalStyle from "../global/globalStyle";
 
 const styles = StyleSheet.create({
     profilePeek: {
@@ -12,7 +13,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 10,
         borderBottomWidth: 1,
-        borderBottomColor: 'lightgray'
+        borderBottomColor: '#1F1D21'
     }, profilePicContainer: {
         overflow: "hidden",
         borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
@@ -40,10 +41,10 @@ export default class ContactPeek extends Component {
                         PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text>{data.identifier || data.phone_no}</Text>
+                    <Text style={globalStyle.textInfo}>{data.identifier || data.phone_no}</Text>
                 </View>
                 <View>
-                    <Text>{data.lastActive ? userData.humanTime(data.lastActive) : null}</Text>
+                    <Text style={globalStyle.textInfo}>{data.lastActive ? userData.humanTime(data.lastActive) : null}</Text>
                 </View>
             </TouchableOpacity>
         );
