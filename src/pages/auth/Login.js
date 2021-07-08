@@ -16,6 +16,12 @@ export default class Login extends Component {
         }
     }
 
+    componentDidMount() {
+        if (userData.isAuthenticated()) {
+            return this.props.navigation.navigate('Home');
+        }
+    }
+
     showError = (msg) => {
         this.setState({
             message: msg, loading: false
