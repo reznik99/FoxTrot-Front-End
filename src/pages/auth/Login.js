@@ -16,10 +16,11 @@ export default class Login extends Component {
         }
     }
 
-    componentDidMount() {
-        if (userData.isAuthenticated()) {
+    async componentDidMount() {
+        if (await userData.isAuthenticated()) {
             return this.props.navigation.navigate('Home');
         }
+        console.log("user not authenticated")
     }
 
     showError = (msg) => {

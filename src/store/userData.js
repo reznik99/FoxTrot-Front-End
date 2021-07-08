@@ -163,9 +163,13 @@ const userData = {
         if (JWT == null) throw new Error('User not authenticated. Re-login')
         if (phone_no == null) throw new Error('Device out of sync. Preform Sync')
     },
-    readStateFromStorage: async (key) => {
-        console.log(`Reading ${key} from local storage into store`)
-        return await AsyncStorage.getItem(key)
+    readDataFromStorage: async (key) => {
+        try {
+            console.log(`Reading ${key} from local storage into store`)
+            return await AsyncStorage.getItem(key)
+        } catch (err) {
+            console.log(err)
+        }
     },
     writeDataToStorage: async (key, data) => {
         try {
@@ -185,16 +189,16 @@ const userData = {
         // Send JWT Token to authorize requests
         return { headers: { "Authorization": `JWT ${userData.self.JWT}` } }
     },
-    isAuthenticated() {
+    isAuthenticated: async () => {
         try {
             // Has user logged in before?
-            userData.self.JWT = await readStateFromStorage('JWT')
-
+            userData.self.JWT = await userData.readDataFromStorage('JWT')
             // Is token expired?
             const res = await axios.get('http://francescogorini.com:1234/validateToken', userData.getConfig())
-            return res.valid
+            return res.data.valid
 
         } catch (err) {
+            console.log(err)
             return false
         }
     },
