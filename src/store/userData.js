@@ -65,14 +65,14 @@ const userData = {
     },
     setJWToken: async (token, phone_no) => {
         userData.self.phone_no = phone_no
-        await userData.writeDataToStorage('user', phone_no)
+        await userData.writeToStorage('user', phone_no)
         userData.self.JWT = token
-        await userData.writeDataToStorage('JWT', token)
+        await userData.writeToStorage('JWT', token)
     },
     setKeys: async (keyPair) => {
         userData.self.sync_pubKey = true
         userData.self.rsa_keys = keyPair
-        await userData.writeDataToStorage('rsa-user-keys', JSON.stringify(keyPair))
+        await userData.writeToStorage('rsa-user-keys', JSON.stringify(keyPair))
     },
     // getters
     getConversation: (identifier) => {
@@ -163,7 +163,7 @@ const userData = {
         if (JWT == null) throw new Error('User not authenticated. Re-login')
         if (phone_no == null) throw new Error('Device out of sync. Preform Sync')
     },
-    readDataFromStorage: async (key) => {
+    readFromStorage: async (key) => {
         try {
             console.log(`Reading ${key} from local storage into store`)
             return await AsyncStorage.getItem(key)
@@ -171,7 +171,7 @@ const userData = {
             console.log(err)
         }
     },
-    writeDataToStorage: async (key, data) => {
+    writeToStorage: async (key, data) => {
         try {
             await AsyncStorage.setItem(key, data)
         } catch (err) {
@@ -192,7 +192,7 @@ const userData = {
     isAuthenticated: async () => {
         try {
             // Has user logged in before?
-            userData.self.JWT = await userData.readDataFromStorage('JWT')
+            userData.self.JWT = await userData.readFromStorage('JWT')
             // Is token expired?
             const res = await axios.get('http://francescogorini.com:1234/validateToken', userData.getConfig())
             return res.data.valid
