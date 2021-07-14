@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, Keyboard } from 'react-native';
+import { View, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Keyboard } from 'react-native';
+import { Button, Input, Text } from 'galio-framework';
 import axios from 'axios'
 import styles from './style'
 import userData from './../../store/userData';
@@ -57,40 +58,37 @@ export default class Login extends Component {
 
     render() {
         return (
-            <View style={styles.wrapper}>
-                <View style={styles.logoView}>
-                    <Text style={styles.title}>FoxTrot</Text>
-                    <Text style={styles.subTitle}>secure communications</Text>
-                </View>
-                <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.container}>
+                <View style={styles.wrapper}>
+                    <View style={styles.logoView}>
+                        <Text style={styles.title} h4>FoxTrot</Text>
+                        <Text style={styles.title} h6 muted>secure communications</Text>
+                    </View>
                     {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
-                    <TextInput placeholder="Phone no."
+                    <Input
                         value={this.state.phone_no}
-                        onChangeText={TextInputValue =>
-                            this.setState({ phone_no: TextInputValue })}
-                        underlineColorAndroid='transparent'
-                        style={styles.input}
+                        onChangeText={val => this.setState({ phone_no: val })}
+                        style={{ borderColor: "red" }}
+                        help="Phone number"
+                        placeholder="Phone no."
+                        placeholderTextColor="#333"
                     />
-                    <TextInput placeholder="Password"
-                        value={this.state.password}
-                        onChangeText={TextInputValue =>
-                            this.setState({ password: TextInputValue })}
-                        underlineColorAndroid='transparent'
+                    <Input value={this.state.password}
+                        onChangeText={val => this.setState({ password: val })}
                         secureTextEntry={true}
-                        style={styles.input}
+                        help="Password"
+                        placeholder="Password"
+                        placeholderTextColor="#333"
                     />
                     {this.state.loading
-                        ? <TouchableOpacity style={styles.button}><ActivityIndicator color="#00FFFF" /></TouchableOpacity>
-                        : <TouchableOpacity style={styles.button} onPress={() => this.login()}><Text style={styles.buttonText}>Login</Text></TouchableOpacity>
+                        ? <Button style={styles.button}><ActivityIndicator color="#00FFFF" /></Button>
+                        : <Button style={styles.button} onPress={() => this.login()}>Login</Button>
                     }
 
-                    <Text style={styles.subTitle}>Or</Text>
-                    <TouchableOpacity style={[styles.button, styles.buttonCyan]}
-                        onPress={() => this.props.navigation.navigate('Signup')}>
-                        <Text style={styles.buttonText}>Signup</Text>
-                    </TouchableOpacity>
+                    <Text>Or</Text>
+                    <Button style={[styles.button, styles.buttonCyan]} onPress={() => this.props.navigation.navigate('Signup')}>Signup </Button>
                 </View>
-            </View>
+            </ScrollView>
         );
     }
 }
