@@ -1,12 +1,13 @@
-import React, { Component } from 'react';
-import { View, ScrollView, RefreshControl, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import React, { Component } from 'react'
+import { View, ScrollView, RefreshControl, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native'
+import { Divider } from 'react-native-paper'
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 
-import { RSA } from 'react-native-rsa-native';
-import ConversationPeek from '../../components/ConversationPeek';
-import userData from './../../store/userData';
-import globalStyle from "../../global/globalStyle";
+import { RSA } from 'react-native-rsa-native'
+import ConversationPeek from '../../components/ConversationPeek'
+import userData from './../../store/userData'
+import globalStyle from "../../global/globalStyle"
 
 const styles = StyleSheet.create({
     newMessageBtn: {
@@ -17,7 +18,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#627894',
         shadowColor: "#000",
         elevation: 12,
-    }
+    },
 });
 
 export default class Home extends Component {
@@ -67,7 +68,6 @@ export default class Home extends Component {
                 return -1;
             if (!c2.messages || c2.messages.length <= 0)
                 return 1;
-
             return c1.messages[c1.messages.length - 1].sent_at < c2.messages[c2.messages.length - 1].sent_at ? 1 : -1
         })
         this.setState({ conversations: convos });
@@ -79,30 +79,44 @@ export default class Home extends Component {
         this.setState({ syncing: false })
     }
 
+    renderLoader = () => {
+        return (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <Text>{this.state.loading_msg}</Text>
+                <ActivityIndicator color="#00FFFF" size="large" />
+            </View>
+        )
+    }
+
+    renderConversations = () => {
+        return (
+            <>
+                <ScrollView refreshControl={<RefreshControl refreshing={this.state.syncing} onRefresh={this.reload} />}>
+                    {
+                        this.state.conversations.length > 0
+                            ? this.state.conversations.map((convo, index) =>
+                            (<View key={index} >
+                                <ConversationPeek data={convo} navigation={this.props.navigation} />
+                                <Divider />
+                            </View>)
+                            )
+                            : <Text>No Conversations.</Text>
+                    }
+                </ScrollView>
+                <TouchableOpacity style={styles.newMessageBtn} onPress={() => this.props.navigation.navigate('NewConversation')}>
+                    <FontAwesomeIcon size={25} icon={faEnvelope} style={{ color: '#fff' }} />
+                </TouchableOpacity>
+            </>
+        )
+    }
+
     render() {
         return (
-
             <View style={globalStyle.wrapper}>
                 {
                     this.state.loading == true
-                        ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                            <Text>{this.state.loading_msg}</Text>
-                            <ActivityIndicator color="#00FFFF" size="large" />
-                        </View>
-                        : <>
-                            <ScrollView refreshControl={<RefreshControl refreshing={this.state.syncing} onRefresh={this.reload} />}>
-                                {
-                                    this.state.conversations.length > 0
-                                        ? this.state.conversations.map((convo, index) =>
-                                            (<ConversationPeek data={convo} key={index} navigation={this.props.navigation} />)
-                                        )
-                                        : <Text>No Conversations.</Text>
-                                }
-                            </ScrollView>
-                            <TouchableOpacity style={styles.newMessageBtn} onPress={() => this.props.navigation.navigate('NewConversation')}>
-                                <FontAwesomeIcon size={25} icon={faEnvelope} style={{ color: '#fff' }} />
-                            </TouchableOpacity>
-                        </>
+                        ? this.renderLoader()
+                        : this.renderConversations()
                 }
             </View>
         );

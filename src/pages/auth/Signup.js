@@ -61,7 +61,7 @@ export default class Login extends Component {
                     <Input onChangeText={val => this.setState({ phone_no: val })}
                         style={this.state.message && this.state.phone_no === '' ? { borderColor: "red" } : null}
                         help="Phone number"
-                        placeholder="+64 000 00 000"
+                        placeholder="+64222222222"
                         placeholderTextColor="#333"
                     />
                     <Input onChangeText={val => this.setState({ password: val })}

@@ -10,13 +10,6 @@ const globalStyle = StyleSheet.create({
         color: '#fff'
     }, searchContainer: {
         alignItems: 'center'
-    }, searchBar: {
-        textAlign: 'center',
-        width: '70%',
-        margin: 10,
-        height: 40,
-        borderRadius: 5,
-        fontSize: 17,
     }, errorMsg: {
         color: 'red',
         textAlign: 'center',

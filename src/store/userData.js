@@ -7,6 +7,7 @@ const userData = {
         JWT: '',
         rsa_keys: {},
         sync_pubKey: false,
+        pic: `https://robohash.org/${Date.now()}`
     },
 
     defaultAvatar: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg',
@@ -124,7 +125,7 @@ const userData = {
             const contacts = await axios.get('http://francescogorini.com:1234/getContacts', userData.getConfig())
 
             contacts.data.forEach(contact => {
-                userData.contacts.set(contact.nickname || contact.phone_no, contact)
+                userData.contacts.set(contact.nickname || contact.phone_no, { ...contact, pic: `https://robohash.org/${contact.phone_no}` })
             });
 
             // Load user conversations
@@ -136,7 +137,7 @@ const userData = {
             })
 
             messages.data.forEach(message => {
-                let other = message.sender === userData.self.phone_no ? { phone_no: message.reciever, id: message.reciever_id } : { phone_no: message.sender, id: message.sender_id }
+                let other = message.sender === userData.self.phone_no ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` } : { phone_no: message.sender, id: message.sender_id }
                 userData.getOrCreateConversation(other).messages.push(message)
             })
 

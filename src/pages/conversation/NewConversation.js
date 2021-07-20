@@ -1,10 +1,11 @@
-import React, { Component } from "react";
-import { Text, View, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import React, { Component } from "react"
+import { Text, View, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native"
+import { Searchbar } from 'react-native-paper'
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
-import ContactPeek from './../../components/ContactPeek';
-import userData from './../../store/userData';
-import globalStyle from "../../global/globalStyle";
+import ContactPeek from './../../components/ContactPeek'
+import userData from './../../store/userData'
+import globalStyle from "../../global/globalStyle"
 
 const styles = StyleSheet.create({
     newContactBtn: {
@@ -65,10 +66,9 @@ class NewConversation extends Component {
             <View style={globalStyle.wrapper}>
                 {/* Search */}
                 <View style={globalStyle.searchContainer}>
-                    <TextInput placeholder="Search contacts"
-                        onChangeText={TextInputValue => this.searchContact(TextInputValue)}
-                        underlineColorAndroid='transparent'
-                        style={globalStyle.searchBar}
+                    <Searchbar
+                        placeholder="Search contacts"
+                        onChangeText={val => this.searchContact(val)}
                     />
                 </View>
 
