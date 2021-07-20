@@ -15,9 +15,9 @@ const userData = {
     contacts: new Map(),
     callbacks: [],
 
-    // Setters
+    // Conversations
     deleteConversation: (party) => {
-        userData.conversations.delete(party.identifier);
+        userData.conversations.delete(party.phone_no);
         userData.callCallbacks();
     },
     createConversation: (party) => {
@@ -28,6 +28,20 @@ const userData = {
         userData.callCallbacks();
         return userData.getConversation(party.phone_no);
     },
+    getConversation: (identifier) => {
+        return userData.conversations.get(identifier.phone_no);
+    },
+    getOrCreateConversation: (identifier) => {
+        let convo = userData.conversations.has(identifier.phone_no)
+        if (!convo) {
+            userData.createConversation(identifier)
+        }
+        return userData.getConversation(identifier)
+    },
+    getAllConversations: () => {
+        return [...userData.conversations.values()];
+    },
+    // Messages
     sendMessage: async (user, message) => {
         try {
             let msg = {
@@ -37,7 +51,7 @@ const userData = {
                 sent_at: Date.now(),
                 seen: false
             }
-            userData.getConversation(user.phone_no).messages.push(msg);
+            userData.getConversation(user).messages.push(msg);
 
             await axios.post('http://francescogorini.com:1234/sendMessage', { message: message, contact_id: user.id }, userData.getConfig())
 
@@ -50,8 +64,11 @@ const userData = {
         }
     },
     readMessage: (contact) => {
-        userData.getConversation(contact.phone_no).messages.forEach(msg => msg.seen = true)
+        userData.getConversation(contact).messages.forEach(msg => msg.seen = true)
         userData.callCallbacks()
+    },
+    getContacts: () => {
+        return userData.contacts;
     },
     addContact: async (contact) => {
         try {
@@ -73,23 +90,6 @@ const userData = {
         userData.self.sync_pubKey = true
         userData.self.rsa_keys = keyPair
         await userData.writeToStorage('rsa-user-keys', JSON.stringify(keyPair))
-    },
-    // getters
-    getConversation: (identifier) => {
-        return userData.conversations.get(identifier);
-    },
-    getOrCreateConversation: (identifier) => {
-        let convo = userData.conversations.has(identifier.phone_no)
-        if (!convo) {
-            userData.createConversation(identifier)
-        }
-        return userData.getConversation(identifier.phone_no)
-    },
-    getAllConversations: () => {
-        return [...userData.conversations.values()];
-    },
-    getContacts: () => {
-        return userData.contacts;
     },
     searchUsers: async (prefix) => {
         try {

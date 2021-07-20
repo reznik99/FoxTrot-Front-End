@@ -10,13 +10,15 @@ const styles = StyleSheet.create({
         height: "100%",
         alignItems: 'center',
         justifyContent: 'center',
+    }, formWrapper: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
+        alignItems: 'center',
     }, button: {
         width: '100%',
-        padding: 5,
     }, buttonCyan: {
         backgroundColor: "#00aaaa"
-    }, logoView: {
-        marginTop: 0,
     }, title: {
         textAlign: "center",
         paddingVertical: 10,

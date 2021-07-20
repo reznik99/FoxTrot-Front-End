@@ -59,20 +59,20 @@ export default class Login extends Component {
                     </View>
                     {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
                     <Input onChangeText={val => this.setState({ phone_no: val })}
-                        underlineColorAndroid='transparent'
+                        style={this.state.message && this.state.phone_no === '' ? { borderColor: "red" } : null}
                         help="Phone number"
                         placeholder="+64 000 00 000"
                         placeholderTextColor="#333"
                     />
                     <Input onChangeText={val => this.setState({ password: val })}
-                        underlineColorAndroid='transparent'
+                        style={this.state.message && this.state.password === '' ? { borderColor: "red" } : null}
                         secureTextEntry={true}
                         help="Password"
                         placeholder="********"
                         placeholderTextColor="#333"
                     />
                     <Input onChangeText={val => this.setState({ re_password: val })}
-                        underlineColorAndroid='transparent'
+                        style={this.state.message && (this.state.re_password === '' || this.state.re_password != this.state.password) ? { borderColor: "red" } : null}
                         secureTextEntry={true}
                         help="Repeat Password"
                         placeholder="********"
@@ -82,9 +82,6 @@ export default class Login extends Component {
                         ? <Button style={[styles.button, styles.buttonCyan]}><ActivityIndicator color="#00FFFF" /></Button>
                         : <Button style={[styles.button, styles.buttonCyan]} onPress={() => this.signup()}>Signup</Button>
                     }
-
-                    <Text>Or</Text>
-                    <Button style={styles.button} onPress={() => this.props.navigation.navigate('Login')}> Login </Button>
                 </View>
             </ScrollView>
         );
