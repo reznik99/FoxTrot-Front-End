@@ -1,23 +1,13 @@
 import React, { Component } from "react"
-import { Text, View, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native"
-import { Searchbar } from 'react-native-paper'
+import { Text, View, ActivityIndicator, ScrollView } from "react-native"
+import { Searchbar, FAB } from 'react-native-paper'
+
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
+import { faUserPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
 import ContactPeek from './../../components/ContactPeek'
 import userData from './../../store/userData'
 import globalStyle from "../../global/globalStyle"
 
-const styles = StyleSheet.create({
-    newContactBtn: {
-        alignSelf: 'flex-end',
-        padding: 20,
-        margin: 20,
-        borderRadius: 100,
-        backgroundColor: '#00a000',//'#627894',
-        shadowColor: "#000",
-        elevation: 12,
-    }
-});
 
 class NewConversation extends Component {
     constructor(props) {
@@ -67,6 +57,9 @@ class NewConversation extends Component {
                 {/* Search */}
                 <View style={globalStyle.searchContainer}>
                     <Searchbar
+                        icon={({ size, color }) => (
+                            <FontAwesomeIcon size={size} icon={faSearch} style={{ color: color }} />
+                        )}
                         placeholder="Search contacts"
                         onChangeText={val => this.searchContact(val)}
                     />
@@ -92,9 +85,13 @@ class NewConversation extends Component {
                 </ScrollView>
 
                 {/* Add contact */}
-                <TouchableOpacity style={styles.newContactBtn} onPress={() => this.props.navigation.navigate('AddContact')}>
-                    <FontAwesomeIcon size={25} icon={faUserPlus} style={{ color: '#fff' }} />
-                </TouchableOpacity>
+                <FAB
+                    style={globalStyle.fab} color="#fff"
+                    onPress={() => this.props.navigation.navigate('AddContact')}
+                    icon={({ size, color }) => (
+                        <FontAwesomeIcon size={size} icon={faUserPlus} style={{ color: color }} />
+                    )}
+                />
             </View>
         );
     }

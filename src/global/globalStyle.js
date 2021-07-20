@@ -15,7 +15,12 @@ const globalStyle = StyleSheet.create({
         textAlign: 'center',
         fontSize: 20,
         paddingVertical: 20
-    }
+    }, fab: {
+        position: 'absolute',
+        margin: 20,
+        right: 0,
+        bottom: 0,
+    },
 });
 
 export default globalStyle

@@ -1,14 +1,13 @@
 import React, { Component } from "react"
-import { Text, View, TextInput, StyleSheet, ActivityIndicator, ScrollView } from "react-native"
+import { Text, View, ActivityIndicator, ScrollView } from "react-native"
 import { Divider, Searchbar } from 'react-native-paper'
 
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
+import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import ContactPeek from './../../components/ContactPeek'
 import userData from './../../store/userData'
 import globalStyle from "../../global/globalStyle"
 
-const styles = StyleSheet.create({
-
-});
 
 class AddContact extends Component {
     constructor(props) {
@@ -45,6 +44,9 @@ class AddContact extends Component {
                 {/* Search */}
                 <View style={globalStyle.searchContainer}>
                     <Searchbar
+                        icon={({ size, color }) => (
+                            <FontAwesomeIcon size={size} icon={faSearch} style={{ color: color }} />
+                        )}
                         placeholder="Find new contacts"
                         value={this.state.prefix}
                         onChangeText={val => this.searchUsers(val)}

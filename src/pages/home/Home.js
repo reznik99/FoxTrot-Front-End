@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import { View, ScrollView, RefreshControl, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native'
-import { Divider } from 'react-native-paper'
+import { View, ScrollView, RefreshControl, ActivityIndicator, Text } from 'react-native'
+import { Divider, FAB } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 
@@ -9,17 +9,6 @@ import ConversationPeek from '../../components/ConversationPeek'
 import userData from './../../store/userData'
 import globalStyle from "../../global/globalStyle"
 
-const styles = StyleSheet.create({
-    newMessageBtn: {
-        alignSelf: 'flex-end',
-        padding: 20,
-        margin: 20,
-        borderRadius: 100,
-        backgroundColor: '#627894',
-        shadowColor: "#000",
-        elevation: 12,
-    },
-});
 
 export default class Home extends Component {
 
@@ -29,7 +18,8 @@ export default class Home extends Component {
             conversations: [],
             loading: false,
             syncing: false,
-            loading_msg: ''
+            loading_msg: '',
+            active: 1
         };
     }
 
@@ -103,9 +93,14 @@ export default class Home extends Component {
                             : <Text>No Conversations.</Text>
                     }
                 </ScrollView>
-                <TouchableOpacity style={styles.newMessageBtn} onPress={() => this.props.navigation.navigate('NewConversation')}>
-                    <FontAwesomeIcon size={25} icon={faEnvelope} style={{ color: '#fff' }} />
-                </TouchableOpacity>
+                <FAB
+                    style={[globalStyle.fab, { backgroundColor: "red" }]} color="#fff"
+                    onPress={() => this.props.navigation.navigate('NewConversation')}
+                    icon={({ size, color }) => (
+                        <FontAwesomeIcon size={size} icon={faEnvelope} style={{ color: color }} />
+                    )}
+                />
+
             </>
         )
     }
