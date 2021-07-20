@@ -1,6 +1,6 @@
 
 import React, { Component } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground, Keyboard } from "react-native";
 
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons";
@@ -29,12 +29,12 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         backgroundColor: 'gray'
     }, inputContainer: {
-        height: "10%",
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-evenly',
         borderRadius: 20,
-        paddingHorizontal: 10
+        paddingHorizontal: 10,
+        paddingVertical: 10
     }, input: {
         width: '75%',
         borderRadius: 20,
@@ -53,6 +53,30 @@ class Conversation extends Component {
         this.state = {
             message: '',
         }
+    }
+
+    componentDidMount() {
+        this.keyboardDidShowListener = Keyboard.addListener(
+            'keyboardDidShow',
+            this._keyboardDidShow,
+        );
+        this.keyboardDidHideListener = Keyboard.addListener(
+            'keyboardDidHide',
+            this._keyboardDidHide,
+        );
+    }
+
+    componentWillUnmount() {
+        this.keyboardDidShowListener.remove();
+        this.keyboardDidHideListener.remove();
+    }
+
+    _keyboardDidShow = () => {
+        this.scrollView.scrollToEnd({ animated: true })
+    }
+
+    _keyboardDidHide = () => {
+        this.scrollView.scrollToEnd({ animated: true })
     }
 
     sendMessage = async (data) => {
@@ -89,8 +113,7 @@ class Conversation extends Component {
                     </TouchableOpacity>
                     <TextInput placeholder="Type a message"
                         ref={input => { this.textInput = input }}
-                        onChangeText={TextInputValue =>
-                            this.setState({ message: TextInputValue })}
+                        onChangeText={val => this.setState({ message: val })}
                         underlineColorAndroid='transparent'
                         style={styles.input}
                     />
