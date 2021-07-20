@@ -212,7 +212,9 @@ const userData = {
 
         return diff / 1000 > 60
             ? diff / 1000 / 60 > 60
-                ? `${parseInt(diff / 1000 / 60 / 60)} h ago`
+                ? diff / 1000 / 60 / 60 > 24
+                    ? `${parseInt(diff / 1000 / 60 / 60 / 24)} days ago`
+                    : `${parseInt(diff / 1000 / 60 / 60)} h ago`
                 : `${parseInt(diff / 1000 / 60)} m ago`
             : 'just now'
     }

@@ -19,19 +19,17 @@ export default class Login extends Component {
     }
 
     async componentDidMount() {
-        let phone_no = ''
+        let phone_number = ''
         try {
             this.setState({ gloablLoading: true })
+            phone_number = await userData.readFromStorage('user')
             if (await userData.isAuthenticated())
                 return this.props.navigation.navigate('Home')
-            else {
-                console.log("user not authenticated")
-                phone_no = await userData.readFromStorage('user')
-            }
-        } finally {
-            this.setState({ gloablLoading: false, phone_no: phone_no })
-        }
 
+            console.log("user not authenticated")
+        } finally {
+            this.setState({ gloablLoading: false, phone_no: phone_number })
+        }
     }
 
     showError = (msg) => {

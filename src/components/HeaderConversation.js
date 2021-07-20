@@ -34,7 +34,7 @@ class HeaderConversation extends Component {
                         <Text style={styles.topBarText}>{navigation.state.params.data.parties[0].identifier || navigation.state.params.data.parties[0].phone_no}</Text>
                     </TouchableOpacity>
                 </View>
-                <View style={styles.buttonContainer}>
+                <View style={[styles.buttonContainer, { width: '50%' }]}>
                     <TouchableOpacity style={styles.button}>
                         <FontAwesomeIcon icon={faVideo} size={20} style={styles.topBarText} />
                     </TouchableOpacity>
