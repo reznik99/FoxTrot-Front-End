@@ -1,7 +1,7 @@
 import React, { Component } from "react"
-import { Text, View, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native"
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
+import { Text, View, TextInput, StyleSheet, ActivityIndicator, ScrollView } from "react-native"
+import { Divider, Searchbar } from 'react-native-paper'
+
 import ContactPeek from './../../components/ContactPeek'
 import userData from './../../store/userData'
 import globalStyle from "../../global/globalStyle"
@@ -44,11 +44,10 @@ class AddContact extends Component {
             <View style={globalStyle.wrapper}>
                 {/* Search */}
                 <View style={globalStyle.searchContainer}>
-                    <TextInput placeholder="Search contacts"
+                    <Searchbar
+                        placeholder="Find new contacts"
                         value={this.state.prefix}
-                        onChangeText={TextInputValue => this.searchUsers(TextInputValue)}
-                        underlineColorAndroid='transparent'
-                        style={globalStyle.input}
+                        onChangeText={val => this.searchUsers(val)}
                     />
                 </View>
 
@@ -59,14 +58,20 @@ class AddContact extends Component {
                             ? <ActivityIndicator size="large" color='#fc501c' />
                             : this.state.results && this.state.results.length > 0
                                 ? this.state.results.map((res, index) => {
-                                    return <ContactPeek data={res} key={index} navigation={navigation} onSelect={async () => {
-                                        await userData.addContact(res)
-                                        navigation.navigate('Conversation', { data: userData.createConversation(res) })
-                                    }} />
+                                    return (
+                                        <View key={index}>
+                                            <ContactPeek data={res} navigation={navigation}
+                                                onSelect={async () => {
+                                                    await userData.addContact(res)
+                                                    navigation.navigate('Conversation', { data: userData.createConversation(res) })
+                                                }}
+                                            />
+                                            <Divider />
+                                        </View>
+                                    )
                                 })
                                 : <Text style={globalStyle.errorMsg}>No results</Text>
                     }
-
                 </ScrollView>
             </View>
         );

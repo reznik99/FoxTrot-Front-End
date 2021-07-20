@@ -12,8 +12,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#1F1D21'
     }, profilePicContainer: {
         overflow: "hidden",
         marginRight: 20

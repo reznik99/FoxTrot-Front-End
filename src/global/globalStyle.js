@@ -13,7 +13,8 @@ const globalStyle = StyleSheet.create({
     }, errorMsg: {
         color: 'red',
         textAlign: 'center',
-        fontSize: 20
+        fontSize: 20,
+        paddingVertical: 20
     }
 });
 
