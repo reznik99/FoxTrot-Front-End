@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
-import { Image } from 'react-native-elements';
+import React, { Component } from 'react'
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native'
+import { Avatar } from 'react-native-paper'
 
-import userData from './../store/userData';
-import globalStyle from "../global/globalStyle";
+import userData from './../store/userData'
+import globalStyle from "../global/globalStyle"
 
 const styles = StyleSheet.create({
     profilePeek: {
@@ -12,16 +12,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#1F1D21'
     }, profilePicContainer: {
         overflow: "hidden",
-        borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
         marginRight: 20
-    }, profilePic: {
-        width: 60,
-        height: 60,
-        borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
     }
 });
 
@@ -31,15 +24,14 @@ export default class ContactPeek extends Component {
     }
 
     render() {
-        const { navigation, data, onSelect } = this.props
+        const { data, onSelect } = this.props
         return (
             <TouchableOpacity style={styles.profilePeek}
                 onPress={onSelect}>
-                <View style={styles.profilePicContainer}>
-                    <Image source={{ uri: data.pic || userData.defaultAvatar }}
-                        style={styles.profilePic}
-                        PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
-                </View>
+                <Avatar.Image size={55} style={styles.profilePicContainer}
+                    source={{ uri: data.pic || userData.defaultAvatar }}
+                    PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
+
                 <View style={{ flex: 1 }}>
                     <Text style={globalStyle.textInfo}>{data.identifier || data.phone_no}</Text>
                 </View>

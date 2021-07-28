@@ -1,11 +1,11 @@
-import React, { Component } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
-import { Image } from 'react-native-elements';
+import React, { Component } from 'react'
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native'
+import { Avatar } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 
-import userData from './../store/userData';
-import globalStyle from "../global/globalStyle";
+import userData from './../store/userData'
+import globalStyle from "../global/globalStyle"
 
 const styles = StyleSheet.create({
     conversationPeek: {
@@ -15,13 +15,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 10
     }, profilePicContainer: {
-        overflow: "hidden",
-        borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
         marginRight: 20
-    }, profilePic: {
-        width: 60,
-        height: 60,
-        borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
     }, unseenMessage: {
         fontWeight: "bold"
     }
@@ -39,25 +33,28 @@ export default class ConversationPeek extends Component {
         return false
     }
 
+    otherUser = (parties) => {
+        return parties[0].phone_no === userData.self.phone_no ? parties[1] : parties[0]
+    }
+
     render() {
         const { data, navigation } = this.props
         const lastMessage = data.messages[data.messages.length - 1] || { content: "", sent_at: null }
         const isNew = this.shouldNotify(lastMessage)
-        const { boldIfUnseen } = isNew ? { boldIfUnseen: styles.unseenMessage } : { boldIfUnseen: null }
+        const boldIfUnseen = isNew ? styles.unseenMessage : null
 
         return (
             <TouchableOpacity style={[styles.conversationPeek]}
                 onPress={() => {
-                    userData.readMessage(data.parties[0])
+                    userData.readMessage(this.otherUser(data.parties))
                     navigation.navigate('Conversation', { data })
                 }}>
-                <View style={styles.profilePicContainer}>
-                    <Image source={{ uri: data.parties[0].pic || userData.defaultAvatar }}
-                        style={styles.profilePic}
-                        PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
-                </View>
+                <Avatar.Image size={55} style={styles.profilePicContainer}
+                    source={{ uri: this.otherUser(data.parties).pic || userData.defaultAvatar }}
+                    PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
+
                 <View style={{ flex: 1 }}>
-                    <Text style={[globalStyle.textInfo, boldIfUnseen]}>{data.parties[0].phone_no}</Text>
+                    <Text style={[globalStyle.textInfo, boldIfUnseen]}>{this.otherUser(data.parties).phone_no}</Text>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}>{lastMessage.message}</Text>
                 </View>
                 <View style={{ alignSelf: "center" }}>

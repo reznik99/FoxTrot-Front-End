@@ -10,18 +10,17 @@ const globalStyle = StyleSheet.create({
         color: '#fff'
     }, searchContainer: {
         alignItems: 'center'
-    }, searchBar: {
-        textAlign: 'center',
-        width: '70%',
-        margin: 10,
-        height: 40,
-        borderRadius: 5,
-        fontSize: 17,
     }, errorMsg: {
         color: 'red',
         textAlign: 'center',
-        fontSize: 20
-    }
+        fontSize: 20,
+        paddingVertical: 20
+    }, fab: {
+        position: 'absolute',
+        margin: 20,
+        right: 0,
+        bottom: 0,
+    },
 });
 
 export default globalStyle

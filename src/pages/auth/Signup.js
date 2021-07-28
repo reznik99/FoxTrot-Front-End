@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import { Text, View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
-
+import { View, ScrollView, ActivityIndicator } from 'react-native';
+import { Button, Input, Text } from 'galio-framework';
 import axios from 'axios'
 import styles from './style'
 
@@ -51,45 +51,39 @@ export default class Login extends Component {
 
     render() {
         return (
-            <View style={styles.wrapper}>
-                <View style={styles.logoView}>
-                    <Text style={styles.title}>FoxTrot</Text>
-                    <Text style={styles.subTitle}>secure communications</Text>
-                </View>
-                <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.container}>
+                <View style={styles.wrapper}>
+                    <View style={styles.logoView}>
+                        <Text style={styles.title} h4>FoxTrot</Text>
+                        <Text style={styles.title} h6 muted>secure communications</Text>
+                    </View>
                     {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
-                    <TextInput placeholder="Enter Phone number"
-                        onChangeText={TextInputValue =>
-                            this.setState({ phone_no: TextInputValue })}
-                        underlineColorAndroid='transparent'
-                        style={styles.input}
+                    <Input onChangeText={val => this.setState({ phone_no: val })}
+                        style={this.state.message && this.state.phone_no === '' ? { borderColor: "red" } : null}
+                        help="Phone number"
+                        placeholder="+64222222222"
+                        placeholderTextColor="#333"
                     />
-                    <TextInput placeholder="Enter password"
-                        onChangeText={TextInputValue =>
-                            this.setState({ password: TextInputValue })}
-                        underlineColorAndroid='transparent'
+                    <Input onChangeText={val => this.setState({ password: val })}
+                        style={this.state.message && this.state.password === '' ? { borderColor: "red" } : null}
                         secureTextEntry={true}
-                        style={styles.input}
+                        help="Password"
+                        placeholder="********"
+                        placeholderTextColor="#333"
                     />
-                    <TextInput placeholder="Repeat password"
-                        onChangeText={TextInputValue =>
-                            this.setState({ re_password: TextInputValue })}
-                        underlineColorAndroid='transparent'
+                    <Input onChangeText={val => this.setState({ re_password: val })}
+                        style={this.state.message && (this.state.re_password === '' || this.state.re_password != this.state.password) ? { borderColor: "red" } : null}
                         secureTextEntry={true}
-                        style={styles.input}
+                        help="Repeat Password"
+                        placeholder="********"
+                        placeholderTextColor="#333"
                     />
                     {this.state.loading
-                        ? <TouchableOpacity style={[styles.button, styles.buttonCyan]}><ActivityIndicator color="#00FFFF" /></TouchableOpacity>
-                        : <TouchableOpacity style={[styles.button, styles.buttonCyan]} onPress={() => this.signup()}><Text style={styles.buttonText}>Signup</Text></TouchableOpacity>
+                        ? <Button style={[styles.button, styles.buttonCyan]}><ActivityIndicator color="#00FFFF" /></Button>
+                        : <Button style={[styles.button, styles.buttonCyan]} onPress={() => this.signup()}>Signup</Button>
                     }
-
-                    <Text style={styles.subTitle}>Or</Text>
-                    <TouchableOpacity style={styles.button}
-                        onPress={() => this.props.navigation.navigate('Login')}>
-                        <Text style={styles.buttonText}>Login</Text>
-                    </TouchableOpacity>
                 </View>
-            </View>
+            </ScrollView>
         );
     }
 }

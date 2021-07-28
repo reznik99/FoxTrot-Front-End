@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, Keyboard } from 'react-native';
+import { View, ScrollView, ActivityIndicator, Keyboard } from 'react-native';
+import { Button, Input, Text } from 'galio-framework';
 import axios from 'axios'
 import styles from './style'
 import userData from './../../store/userData';
@@ -11,8 +12,23 @@ export default class Login extends Component {
         this.state = {
             phone_no: '',
             password: '',
+            message: '',
             loading: false,
-            message: ''
+            gloablLoading: false
+        }
+    }
+
+    async componentDidMount() {
+        let phone_number = ''
+        try {
+            this.setState({ gloablLoading: true })
+            phone_number = await userData.readFromStorage('user')
+            if (await userData.isAuthenticated())
+                return this.props.navigation.navigate('Home')
+
+            console.log("user not authenticated")
+        } finally {
+            this.setState({ gloablLoading: false, phone_no: phone_number })
         }
     }
 
@@ -48,42 +64,51 @@ export default class Login extends Component {
         })
     }
 
+    RenderForm = () => {
+        return (
+            <>
+                <Input onChangeText={val => this.setState({ phone_no: val })}
+                    value={this.state.phone_no}
+                    style={this.state.message ? { borderColor: "red" } : null}
+                    help="Phone number"
+                    placeholder="Phone no."
+                    placeholderTextColor="#333"
+                />
+                <Input onChangeText={val => this.setState({ password: val })}
+                    value={this.state.password}
+                    style={this.state.message ? { borderColor: "red" } : null}
+                    secureTextEntry={true}
+                    help="Password"
+                    placeholder="Password"
+                    placeholderTextColor="#333"
+                />
+                {
+                    this.state.loading
+                        ? <Button style={styles.button}><ActivityIndicator color="#00FFFF" /></Button>
+                        : <Button style={styles.button} onPress={() => this.login()}>Login</Button>
+                }
+                <Text>Or</Text>
+                <Button style={[styles.button, styles.buttonCyan]} onPress={() => this.props.navigation.navigate('Signup')}>Signup </Button>
+            </>
+        )
+    }
+
     render() {
         return (
-            <View style={styles.wrapper}>
-                <View style={styles.logoView}>
-                    <Text style={styles.title}>FoxTrot</Text>
-                    <Text style={styles.subTitle}>secure communications</Text>
-                </View>
-                <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.container}>
+                <View style={styles.wrapper}>
+                    <View>
+                        <Text style={styles.title} h4>FoxTrot</Text>
+                        <Text style={styles.title} h6 muted>secure communications</Text>
+                    </View>
                     {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
-                    <TextInput placeholder="Phone no."
-                        value={this.state.phone_no}
-                        onChangeText={TextInputValue =>
-                            this.setState({ phone_no: TextInputValue })}
-                        underlineColorAndroid='transparent'
-                        style={styles.input}
-                    />
-                    <TextInput placeholder="Password"
-                        value={this.state.password}
-                        onChangeText={TextInputValue =>
-                            this.setState({ password: TextInputValue })}
-                        underlineColorAndroid='transparent'
-                        secureTextEntry={true}
-                        style={styles.input}
-                    />
-                    {this.state.loading
-                        ? <TouchableOpacity style={styles.button}><ActivityIndicator color="#00FFFF" /></TouchableOpacity>
-                        : <TouchableOpacity style={styles.button} onPress={() => this.login()}><Text style={styles.buttonText}>Login</Text></TouchableOpacity>
-                    }
 
-                    <Text style={styles.subTitle}>Or</Text>
-                    <TouchableOpacity style={[styles.button, styles.buttonCyan]}
-                        onPress={() => this.props.navigation.navigate('Signup')}>
-                        <Text style={styles.buttonText}>Signup</Text>
-                    </TouchableOpacity>
+                    {this.state.gloablLoading
+                        ? <ActivityIndicator color="#00FFFF" size="large" />
+                        : <this.RenderForm />
+                    }
                 </View>
-            </View>
+            </ScrollView>
         );
     }
 }

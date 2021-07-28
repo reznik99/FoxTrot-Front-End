@@ -7,6 +7,7 @@ const userData = {
         JWT: '',
         rsa_keys: {},
         sync_pubKey: false,
+        pic: `https://robohash.org/${Date.now()}`
     },
 
     defaultAvatar: 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX9531609.jpg',
@@ -15,9 +16,9 @@ const userData = {
     contacts: new Map(),
     callbacks: [],
 
-    // Setters
+    // Conversations
     deleteConversation: (party) => {
-        userData.conversations.delete(party.identifier);
+        userData.conversations.delete(party.phone_no);
         userData.callCallbacks();
     },
     createConversation: (party) => {
@@ -28,6 +29,20 @@ const userData = {
         userData.callCallbacks();
         return userData.getConversation(party.phone_no);
     },
+    getConversation: (identifier) => {
+        return userData.conversations.get(identifier.phone_no);
+    },
+    getOrCreateConversation: (identifier) => {
+        let convo = userData.conversations.has(identifier.phone_no)
+        if (!convo) {
+            userData.createConversation(identifier)
+        }
+        return userData.getConversation(identifier)
+    },
+    getAllConversations: () => {
+        return [...userData.conversations.values()];
+    },
+    // Messages
     sendMessage: async (user, message) => {
         try {
             let msg = {
@@ -37,7 +52,7 @@ const userData = {
                 sent_at: Date.now(),
                 seen: false
             }
-            userData.getConversation(user.phone_no).messages.push(msg);
+            userData.getConversation(user).messages.push(msg);
 
             await axios.post('http://francescogorini.com:1234/sendMessage', { message: message, contact_id: user.id }, userData.getConfig())
 
@@ -50,8 +65,11 @@ const userData = {
         }
     },
     readMessage: (contact) => {
-        userData.getConversation(contact.phone_no).messages.forEach(msg => msg.seen = true)
+        userData.getConversation(contact).messages.forEach(msg => msg.seen = true)
         userData.callCallbacks()
+    },
+    getContacts: () => {
+        return userData.contacts;
     },
     addContact: async (contact) => {
         try {
@@ -65,31 +83,14 @@ const userData = {
     },
     setJWToken: async (token, phone_no) => {
         userData.self.phone_no = phone_no
-        await userData.writeDataToStorage('user', phone_no)
+        await userData.writeToStorage('user', phone_no)
         userData.self.JWT = token
-        await userData.writeDataToStorage('JWT', token)
+        await userData.writeToStorage('JWT', token)
     },
     setKeys: async (keyPair) => {
         userData.self.sync_pubKey = true
         userData.self.rsa_keys = keyPair
-        await userData.writeDataToStorage('rsa-user-keys', JSON.stringify(keyPair))
-    },
-    // getters
-    getConversation: (identifier) => {
-        return userData.conversations.get(identifier);
-    },
-    getOrCreateConversation: (identifier) => {
-        let convo = userData.conversations.has(identifier.phone_no)
-        if (!convo) {
-            userData.createConversation(identifier)
-        }
-        return userData.getConversation(identifier.phone_no)
-    },
-    getAllConversations: () => {
-        return [...userData.conversations.values()];
-    },
-    getContacts: () => {
-        return userData.contacts;
+        await userData.writeToStorage('rsa-user-keys', JSON.stringify(keyPair))
     },
     searchUsers: async (prefix) => {
         try {
@@ -124,7 +125,7 @@ const userData = {
             const contacts = await axios.get('http://francescogorini.com:1234/getContacts', userData.getConfig())
 
             contacts.data.forEach(contact => {
-                userData.contacts.set(contact.nickname || contact.phone_no, contact)
+                userData.contacts.set(contact.nickname || contact.phone_no, { ...contact, pic: `https://robohash.org/${contact.phone_no}` })
             });
 
             // Load user conversations
@@ -136,7 +137,7 @@ const userData = {
             })
 
             messages.data.forEach(message => {
-                let other = message.sender === userData.self.phone_no ? { phone_no: message.reciever, id: message.reciever_id } : { phone_no: message.sender, id: message.sender_id }
+                let other = message.sender === userData.self.phone_no ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` } : { phone_no: message.sender, id: message.sender_id }
                 userData.getOrCreateConversation(other).messages.push(message)
             })
 
@@ -163,7 +164,15 @@ const userData = {
         if (JWT == null) throw new Error('User not authenticated. Re-login')
         if (phone_no == null) throw new Error('Device out of sync. Preform Sync')
     },
-    writeDataToStorage: async (key, data) => {
+    readFromStorage: async (key) => {
+        try {
+            console.log(`Reading ${key} from local storage into store`)
+            return await AsyncStorage.getItem(key)
+        } catch (err) {
+            console.log(err)
+        }
+    },
+    writeToStorage: async (key, data) => {
         try {
             await AsyncStorage.setItem(key, data)
         } catch (err) {
@@ -181,6 +190,19 @@ const userData = {
         // Send JWT Token to authorize requests
         return { headers: { "Authorization": `JWT ${userData.self.JWT}` } }
     },
+    isAuthenticated: async () => {
+        try {
+            // Has user logged in before?
+            userData.self.JWT = await userData.readFromStorage('JWT')
+            // Is token expired?
+            const res = await axios.get('http://francescogorini.com:1234/validateToken', userData.getConfig())
+            return res.data.valid
+
+        } catch (err) {
+            console.log(err)
+            return false
+        }
+    },
 
     humanTime: (lastTime) => {
         if (!lastTime) return null
@@ -190,7 +212,9 @@ const userData = {
 
         return diff / 1000 > 60
             ? diff / 1000 / 60 > 60
-                ? `${parseInt(diff / 1000 / 60 / 60)} h ago`
+                ? diff / 1000 / 60 / 60 > 24
+                    ? `${parseInt(diff / 1000 / 60 / 60 / 24)} days ago`
+                    : `${parseInt(diff / 1000 / 60 / 60)} h ago`
                 : `${parseInt(diff / 1000 / 60)} m ago`
             : 'just now'
     }
