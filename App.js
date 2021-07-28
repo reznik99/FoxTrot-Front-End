@@ -2,6 +2,8 @@
 import React from 'react';
 import { createAppContainer } from "react-navigation";
 import { createStackNavigator } from "react-navigation-stack";
+import { Provider } from 'react-redux';
+import { store } from './src/store/store';
 
 import { Login, Signup, Home, Conversation, NewConversation, AddContact } from './src'
 import Header from './src/components/Header';
@@ -10,7 +12,11 @@ import HeaderConversation from "./src/components/HeaderConversation";
 
 export default class App extends React.Component {
     render() {
-        return <AppContainer />;
+        return (
+            <Provider store={store}>
+                <AppContainer />
+            </Provider>
+        );
     }
 }
 const AppNavigator = createStackNavigator({
