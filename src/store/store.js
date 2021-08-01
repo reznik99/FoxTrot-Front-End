@@ -1,8 +1,8 @@
 import { createStore, combineReducers, applyMiddleware } from 'redux'
 import thunk from 'redux-thunk'
-import exampleReducer from './reducers/user'
+import userReducer from './reducers/user'
 
 const rootReducer = combineReducers({
-    exampleReducer,
+    userReducer: userReducer,
 })
 export const store = createStore(rootReducer, applyMiddleware(thunk))

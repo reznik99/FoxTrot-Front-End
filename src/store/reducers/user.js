@@ -1,12 +1,24 @@
 
-const initialState = {} // do i need this?
+const initialState = {
+    tokenValid: false,
+    token: '',
+    phone_no: '',
+}
 
-function exampleReducer(state = initialState, action) {
+function userReducer(state = initialState, action) {
     switch (action.type) {
-        case "GET_SOMETHING":
-            return { ...state, something: action.payload }
+        case "SYNC_FROM_STORAGE":
+            return { ...state, keys: action.payload.keys, token: action.payload.token, phone_no: action.payload.phone_no, }
+        case "TOKEN_VALID":
+            return { ...state, tokenValid: action.payload }
+        case "LOGGED_IN":
+            return { ...state, token: action.payload.token, phone_no: action.payload.phone_no }
+        case "ERROR_MSG":
+            return { ...state, errorMsg: action.payload }
+        case "SET_LOADING":
+            return { ...state, loading: action.payload }
         default:
             return state
     }
 }
-export default exampleReducer
+export default userReducer

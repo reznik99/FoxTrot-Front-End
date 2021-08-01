@@ -1,115 +1,91 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, ActivityIndicator, Keyboard } from 'react-native';
 import { Button, Input, Text } from 'galio-framework';
-import axios from 'axios'
+import { useSelector, useDispatch } from 'react-redux';
+
 import styles from './style'
-import userData from './../../store/userData';
+import { logIn, validateToken, syncFromStorage } from '../../store/actions/user';
 
-export default class Login extends Component {
-    constructor(props) {
-        super(props);
+export default function Login(props) {
 
-        this.state = {
-            phone_no: '',
-            password: '',
-            message: '',
-            loading: false,
-            gloablLoading: false
-        }
-    }
+    const { errorMsg, loading, phone_no } = useSelector(state => state.userReducer);
+    const [gloablLoading, setGloablLoading] = useState(false)
+    const [phone_number, setPhone_number] = useState('')
+    const [password, setPassword] = useState('')
 
-    async componentDidMount() {
-        let phone_number = ''
+    const dispatch = useDispatch()
+
+    useEffect(async () => {
         try {
-            this.setState({ gloablLoading: true })
-            phone_number = await userData.readFromStorage('user')
-            if (await userData.isAuthenticated())
-                return this.props.navigation.navigate('Home')
+            setGloablLoading(true)
 
-            console.log("user not authenticated")
+            // Load data from disk into redux store
+            dispatch(syncFromStorage())
+
+            // Auto-login if Token still valid
+            let loggedIn = dispatch(validateToken())
+            if (loggedIn)
+                return props.navigation.navigate('Home')
+
+            // Auto-fill phone_no from storage
+            setPhone_no(phone_no)
+            console.log("Token expired")
         } finally {
-            this.setState({ gloablLoading: false, phone_no: phone_number })
+            setGloablLoading(false)
         }
-    }
+    }, []);
 
-    showError = (msg) => {
-        this.setState({
-            message: msg, loading: false
-        });
-    }
 
-    login = async () => {
-        const { phone_no, password, loading } = this.state;
-
+    login_better = async () => {
         if (loading) return;
-        if (phone_no === '' || password === '') {
-            this.showError('Textfields cannot be blank!');
-            return;
-        }
 
-        this.setState({ loading: true });
         Keyboard.dismiss()
 
-        axios.post('http://francescogorini.com:1234/login', {
-            phone_no: phone_no,
-            password: password
-        }).then(async (response) => {
-            // No error code thrown. Save JWT
-            await userData.setJWToken(response.data.token, phone_no)
-            return this.props.navigation.navigate('Home');
-        }).catch(err => {
-            this.showError(err.response?.data);
-        }).finally(() => {
-            this.setState({ loading: false });
-        })
+        let loggedIn = await dispatch(logIn(phone_number, password))
+        if (loggedIn) {
+            props.navigation.navigate('Home')
+        }
     }
 
-    RenderForm = () => {
-        return (
-            <>
-                <Input onChangeText={val => this.setState({ phone_no: val })}
-                    value={this.state.phone_no}
-                    style={this.state.message ? { borderColor: "red" } : null}
-                    help="Phone number"
-                    placeholder="Phone no."
-                    placeholderTextColor="#333"
-                />
-                <Input onChangeText={val => this.setState({ password: val })}
-                    value={this.state.password}
-                    style={this.state.message ? { borderColor: "red" } : null}
-                    secureTextEntry={true}
-                    help="Password"
-                    placeholder="Password"
-                    placeholderTextColor="#333"
-                />
-                {
-                    this.state.loading
-                        ? <Button style={styles.button}><ActivityIndicator color="#00FFFF" /></Button>
-                        : <Button style={styles.button} onPress={() => this.login()}>Login</Button>
-                }
-                <Text>Or</Text>
-                <Button style={[styles.button, styles.buttonCyan]} onPress={() => this.props.navigation.navigate('Signup')}>Signup </Button>
-            </>
-        )
-    }
 
-    render() {
-        return (
-            <ScrollView contentContainerStyle={styles.container}>
-                <View style={styles.wrapper}>
-                    <View>
-                        <Text style={styles.title} h4>FoxTrot</Text>
-                        <Text style={styles.title} h6 muted>secure communications</Text>
-                    </View>
-                    {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
-
-                    {this.state.gloablLoading
-                        ? <ActivityIndicator color="#00FFFF" size="large" />
-                        : <this.RenderForm />
-                    }
+    return (
+        <ScrollView contentContainerStyle={styles.container}>
+            <View style={styles.wrapper}>
+                <View>
+                    <Text style={styles.title} h4>FoxTrot</Text>
+                    <Text style={styles.title} h6 muted>secure communications</Text>
                 </View>
-            </ScrollView>
-        );
-    }
+                {errorMsg ? <Text style={styles.errorMsg}>{errorMsg}</Text> : null}
+
+                {gloablLoading
+                    ? <ActivityIndicator color="#00FFFF" size="large" />
+                    : <>
+                        <Input onChangeText={val => setPhone_number(val)}
+                            value={phone_number}
+                            style={errorMsg ? { borderColor: "red" } : null}
+                            help="Phone number"
+                            placeholder="Phone no."
+                            placeholderTextColor="#333"
+                        />
+                        <Input onChangeText={val => setPassword(val)}
+                            value={password}
+                            style={errorMsg ? { borderColor: "red" } : null}
+                            secureTextEntry={true}
+                            help="Password"
+                            placeholder="Password"
+                            placeholderTextColor="#333"
+                        />
+                        {
+                            loading
+                                ? <Button style={styles.button}><ActivityIndicator color="#00FFFF" /></Button>
+                                : <Button style={styles.button} onPress={() => login_better()}>Login</Button>
+                        }
+                        <Text>Or</Text>
+                        <Button style={[styles.button, styles.buttonCyan]} onPress={() => props.navigation.navigate('Signup')}>Signup </Button>
+                    </>
+                }
+            </View>
+        </ScrollView>
+    )
 }
 
