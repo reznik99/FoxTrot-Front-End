@@ -32,6 +32,10 @@ export function logIn(phone_no, password) {
             // Save data in phone storage
             AsyncStorage.setItem('user', phone_no)
             AsyncStorage.setItem('JWT', res.data.token)
+            dispatch({
+                type: "ERROR_MSG",
+                payload: "",
+            })
             return true
         }
         catch (err) {
@@ -58,13 +62,13 @@ export function signUp(phone_no, password, re_password) {
                 type: "ERROR_MSG",
                 payload: "Textfields cannot be blank!",
             })
-            return
+            return false
         } else if (password !== re_password) {
             dispatch({
                 type: "ERROR_MSG",
                 payload: "Passwords do not match!",
             })
-            return
+            return false
         }
         try {
             dispatch({
@@ -77,6 +81,10 @@ export function signUp(phone_no, password, re_password) {
             })
             // Save data in phone storage
             AsyncStorage.setItem('user', phone_no)
+            dispatch({
+                type: "ERROR_MSG",
+                payload: "",
+            })
             return true
         }
         catch (err) {

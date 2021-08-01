@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { View, ScrollView, RefreshControl, ActivityIndicator, Text } from 'react-native'
 import { Divider, FAB } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
@@ -25,18 +25,15 @@ export default function Home(props) {
             await dispatch(generateAndSyncKeys())
         }
 
+        loadAllMessages()
+    }, [])
+
+    const loadAllMessages = useCallback(async () => {
         setLoadingMsg("Loading messages...")
         await dispatch(loadContacts())
         await dispatch(loadMessages())
         setLoadingMsg('')
     }, [])
-
-    reload = async () => {
-        setLoadingMsg("Loading messages...")
-        await dispatch(loadContacts())
-        await dispatch(loadMessages())
-        setLoadingMsg('')
-    }
 
 
     return (
@@ -48,7 +45,7 @@ export default function Home(props) {
                         <ActivityIndicator color="#00FFFF" size="large" />
                     </View>
                     : <>
-                        <ScrollView refreshControl={<RefreshControl refreshing={state.loading} onRefresh={reload} />}>
+                        <ScrollView refreshControl={<RefreshControl refreshing={state.loading} onRefresh={loadAllMessages} />}>
                             {
                                 state.conversations?.length > 0
                                     ? state.conversations.map((convo, index) =>
@@ -57,7 +54,9 @@ export default function Home(props) {
                                         <Divider />
                                     </View>)
                                     )
-                                    : <Text>No Conversations.</Text>
+                                    : <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                                        <Text>No Conversations.</Text>
+                                    </View>
                             }
                         </ScrollView>
                         <FAB

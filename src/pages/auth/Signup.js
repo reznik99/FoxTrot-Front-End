@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, ActivityIndicator } from 'react-native';
 import { Button, Input, Text } from 'galio-framework';
 import { useSelector, useDispatch } from 'react-redux';
@@ -7,7 +7,7 @@ import styles from './style'
 import { signUp } from '../../store/actions/auth'
 
 
-export default function Signup() {
+export default function Signup(props) {
 
     const { errorMsg, loading, phone_no } = useSelector(state => state.userReducer)
     const dispatch = useDispatch()
@@ -17,11 +17,12 @@ export default function Signup() {
     const [rePassword, setRePassword] = useState('')
 
 
-    showError = (msg) => {
-        this.setState({
-            message: msg, loading: false
-        });
-    }
+    const signup = useCallback(async () => {
+        let res = await dispatch(signUp(phone_number, password, rePassword))
+        if (res)
+            return props.navigation.navigate('Login')
+    }, [phone_number, password, rePassword]);
+
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -53,7 +54,7 @@ export default function Signup() {
                 />
                 {loading
                     ? <Button style={[styles.button, styles.buttonCyan]}><ActivityIndicator color="#00FFFF" /></Button>
-                    : <Button style={[styles.button, styles.buttonCyan]} onPress={() => dispatch(signUp(phone_number, password, rePassword))}>Signup</Button>
+                    : <Button style={[styles.button, styles.buttonCyan]} onPress={signup}>Signup</Button>
                 }
             </View>
         </ScrollView>

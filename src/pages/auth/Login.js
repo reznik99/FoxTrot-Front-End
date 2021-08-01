@@ -4,7 +4,8 @@ import { Button, Input, Text } from 'galio-framework';
 import { useSelector, useDispatch } from 'react-redux';
 
 import styles from './style'
-import { logIn, validateToken, syncFromStorage } from '../../store/actions/user';
+import { validateToken, syncFromStorage } from '../../store/actions/user'
+import { logIn } from '../../store/actions/auth'
 
 export default function Login(props) {
 
