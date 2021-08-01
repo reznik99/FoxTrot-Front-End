@@ -13,13 +13,17 @@ export function generateAndSyncKeys() {
             })
 
             let state = getState().userReducer
-
             // Generate Keypair
             const keys = await RSA.generateKeys(4096)
             // Store on device 
             await userData.writeToStorage('rsa-user-keys', JSON.stringify(keys))
             // Upload public key
             const response = await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.publicKey }, axiosBearerConfig(state.token))
+            // Store keypair in memory
+            dispatch({
+                type: "KEY_GEN",
+                payload: keys,
+            })
 
         } catch (err) {
             console.error(err)
