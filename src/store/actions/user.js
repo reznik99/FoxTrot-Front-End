@@ -7,10 +7,7 @@ import { API_URL } from '../../global/variables'
 export function generateAndSyncKeys() {
     return async (dispatch, getState) => {
         try {
-            dispatch({
-                type: "SET_LOADING",
-                payload: true,
-            })
+            dispatch({ type: "SET_LOADING", payload: true })
 
             let state = getState().userReducer
             // Generate Keypair
@@ -20,18 +17,12 @@ export function generateAndSyncKeys() {
             // Upload public key
             const response = await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.publicKey }, axiosBearerConfig(state.token))
             // Store keypair in memory
-            dispatch({
-                type: "KEY_GEN",
-                payload: keys,
-            })
+            dispatch({ type: "KEY_GEN", payload: keys })
 
         } catch (err) {
             console.error(err)
         } finally {
-            dispatch({
-                type: "SET_LOADING",
-                payload: false,
-            })
+            dispatch({ type: "SET_LOADING", payload: false })
         }
     }
 }
@@ -39,10 +30,7 @@ export function generateAndSyncKeys() {
 export function loadMessages() {
     return async (dispatch, getState) => {
         try {
-            dispatch({
-                type: "SET_LOADING",
-                payload: true,
-            })
+            dispatch({ type: "SET_LOADING", payload: true })
 
             let state = getState().userReducer
             // Load user conversations
@@ -77,18 +65,12 @@ export function loadMessages() {
                 return c1.messages[c1.messages.length - 1].sent_at < c2.messages[c2.messages.length - 1].sent_at ? 1 : -1
             })
 
-            dispatch({
-                type: "LOAD_CONVERSATIONS",
-                payload: convos,
-            })
+            dispatch({ type: "LOAD_CONVERSATIONS", payload: convos })
 
         } catch (err) {
             console.error(`Error loading messages: ${err}`)
         } finally {
-            dispatch({
-                type: "SET_LOADING",
-                payload: false,
-            })
+            dispatch({ type: "SET_LOADING", payload: false })
         }
     }
 }
@@ -96,10 +78,7 @@ export function loadMessages() {
 export function loadContacts() {
     return async (dispatch, getState) => {
         try {
-            dispatch({
-                type: "SET_LOADING",
-                payload: true,
-            })
+            dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
             // Load contacts
             const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
@@ -109,18 +88,12 @@ export function loadContacts() {
                 contacts.set(contact.nickname || contact.phone_no, { ...contact, pic: `https://robohash.org/${contact.phone_no}` })
             });
 
-            dispatch({
-                type: "LOAD_CONTACTS",
-                payload: contacts,
-            })
+            dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 
         } catch (err) {
             console.error(`Error loading contacts: ${err}`)
         } finally {
-            dispatch({
-                type: "SET_LOADING",
-                payload: false,
-            })
+            dispatch({ type: "SET_LOADING", payload: false })
         }
     }
 }
@@ -128,32 +101,21 @@ export function loadContacts() {
 export function validateToken() {
     return async (dispatch, getState) => {
         try {
-            dispatch({
-                type: "SET_LOADING",
-                payload: true,
-            })
+            dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
             if (!state.token)
                 return false
 
             const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(state.token))
-            dispatch({
-                type: "TOKEN_VALID",
-                payload: res.data?.valid,
-            })
+
+            dispatch({ type: "TOKEN_VALID", payload: res.data?.valid })
             return res.data?.valid
         } catch (err) {
             console.error(`Error validating JWT: ${err}`)
-            dispatch({
-                type: "TOKEN_VALID",
-                payload: false,
-            })
+            dispatch({ type: "TOKEN_VALID", payload: false })
             return false
         } finally {
-            dispatch({
-                type: "SET_LOADING",
-                payload: false,
-            })
+            dispatch({ type: "SET_LOADING", payload: false })
         }
     }
 }
@@ -161,10 +123,7 @@ export function validateToken() {
 export function syncFromStorage() {
     return async (dispatch) => {
         try {
-            dispatch({
-                type: "SET_LOADING",
-                payload: true,
-            })
+            dispatch({ type: "SET_LOADING", payload: true })
 
             console.log('Reading keys from local storage into store')
             const keys = await AsyncStorage.getItem('rsa-user-keys')
@@ -189,10 +148,7 @@ export function syncFromStorage() {
             console.error(`Error syncing from storage: ${err}`)
             return false
         } finally {
-            dispatch({
-                type: "SET_LOADING",
-                payload: false,
-            })
+            dispatch({ type: "SET_LOADING", payload: false })
         }
     }
 }
