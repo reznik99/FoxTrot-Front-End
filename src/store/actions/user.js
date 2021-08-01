@@ -4,54 +4,6 @@ import { RSA } from 'react-native-rsa-native'
 
 import { API_URL } from '../../global/variables'
 
-export function logIn(phone_no, password) {
-    return async (dispatch) => {
-        if (phone_no === '' || password === '') {
-            dispatch({
-                type: "ERROR_MSG",
-                payload: "Textfields cannot be blank!",
-            })
-            return;
-        }
-        try {
-            dispatch({
-                type: "SET_LOADING",
-                payload: true,
-            })
-            const res = await axios.post(`${API_URL}/login`, {
-                phone_no: phone_no,
-                password: password
-            })
-            // Save data in redux store
-            dispatch({
-                type: "LOGGED_IN",
-                payload: {
-                    token: res.data.token,
-                    phone_no: phone_no
-                },
-            })
-            // Save data in phone storage
-            AsyncStorage.setItem('user', phone_no)
-            AsyncStorage.setItem('JWT', res.data.token)
-            return true
-        }
-        catch (err) {
-            console.error(`Error logging in: ${err}`)
-            dispatch({
-                type: "ERROR_MSG",
-                payload: err.response?.data,
-            })
-            return false
-        }
-        finally {
-            dispatch({
-                type: "SET_LOADING",
-                payload: false,
-            })
-        }
-    }
-}
-
 export function generateAndSyncKeys() {
     return async (dispatch, getState) => {
         try {
@@ -78,168 +30,169 @@ export function generateAndSyncKeys() {
             })
         }
     }
+}
 
-    export function loadMessages() {
-        return async (dispatch, getState) => {
-            try {
-                dispatch({
-                    type: "SET_LOADING",
-                    payload: true,
-                })
+export function loadMessages() {
+    return async (dispatch, getState) => {
+        try {
+            dispatch({
+                type: "SET_LOADING",
+                payload: true,
+            })
 
-                let state = getState().userReducer
-                // Load user conversations
-                const conversations = new Map()
+            let state = getState().userReducer
+            // Load user conversations
+            const conversations = new Map()
 
-                const response = await axios.get(`${API_URL}/getConversations`, axiosBearerConfig(state.token))
-                response.data = response.data.sort((msg1, msg2) => {
-                    let date1 = new Date(msg1.sent_at);
-                    let date2 = new Date(msg2.sent_at);
-                    return date1 - date2
-                })
+            const response = await axios.get(`${API_URL}/getConversations`, axiosBearerConfig(state.token))
+            response.data = response.data.sort((msg1, msg2) => {
+                let date1 = new Date(msg1.sent_at);
+                let date2 = new Date(msg2.sent_at);
+                return date1 - date2
+            })
 
-                response.data.forEach(message => {
-                    let other = message.sender === state.phone_no
-                        ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` }
-                        : { phone_no: message.sender, id: message.sender_id }
-                    let exists = conversations.has(other.phone_no)
-                    if (!exists) {
-                        conversations.set(other.phone_no, {
-                            parties: [other, { phone_no: state.phone_no }],
-                            messages: []
-                        });
-                    }
-                    conversations.get(other.phone_no).messages.push(message)
-                })
+            response.data.forEach(message => {
+                let other = message.sender === state.phone_no
+                    ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` }
+                    : { phone_no: message.sender, id: message.sender_id }
+                let exists = conversations.has(other.phone_no)
+                if (!exists) {
+                    conversations.set(other.phone_no, {
+                        parties: [other, { phone_no: state.phone_no }],
+                        messages: []
+                    });
+                }
+                conversations.get(other.phone_no).messages.push(message)
+            })
 
-                const convos = [...conversations.values()].sort((c1, c2) => {
-                    if (!c1.messages || c1.messages.length <= 0)
-                        return -1;
-                    if (!c2.messages || c2.messages.length <= 0)
-                        return 1;
-                    return c1.messages[c1.messages.length - 1].sent_at < c2.messages[c2.messages.length - 1].sent_at ? 1 : -1
-                })
+            const convos = [...conversations.values()].sort((c1, c2) => {
+                if (!c1.messages || c1.messages.length <= 0)
+                    return -1;
+                if (!c2.messages || c2.messages.length <= 0)
+                    return 1;
+                return c1.messages[c1.messages.length - 1].sent_at < c2.messages[c2.messages.length - 1].sent_at ? 1 : -1
+            })
 
-                dispatch({
-                    type: "LOAD_CONVERSATIONS",
-                    payload: convos,
-                })
+            dispatch({
+                type: "LOAD_CONVERSATIONS",
+                payload: convos,
+            })
 
-            } catch (err) {
-                console.error(`Error loading messages: ${err}`)
-            } finally {
-                dispatch({
-                    type: "SET_LOADING",
-                    payload: false,
-                })
-            }
+        } catch (err) {
+            console.error(`Error loading messages: ${err}`)
+        } finally {
+            dispatch({
+                type: "SET_LOADING",
+                payload: false,
+            })
         }
     }
+}
 
-    export function loadContacts() {
-        return async (dispatch, getState) => {
-            try {
-                dispatch({
-                    type: "SET_LOADING",
-                    payload: true,
-                })
-                let state = getState().userReducer
-                // Load contacts
-                const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
+export function loadContacts() {
+    return async (dispatch, getState) => {
+        try {
+            dispatch({
+                type: "SET_LOADING",
+                payload: true,
+            })
+            let state = getState().userReducer
+            // Load contacts
+            const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
 
-                const contacts = new Map()
-                response.data.forEach(contact => {
-                    contacts.set(contact.nickname || contact.phone_no, { ...contact, pic: `https://robohash.org/${contact.phone_no}` })
-                });
+            const contacts = new Map()
+            response.data.forEach(contact => {
+                contacts.set(contact.nickname || contact.phone_no, { ...contact, pic: `https://robohash.org/${contact.phone_no}` })
+            });
 
-                dispatch({
-                    type: "LOAD_CONTACTS",
-                    payload: contacts,
-                })
+            dispatch({
+                type: "LOAD_CONTACTS",
+                payload: contacts,
+            })
 
-            } catch (err) {
-                console.error(`Error loading contacts: ${err}`)
-            } finally {
-                dispatch({
-                    type: "SET_LOADING",
-                    payload: false,
-                })
-            }
+        } catch (err) {
+            console.error(`Error loading contacts: ${err}`)
+        } finally {
+            dispatch({
+                type: "SET_LOADING",
+                payload: false,
+            })
         }
     }
+}
 
-    export function validateToken() {
-        return async (dispatch, getState) => {
-            try {
-                dispatch({
-                    type: "SET_LOADING",
-                    payload: true,
-                })
-                let state = getState().userReducer
-                if (!state.token)
-                    return false
-
-                const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(state.token))
-                dispatch({
-                    type: "TOKEN_VALID",
-                    payload: res.data?.valid,
-                })
-                return res.data?.valid
-            } catch (err) {
-                console.error(`Error validating JWT: ${err}`)
-                dispatch({
-                    type: "TOKEN_VALID",
-                    payload: false,
-                })
+export function validateToken() {
+    return async (dispatch, getState) => {
+        try {
+            dispatch({
+                type: "SET_LOADING",
+                payload: true,
+            })
+            let state = getState().userReducer
+            if (!state.token)
                 return false
-            } finally {
-                dispatch({
-                    type: "SET_LOADING",
-                    payload: false,
-                })
-            }
+
+            const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(state.token))
+            dispatch({
+                type: "TOKEN_VALID",
+                payload: res.data?.valid,
+            })
+            return res.data?.valid
+        } catch (err) {
+            console.error(`Error validating JWT: ${err}`)
+            dispatch({
+                type: "TOKEN_VALID",
+                payload: false,
+            })
+            return false
+        } finally {
+            dispatch({
+                type: "SET_LOADING",
+                payload: false,
+            })
         }
     }
+}
 
-    export function syncFromStorage() {
-        return async (dispatch) => {
-            try {
-                dispatch({
-                    type: "SET_LOADING",
-                    payload: true,
-                })
+export function syncFromStorage() {
+    return async (dispatch) => {
+        try {
+            dispatch({
+                type: "SET_LOADING",
+                payload: true,
+            })
 
-                console.log('Reading keys from local storage into store')
-                const keys = await AsyncStorage.getItem('rsa-user-keys')
+            console.log('Reading keys from local storage into store')
+            const keys = await AsyncStorage.getItem('rsa-user-keys')
 
-                console.log('Reading JWT from local storage into store')
-                const JWT = await AsyncStorage.getItem('JWT')
+            console.log('Reading JWT from local storage into store')
+            const JWT = await AsyncStorage.getItem('JWT')
 
-                console.log('Reading userInfo from local storage into store')
-                const phone_no = await AsyncStorage.getItem('user')
+            console.log('Reading userInfo from local storage into store')
+            const phone_no = await AsyncStorage.getItem('user')
 
-                dispatch({
-                    type: "SYNC_FROM_STORAGE",
-                    payload: {
-                        keys: JSON.parse(keys),
-                        token: JWT,
-                        phone_no: phone_no,
-                    },
-                })
+            dispatch({
+                type: "SYNC_FROM_STORAGE",
+                payload: {
+                    keys: JSON.parse(keys),
+                    token: JWT,
+                    phone_no: phone_no,
+                },
+            })
 
-                return true
-            } catch (err) {
-                console.error(`Error syncing from storage: ${err}`)
-                return false
-            } finally {
-                dispatch({
-                    type: "SET_LOADING",
-                    payload: false,
-                })
-            }
+            return true
+        } catch (err) {
+            console.error(`Error syncing from storage: ${err}`)
+            return false
+        } finally {
+            dispatch({
+                type: "SET_LOADING",
+                payload: false,
+            })
         }
     }
+}
 
-    function axiosBearerConfig(token) {
-        return { headers: { "Authorization": `JWT ${token}` } }
-    }
+function axiosBearerConfig(token) {
+    return { headers: { "Authorization": `JWT ${token}` } }
+}

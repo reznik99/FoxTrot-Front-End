@@ -50,7 +50,7 @@ export default function Home(props) {
                     : <>
                         <ScrollView refreshControl={<RefreshControl refreshing={state.loading} onRefresh={reload} />}>
                             {
-                                state.conversations.length > 0
+                                state.conversations?.length > 0
                                     ? state.conversations.map((convo, index) =>
                                     (<View key={index} >
                                         <ConversationPeek data={convo} navigation={props.navigation} />
