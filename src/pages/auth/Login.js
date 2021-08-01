@@ -20,10 +20,10 @@ export default function Login(props) {
             setGloablLoading(true)
 
             // Load data from disk into redux store
-            dispatch(syncFromStorage())
+            await dispatch(syncFromStorage())
 
             // Auto-login if Token still valid
-            let loggedIn = dispatch(validateToken())
+            let loggedIn = await dispatch(validateToken())
             if (loggedIn)
                 return props.navigation.navigate('Home')
 

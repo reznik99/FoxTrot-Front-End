@@ -7,6 +7,10 @@ const initialState = {
 
 function userReducer(state = initialState, action) {
     switch (action.type) {
+        case "LOAD_CONTACTS":
+            return { ...state, contacts: action.payload }
+        case "LOAD_CONVERSATIONS":
+            return { ...state, conversations: action.payload }
         case "SYNC_FROM_STORAGE":
             return { ...state, keys: action.payload.keys, token: action.payload.token, phone_no: action.payload.phone_no, }
         case "TOKEN_VALID":
