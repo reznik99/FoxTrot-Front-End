@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, createRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground, Keyboard } from "react-native";
 import { useSelector, useDispatch } from 'react-redux'
 
@@ -55,7 +55,7 @@ export default function Conversation(props) {
     const state = useSelector(state => state.userReducer)
     const dispatch = useDispatch()
 
-    const scrollView = createRef(null) // this isn't working
+    const scrollView = useRef()
     const [message, setMessage] = useState("")
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
     const [keyboardDidHideListener, setkeyboardDidHideListener] = useState(null)
@@ -70,29 +70,29 @@ export default function Conversation(props) {
             'keyboardDidHide',
             _keyboardDidHide,
         ))
+        scrollView.current?.scrollToEnd({ animated: true })
         return () => {
-            keyboardDidShowListener?.remove();
-            keyboardDidHideListener?.remove();
+            keyboardDidShowListener.remove();
+            keyboardDidHideListener.remove();
         }
     }, [])
 
     const _keyboardDidShow = useCallback(() => {
-        scrollView.scrollToEnd({ animated: true })
+        scrollView.current?.scrollToEnd({ animated: true })
     }, [scrollView])
 
     const _keyboardDidHide = useCallback(() => {
-        scrollView.scrollToEnd({ animated: true })
+        scrollView.current?.scrollToEnd({ animated: true })
     }, [scrollView])
 
-    const handle_send = useCallback(async () => {
+    const handle_send = useCallback(() => {
         if (message.trim() === "") return
-        await dispatch(sendMessage(message, otherUser(data.parties)))
+        // Send message
+        dispatch(sendMessage(message, data.other_user))
+        // UX
         setMessage('')
-    }, [message, data])
-
-    const otherUser = useCallback((parties) => {
-        return parties[0].phone_no === state.phone_no ? parties[1] : parties[0]
-    }, [state]);
+        scrollView.current?.scrollToEnd({ animated: true })
+    }, [message, data, scrollView])
 
     return (
         <ImageBackground source={require('../../res/background.jpg')} style={styles.container}>

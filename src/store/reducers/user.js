@@ -23,11 +23,13 @@ function userReducer(state = initialState, action) {
             return { ...state, errorMsg: action.payload }
         case "SET_LOADING":
             return { ...state, loading: action.payload }
+        case "SET_REFRESHING":
+            return { ...state, refreshing: action.payload }
         case "SEND_MESSAGE":
             const newState = { ...state }
             const message = action.payload
             newState.conversations.forEach(convo => {
-                if (convo.parties[0].phone_no === message.sender || convo.parties[1].phone_no === message.sender) {
+                if (convo.other_user.phone_no === message.reciever) {
                     convo.messages.push(message)
                 }
             });

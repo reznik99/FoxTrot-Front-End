@@ -45,7 +45,7 @@ export default function Home(props) {
                         <ActivityIndicator color="#00FFFF" size="large" />
                     </View>
                     : <>
-                        <ScrollView refreshControl={<RefreshControl refreshing={state.loading} onRefresh={loadAllMessages} />}>
+                        <ScrollView refreshControl={<RefreshControl refreshing={state.refreshing} onRefresh={loadAllMessages} />}>
                             {
                                 state.conversations?.length > 0
                                     ? state.conversations.map((convo, index) =>

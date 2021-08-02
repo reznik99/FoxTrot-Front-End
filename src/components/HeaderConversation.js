@@ -27,11 +27,11 @@ class HeaderConversation extends Component {
                     }
                     <TouchableOpacity style={styles.profileBtn}>
                         <View style={styles.profilePicContainer}>
-                            <Image source={{ uri: this.props.data.parties[0].pic || userData.defaultAvatar }}
+                            <Image source={{ uri: this.props.data.other_user.pic || userData.defaultAvatar }}
                                 style={styles.profilePic}
                                 PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                         </View>
-                        <Text style={styles.topBarText}>{navigation.state.params.data.parties[0].identifier || navigation.state.params.data.parties[0].phone_no}</Text>
+                        <Text style={styles.topBarText}>{navigation.state.params.data.other_user.identifier || navigation.state.params.data.other_user.phone_no}</Text>
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.buttonContainer, { width: '50%' }]}>

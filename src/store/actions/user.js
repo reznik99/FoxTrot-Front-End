@@ -30,7 +30,7 @@ export function generateAndSyncKeys() {
 export function loadMessages() {
     return async (dispatch, getState) => {
         try {
-            dispatch({ type: "SET_LOADING", payload: true })
+            dispatch({ type: "SET_REFRESHING", payload: true })
 
             let state = getState().userReducer
             // Load user conversations
@@ -51,7 +51,7 @@ export function loadMessages() {
                 let exists = conversations.has(other.phone_no)
                 if (!exists) {
                     conversations.set(other.phone_no, {
-                        parties: [other, { phone_no: state.phone_no }],
+                        other_user: other,
                         messages: []
                     });
                 }
@@ -71,7 +71,7 @@ export function loadMessages() {
         } catch (err) {
             console.error(`Error loading messages: ${err}`)
         } finally {
-            dispatch({ type: "SET_LOADING", payload: false })
+            dispatch({ type: "SET_REFRESHING", payload: false })
         }
     }
 }
@@ -79,7 +79,7 @@ export function loadMessages() {
 export function loadContacts() {
     return async (dispatch, getState) => {
         try {
-            dispatch({ type: "SET_LOADING", payload: true })
+            dispatch({ type: "SET_REFRESHING", payload: true })
             let state = getState().userReducer
             // Load contacts
             const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
@@ -94,7 +94,7 @@ export function loadContacts() {
         } catch (err) {
             console.error(`Error loading contacts: ${err}`)
         } finally {
-            dispatch({ type: "SET_LOADING", payload: false })
+            dispatch({ type: "SET_REFRESHING", payload: false })
         }
     }
 }
