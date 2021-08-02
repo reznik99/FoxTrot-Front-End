@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, ScrollView, ActivityIndicator, Keyboard } from 'react-native';
 import { Button, Input, Text } from 'galio-framework';
 import { useSelector, useDispatch } from 'react-redux';
@@ -29,24 +29,20 @@ export default function Login(props) {
                 return props.navigation.navigate('Home')
 
             // Auto-fill phone_no from storage
-            setPhone_no(phone_no)
+            setPhone_number(phone_no)
             console.log("Token expired")
         } finally {
             setGloablLoading(false)
         }
     }, []);
 
-
-    login_better = async () => {
-        if (loading) return;
-
+    const handle_login = useCallback(async () => {
         Keyboard.dismiss()
-
         let loggedIn = await dispatch(logIn(phone_number, password))
         if (loggedIn) {
             props.navigation.navigate('Home')
         }
-    }
+    }, [phone_number, password]);
 
 
     return (
@@ -79,7 +75,7 @@ export default function Login(props) {
                         {
                             loading
                                 ? <Button style={styles.button}><ActivityIndicator color="#00FFFF" /></Button>
-                                : <Button style={styles.button} onPress={() => login_better()}>Login</Button>
+                                : <Button style={styles.button} onPress={handle_login}>Login</Button>
                         }
                         <Text>Or</Text>
                         <Button style={[styles.button, styles.buttonCyan]} onPress={() => props.navigation.navigate('Signup')}>Signup </Button>

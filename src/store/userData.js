@@ -65,7 +65,7 @@ const userData = {
         }
     },
     readMessage: (contact) => {
-        userData.getConversation(contact).messages.forEach(msg => msg.seen = true)
+        userData.getConversation(contact)?.messages.forEach(msg => msg.seen = true)
         userData.callCallbacks()
     },
     getContacts: () => {

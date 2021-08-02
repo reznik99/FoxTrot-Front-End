@@ -111,7 +111,7 @@ export function validateToken() {
             dispatch({ type: "TOKEN_VALID", payload: res.data?.valid })
             return res.data?.valid
         } catch (err) {
-            console.error(`Error validating JWT: ${err}`)
+            console.log(`Error validating JWT: ${err}`)
             dispatch({ type: "TOKEN_VALID", payload: false })
             return false
         } finally {

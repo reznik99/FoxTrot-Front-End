@@ -13,7 +13,6 @@ export default function Home(props) {
 
     const state = useSelector(state => state.userReducer)
     const dispatch = useDispatch()
-
     const [loadingMsg, setLoadingMsg] = useState('')
 
     useEffect(async () => {
@@ -23,6 +22,7 @@ export default function Home(props) {
         if (!state.keys) {
             setLoadingMsg("Generating cryptographic keys...")
             await dispatch(generateAndSyncKeys())
+            setLoadingMsg('')
         }
 
         loadAllMessages()
