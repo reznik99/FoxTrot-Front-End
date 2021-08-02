@@ -43,6 +43,7 @@ export function loadMessages() {
                 return date1 - date2
             })
 
+            // TODO: Fix this mess up
             response.data.forEach(message => {
                 let other = message.sender === state.phone_no
                     ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` }
@@ -92,6 +93,32 @@ export function loadContacts() {
 
         } catch (err) {
             console.error(`Error loading contacts: ${err}`)
+        } finally {
+            dispatch({ type: "SET_LOADING", payload: false })
+        }
+    }
+}
+
+export function sendMessage(message, to_user) {
+    return async (dispatch, getState) => {
+        try {
+            dispatch({ type: "SET_LOADING", payload: true })
+            let state = getState().userReducer
+
+            let msg = {
+                message: message,
+                sender: state.phone_no,
+                reciever: to_user.phone_no,
+                sent_at: Date.now(),
+                seen: false
+            }
+
+            dispatch({ type: "SEND_MESSAGE", payload: msg })
+
+            await axios.post(`${API_URL}/sendMessage`, { message: message, contact_id: to_user.id }, axiosBearerConfig(state.token))
+
+        } catch (err) {
+            console.error(`Error sending message: ${err}`)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }

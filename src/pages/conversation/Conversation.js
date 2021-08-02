@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, createRef } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground, Keyboard } from "react-native";
+import { useSelector, useDispatch } from 'react-redux'
 
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
+import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons"
+import { sendMessage } from '../../store/actions/user'
 
-import userData from './../../store/userData';
 
 const styles = StyleSheet.create({
     container: {
@@ -51,9 +52,11 @@ export default function Conversation(props) {
     const { navigation } = props;
     const data = navigation.state.params.data;
 
+    const state = useSelector(state => state.userReducer)
+    const dispatch = useDispatch()
+
+    const scrollView = createRef(null) // this isn't working
     const [message, setMessage] = useState("")
-    const [textInput, settextInput] = useState(null)
-    const [scrollView, setscrollView] = useState(null)
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
     const [keyboardDidHideListener, setkeyboardDidHideListener] = useState(null)
 
@@ -68,38 +71,36 @@ export default function Conversation(props) {
             _keyboardDidHide,
         ))
         return () => {
-            keyboardDidShowListener.remove();
-            keyboardDidHideListener.remove();
+            keyboardDidShowListener?.remove();
+            keyboardDidHideListener?.remove();
         }
     }, [])
 
-    _keyboardDidShow = () => {
+    const _keyboardDidShow = useCallback(() => {
         scrollView.scrollToEnd({ animated: true })
-    }
+    }, [scrollView])
 
-    _keyboardDidHide = () => {
+    const _keyboardDidHide = useCallback(() => {
         scrollView.scrollToEnd({ animated: true })
-    }
+    }, [scrollView])
 
-    sendMessage = async (data) => {
+    const handle_send = useCallback(async () => {
         if (message.trim() === "") return
-        // Send Message
-        await userData.sendMessage(data.parties[0], message)
-        // Clear input
-        textInput.clear()
+        await dispatch(sendMessage(message, otherUser(data.parties)))
         setMessage('')
-    }
+    }, [message, data])
+
+    const otherUser = useCallback((parties) => {
+        return parties[0].phone_no === state.phone_no ? parties[1] : parties[0]
+    }, [state]);
 
     return (
         <ImageBackground source={require('../../res/background.jpg')} style={styles.container}>
 
-            <ScrollView style={styles.messageContainer} ref={ref => setscrollView(ref)}
-                onContentSizeChange={(contentWidth, contentHeight) => {
-                    scrollView.scrollToEnd({ animated: true });
-                }}>
+            <ScrollView style={styles.messageContainer} ref={scrollView} >
                 {
                     data && data.messages ? data.messages.map((packet, index) => {
-                        return packet.sender === userData.self.phone_no
+                        return packet.sender === state.phone_no
                             ? <Text key={index} style={[styles.message, styles.sent]}>{packet.message}</Text>
                             : <Text key={index} style={[styles.message, styles.received]}>{packet.message}</Text>
                     }) : <Text style={[styles.message, styles.system]} >No messages</Text>
@@ -111,12 +112,12 @@ export default function Conversation(props) {
                     <FontAwesomeIcon icon={faEllipsisH} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
                 <TextInput placeholder="Type a message"
-                    ref={input => { settextInput(input) }}
+                    value={message}
                     onChangeText={val => setMessage(val)}
                     underlineColorAndroid='transparent'
                     style={styles.input}
                 />
-                <TouchableOpacity style={styles.button} onPress={() => sendMessage(data)}>
+                <TouchableOpacity style={styles.button} onPress={handle_send}>
                     <FontAwesomeIcon icon={faPaperPlane} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
             </View>

@@ -23,6 +23,15 @@ function userReducer(state = initialState, action) {
             return { ...state, errorMsg: action.payload }
         case "SET_LOADING":
             return { ...state, loading: action.payload }
+        case "SEND_MESSAGE":
+            const newState = { ...state }
+            const message = action.payload
+            newState.conversations.forEach(convo => {
+                if (convo.parties[0].phone_no === message.sender || convo.parties[1].phone_no === message.sender) {
+                    convo.messages.push(message)
+                }
+            });
+            return newState
         default:
             return state
     }

@@ -7,7 +7,7 @@ import { useSelector, useDispatch } from 'react-redux'
 
 import ConversationPeek from '../../components/ConversationPeek'
 import globalStyle from "../../global/globalStyle"
-import { loadMessages, loadContacts, generateAndSyncKeys } from '../../store/actions/user';
+import { loadMessages, loadContacts, generateAndSyncKeys } from '../../store/actions/user'
 
 export default function Home(props) {
 
