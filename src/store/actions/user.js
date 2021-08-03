@@ -84,10 +84,7 @@ export function loadContacts() {
             // Load contacts
             const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
 
-            const contacts = new Map()
-            response.data.forEach(contact => {
-                contacts.set(contact.nickname || contact.phone_no, { ...contact, pic: `https://robohash.org/${contact.phone_no}` })
-            });
+            const contacts = response.data.map(contact => ({ ...contact, pic: `https://robohash.org/${contact.phone_no}` }));
 
             dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 

@@ -27,7 +27,7 @@ export default function NewConversation(props) {
 
         // Load data
         const newResults = [];
-        [...contacts.values()].forEach((value, key, map) => {
+        contacts.forEach((value, key, map) => {
             if (value.identifier?.toLowerCase().startsWith(newPrefix)
                 || value.phone_no?.toLowerCase().startsWith(newPrefix)) {
                 newResults.push(value);
@@ -62,10 +62,11 @@ export default function NewConversation(props) {
                     loading
                         ? <ActivityIndicator size="large" color='#fc501c' />
                         : results && results.length > 0
-                            ? results.map((res, index) => {
-                                return <ContactPeek data={res} key={index} navigation={navigation}
+                            ? results.map((contact, index) => {
+                                return <ContactPeek data={contact} key={index} navigation={navigation}
                                     onSelect={() => {
-                                        let conversation = conversations.find(convo => convo.other_user.phone_no === res.phone_no)
+                                        let conversation = conversations.find(convo => convo.other_user.phone_no === contact.phone_no)
+                                        if (!conversation) conversation = { other_user: contact, messages: [] }
                                         navigation.navigate('Conversation', { data: conversation })
                                     }} />
                             })
