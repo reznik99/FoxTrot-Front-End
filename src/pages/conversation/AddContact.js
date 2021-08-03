@@ -1,84 +1,69 @@
-import React, { Component } from "react"
+import React, { useState, useCallback } from "react"
 import { Text, View, ActivityIndicator, ScrollView } from "react-native"
 import { Divider, Searchbar } from 'react-native-paper'
-
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faSearch } from '@fortawesome/free-solid-svg-icons'
+import { useSelector, useDispatch } from 'react-redux'
+
+import { searchUsers, addContact } from '../../store/actions/user'
 import ContactPeek from './../../components/ContactPeek'
-import userData from './../../store/userData'
 import globalStyle from "../../global/globalStyle"
 
 
-class AddContact extends Component {
-    constructor(props) {
-        super(props);
+export default function AddContact(props) {
 
-        this.state = {
-            prefix: '',
-            loading: true,
-            results: [],
-        }
-    }
+    const { navigation } = props
+    const [results, setresults] = useState("")
+    const loading = useSelector(state => state.userReducer.loading)
+    const dispatch = useDispatch()
 
-    componentDidMount() {
-        // Should load all contacts from storage
-        this.setState({ loading: false })
-    }
-
-    searchUsers = async (newPrefix) => {
-        // UX
-        this.setState({ loading: true, prefix: newPrefix });
+    const handleInput = useCallback(async (newPrefix) => {
         if (newPrefix.length <= 2) return
 
         // Load data
-        const newResults = await userData.searchUsers(newPrefix)
+        const users = await dispatch(searchUsers(newPrefix))
 
         // Sort results
-        this.setState({ results: newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1), loading: false })
-    }
+        setresults(users.sort((u1, u2) => (u1.identifier > u2.identifier) ? 1 : -1))
+    })
 
-    render() {
-        const { navigation } = this.props;
-        return (
-            <View style={globalStyle.wrapper}>
-                {/* Search */}
-                <View style={globalStyle.searchContainer}>
-                    <Searchbar
-                        icon={({ size, color }) => (
-                            <FontAwesomeIcon size={size} icon={faSearch} style={{ color: color }} />
-                        )}
-                        placeholder="Find new contacts"
-                        value={this.state.prefix}
-                        onChangeText={val => this.searchUsers(val)}
-                    />
-                </View>
 
-                {/* Contact List */}
-                <ScrollView>
-                    { /* Contacts */
-                        this.state.loading
-                            ? <ActivityIndicator size="large" color='#fc501c' />
-                            : this.state.results && this.state.results.length > 0
-                                ? this.state.results.map((res, index) => {
-                                    return (
-                                        <View key={index}>
-                                            <ContactPeek data={res} navigation={navigation}
-                                                onSelect={async () => {
-                                                    await userData.addContact(res)
-                                                    navigation.navigate('Conversation', { data: userData.createConversation(res) })
-                                                }}
-                                            />
-                                            <Divider />
-                                        </View>
-                                    )
-                                })
-                                : <Text style={globalStyle.errorMsg}>No results</Text>
-                    }
-                </ScrollView>
+    return (
+        <View style={globalStyle.wrapper}>
+            {/* Search */}
+            <View style={globalStyle.searchContainer}>
+                <Searchbar
+                    icon={({ size, color }) => (
+                        <FontAwesomeIcon size={size} icon={faSearch} style={{ color: color }} />
+                    )}
+                    placeholder="Find new contacts"
+                    onChangeText={val => handleInput(val)}
+                />
             </View>
-        );
-    }
+
+            {/* Contact List */}
+            <ScrollView>
+                { /* Contacts */
+                    loading
+                        ? <ActivityIndicator size="large" color='#fc501c' />
+                        : results && results.length > 0
+                            ? results.map((user, index) => {
+                                return (
+                                    <View key={index}>
+                                        <ContactPeek data={user} navigation={navigation}
+                                            onSelect={async () => {
+                                                await dispatch(addContact(user))
+                                                navigation.navigate('Conversation', { data: { other_user: user, messages: [] } })
+                                            }}
+                                        />
+                                        <Divider />
+                                    </View>
+                                )
+                            })
+                            : <Text style={globalStyle.errorMsg}>No results</Text>
+                }
+            </ScrollView>
+        </View>
+    )
 
 }
-
-export default AddContact;

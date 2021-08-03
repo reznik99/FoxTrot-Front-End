@@ -1,120 +1,74 @@
-import React, { Component } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { View, ScrollView, RefreshControl, ActivityIndicator, Text } from 'react-native'
 import { Divider, FAB } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
+import { useSelector, useDispatch } from 'react-redux'
 
-import { RSA } from 'react-native-rsa-native'
 import ConversationPeek from '../../components/ConversationPeek'
-import userData from './../../store/userData'
 import globalStyle from "../../global/globalStyle"
+import { loadMessages, loadContacts, generateAndSyncKeys } from '../../store/actions/user'
 
+export default function Home(props) {
 
-export default class Home extends Component {
+    const state = useSelector(state => state.userReducer)
+    const dispatch = useDispatch()
+    const [loadingMsg, setLoadingMsg] = useState('')
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            conversations: [],
-            loading: false,
-            syncing: false,
-            loading_msg: '',
-            active: 1
-        };
-    }
+    useEffect(async () => {
+        if (state.loading) return
 
-    async componentDidMount() {
-        if (this.state.loading) return
-
-        // Load user private keys or generate them (if first time login)
-        this.setState({ loading: true, loading_msg: "Loading cryptographic keys..." })
-        try {
-            // await userData.deleteFromStorage('rsa-user-keys') // to test key generation
-            await userData.readStateFromStorage()
-        } catch (e) {
-            this.setState({ loading_msg: "Generating cryptographic keys..." })
-
-            const keys = await RSA.generateKeys(4096)
-            this.setState({ loading_msg: "Storing cryptographic keys..." })
-
-            await userData.setKeys({ privateKey: keys.private, publicKey: keys.public })
-
-        } finally {
-            this.setState({ loading_msg: "Loading messages..." })
-            userData.subscribe(this.reloadConvos)
-            await userData.preformSync()
-            this.setState({ loading: false, loading_msg: "" })
+        // If keys not loaded, generate them (first time login)
+        if (!state.keys) {
+            setLoadingMsg("Generating cryptographic keys...")
+            await dispatch(generateAndSyncKeys())
+            setLoadingMsg('')
         }
-    }
 
-    componentWillUnmount() {
-        userData.unsubscribe(this.reloadConvos)
-    }
+        loadAllMessages()
+    }, [])
+
+    const loadAllMessages = useCallback(async () => {
+        setLoadingMsg("Loading messages...")
+        await dispatch(loadContacts())
+        await dispatch(loadMessages())
+        setLoadingMsg('')
+    }, [])
 
 
-    reloadConvos = () => {
-        const convos = userData.getAllConversations().sort((c1, c2) => {
-            if (!c1.messages || c1.messages.length <= 0)
-                return -1;
-            if (!c2.messages || c2.messages.length <= 0)
-                return 1;
-            return c1.messages[c1.messages.length - 1].sent_at < c2.messages[c2.messages.length - 1].sent_at ? 1 : -1
-        })
-        this.setState({ conversations: convos });
-    }
-
-    reload = async () => {
-        this.setState({ syncing: true })
-        await userData.preformSync()
-        this.setState({ syncing: false })
-    }
-
-    renderLoader = () => {
-        return (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                <Text>{this.state.loading_msg}</Text>
-                <ActivityIndicator color="#00FFFF" size="large" />
-            </View>
-        )
-    }
-
-    renderConversations = () => {
-        return (
-            <>
-                <ScrollView refreshControl={<RefreshControl refreshing={this.state.syncing} onRefresh={this.reload} />}>
-                    {
-                        this.state.conversations.length > 0
-                            ? this.state.conversations.map((convo, index) =>
-                            (<View key={index} >
-                                <ConversationPeek data={convo} navigation={this.props.navigation} />
-                                <Divider />
-                            </View>)
-                            )
-                            : <Text>No Conversations.</Text>
-                    }
-                </ScrollView>
-                <FAB
-                    style={[globalStyle.fab, { backgroundColor: "red" }]} color="#fff"
-                    onPress={() => this.props.navigation.navigate('NewConversation')}
-                    icon={({ size, color }) => (
-                        <FontAwesomeIcon size={size} icon={faEnvelope} style={{ color: color }} />
-                    )}
-                />
-
-            </>
-        )
-    }
-
-    render() {
-        return (
-            <View style={globalStyle.wrapper}>
-                {
-                    this.state.loading == true
-                        ? this.renderLoader()
-                        : this.renderConversations()
-                }
-            </View>
-        );
-    }
+    return (
+        <View style={globalStyle.wrapper}>
+            {
+                state.loading == true
+                    ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                        <Text>{loadingMsg}</Text>
+                        <ActivityIndicator color="#00FFFF" size="large" />
+                    </View>
+                    : <>
+                        <ScrollView refreshControl={<RefreshControl refreshing={state.refreshing} onRefresh={loadAllMessages} />}>
+                            {
+                                state.conversations?.length > 0
+                                    ? state.conversations.map((convo, index) =>
+                                    (<View key={index} >
+                                        <ConversationPeek data={convo} navigation={props.navigation} />
+                                        <Divider />
+                                    </View>)
+                                    )
+                                    : <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                                        <Text>No Conversations.</Text>
+                                    </View>
+                            }
+                        </ScrollView>
+                        <FAB
+                            style={[globalStyle.fab, { backgroundColor: "red" }]} color="#fff"
+                            onPress={() => props.navigation.navigate('NewConversation')}
+                            icon={({ size, color }) => (
+                                <FontAwesomeIcon size={size} icon={faEnvelope} style={{ color: color }} />
+                            )}
+                        />
+                    </>
+            }
+        </View>
+    )
 }
 

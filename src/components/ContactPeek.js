@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native'
 import { Avatar } from 'react-native-paper'
 
-import userData from './../store/userData'
+import { humanTime } from '../global/helper'
 import globalStyle from "../global/globalStyle"
 
 const styles = StyleSheet.create({
@@ -29,14 +29,14 @@ export default class ContactPeek extends Component {
             <TouchableOpacity style={styles.profilePeek}
                 onPress={onSelect}>
                 <Avatar.Image size={55} style={styles.profilePicContainer}
-                    source={{ uri: data.pic || userData.defaultAvatar }}
+                    source={{ uri: data.pic }}
                     PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
 
                 <View style={{ flex: 1 }}>
                     <Text style={globalStyle.textInfo}>{data.identifier || data.phone_no}</Text>
                 </View>
                 <View>
-                    <Text style={globalStyle.textInfo}>{data.lastActive ? userData.humanTime(data.lastActive) : null}</Text>
+                    <Text style={globalStyle.textInfo}>{data.lastActive ? humanTime(data.lastActive) : null}</Text>
                 </View>
             </TouchableOpacity>
         );

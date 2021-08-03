@@ -1,90 +1,63 @@
-import React, { Component } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, ActivityIndicator } from 'react-native';
 import { Button, Input, Text } from 'galio-framework';
-import axios from 'axios'
+import { useSelector, useDispatch } from 'react-redux';
+
 import styles from './style'
+import { signUp } from '../../store/actions/auth'
 
-export default class Login extends Component {
-    constructor(props) {
-        super(props);
 
-        this.state = {
-            phone_no: '',
-            password: '',
-            re_password: '',
-            loading: false,
-            message: ''
-        }
-    }
+export default function Signup(props) {
 
-    showError = (msg) => {
-        this.setState({
-            message: msg, loading: false
-        });
-    }
+    const { errorMsg, loading, phone_no } = useSelector(state => state.userReducer)
+    const dispatch = useDispatch()
 
-    signup = async () => {
-        if (this.state.loading) return;
+    const [phone_number, setPhone_number] = useState('')
+    const [password, setPassword] = useState('')
+    const [rePassword, setRePassword] = useState('')
 
-        const { phone_no, password, re_password } = this.state;
-        this.setState({ loading: true });
 
-        if (phone_no === '' || password === '' || re_password === '') {
-            this.showError('Textfields cannot be blank!');
-        } else if (password !== re_password) {
-            this.showError('Passwords do not match!');
-        } else {
-            // Send data to server
-            axios.post('http://francescogorini.com:1234/signup', {
-                phone_no: phone_no,
-                password: password
-            }).then((response) => {
-                // No error code thrown. Signup successful
-                return this.props.navigation.navigate('Login');
-            }).catch(err => {
-                this.showError(err.response?.data);
-            }).finally(() => {
-                this.setState({ loading: false });
-            })
-        }
-    }
+    const signup = useCallback(async () => {
+        let res = await dispatch(signUp(phone_number, password, rePassword))
+        if (res)
+            return props.navigation.navigate('Login')
+    }, [phone_number, password, rePassword]);
 
-    render() {
-        return (
-            <ScrollView contentContainerStyle={styles.container}>
-                <View style={styles.wrapper}>
-                    <View style={styles.logoView}>
-                        <Text style={styles.title} h4>FoxTrot</Text>
-                        <Text style={styles.title} h6 muted>secure communications</Text>
-                    </View>
-                    {this.state.message ? <Text style={styles.errorMsg}>{this.state.message}</Text> : null}
-                    <Input onChangeText={val => this.setState({ phone_no: val })}
-                        style={this.state.message && this.state.phone_no === '' ? { borderColor: "red" } : null}
-                        help="Phone number"
-                        placeholder="+64222222222"
-                        placeholderTextColor="#333"
-                    />
-                    <Input onChangeText={val => this.setState({ password: val })}
-                        style={this.state.message && this.state.password === '' ? { borderColor: "red" } : null}
-                        secureTextEntry={true}
-                        help="Password"
-                        placeholder="********"
-                        placeholderTextColor="#333"
-                    />
-                    <Input onChangeText={val => this.setState({ re_password: val })}
-                        style={this.state.message && (this.state.re_password === '' || this.state.re_password != this.state.password) ? { borderColor: "red" } : null}
-                        secureTextEntry={true}
-                        help="Repeat Password"
-                        placeholder="********"
-                        placeholderTextColor="#333"
-                    />
-                    {this.state.loading
-                        ? <Button style={[styles.button, styles.buttonCyan]}><ActivityIndicator color="#00FFFF" /></Button>
-                        : <Button style={[styles.button, styles.buttonCyan]} onPress={() => this.signup()}>Signup</Button>
-                    }
+
+    return (
+        <ScrollView contentContainerStyle={styles.container}>
+            <View style={styles.wrapper}>
+                <View style={styles.logoView}>
+                    <Text style={styles.title} h4>FoxTrot</Text>
+                    <Text style={styles.title} h6 muted>secure communications</Text>
                 </View>
-            </ScrollView>
-        );
-    }
+                {errorMsg ? <Text style={styles.errorMsg}>{errorMsg}</Text> : null}
+                <Input onChangeText={val => setPhone_number(val)}
+                    style={errorMsg && phone_number === '' ? { borderColor: "red" } : null}
+                    help="Phone number"
+                    placeholder="+64222222222"
+                    placeholderTextColor="#333"
+                />
+                <Input onChangeText={val => setPassword(val)}
+                    style={errorMsg && password === '' ? { borderColor: "red" } : null}
+                    secureTextEntry={true}
+                    help="Password"
+                    placeholder="********"
+                    placeholderTextColor="#333"
+                />
+                <Input onChangeText={val => setRePassword(val)}
+                    style={errorMsg && (rePassword === '' || rePassword != password) ? { borderColor: "red" } : null}
+                    secureTextEntry={true}
+                    help="Repeat Password"
+                    placeholder="********"
+                    placeholderTextColor="#333"
+                />
+                {loading
+                    ? <Button style={[styles.button, styles.buttonCyan]}><ActivityIndicator color="#00FFFF" /></Button>
+                    : <Button style={[styles.button, styles.buttonCyan]} onPress={signup}>Signup</Button>
+                }
+            </View>
+        </ScrollView>
+    );
 }
 
