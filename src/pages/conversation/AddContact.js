@@ -7,7 +7,6 @@ import { useSelector, useDispatch } from 'react-redux'
 
 import { searchUsers, addContact } from '../../store/actions/user'
 import ContactPeek from './../../components/ContactPeek'
-import userData from './../../store/userData'
 import globalStyle from "../../global/globalStyle"
 
 

@@ -65,6 +65,7 @@ export default function NewConversation(props) {
                             ? results.map((contact, index) => {
                                 return <ContactPeek data={contact} key={index} navigation={navigation}
                                     onSelect={() => {
+                                        // Pass existing conversation data to new page, or create empty conversation if a new chat
                                         let conversation = conversations.find(convo => convo.other_user.phone_no === contact.phone_no)
                                         if (!conversation) conversation = { other_user: contact, messages: [] }
                                         navigation.navigate('Conversation', { data: conversation })

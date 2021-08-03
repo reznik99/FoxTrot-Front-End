@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
 
-import userData from './../store/userData'
+import { humanTime } from '../global/helper'
 import globalStyle from "../global/globalStyle"
 
 const styles = StyleSheet.create({
@@ -49,7 +49,7 @@ export default function ConversationPeek(props) {
                 <Text style={[globalStyle.textInfo, boldIfUnseen]}>{lastMessage.message}</Text>
             </View>
             <View style={{ alignSelf: "center" }}>
-                <Text style={[globalStyle.textInfo, boldIfUnseen]}>{userData.humanTime(lastMessage.sent_at)}  {isNew && <FontAwesomeIcon icon={faCircle} size={10} style={{ color: '#34eb46' }} ></FontAwesomeIcon>}</Text>
+                <Text style={[globalStyle.textInfo, boldIfUnseen]}>{humanTime(lastMessage.sent_at)}  {isNew && <FontAwesomeIcon icon={faCircle} size={10} style={{ color: '#34eb46' }} ></FontAwesomeIcon>}</Text>
             </View>
 
 

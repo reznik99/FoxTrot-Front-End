@@ -1,11 +1,10 @@
-import React, { Component } from 'react';
-import { Text, View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import React, { Component } from 'react'
+import { Text, View, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faVideo, faPhoneAlt, faBars, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
-import { Image } from "react-native-elements";
+import { Image } from "react-native-elements"
 
-import styles from "./HeaderStyles";
-import userData from './../store/userData';
+import styles from "./HeaderStyles"
 
 class HeaderConversation extends Component {
     constructor(props) {
@@ -27,7 +26,7 @@ class HeaderConversation extends Component {
                     }
                     <TouchableOpacity style={styles.profileBtn}>
                         <View style={styles.profilePicContainer}>
-                            <Image source={{ uri: this.props.data.other_user.pic || userData.defaultAvatar }}
+                            <Image source={{ uri: this.props.data.other_user.pic }}
                                 style={styles.profilePic}
                                 PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                         </View>
