@@ -2,11 +2,16 @@
 const initialState = {
     tokenValid: false,
     token: '',
+    keys: {},
     phone_no: '',
+    contacts: [],
+    conversations: []
 }
 
 function userReducer(state = initialState, action) {
     switch (action.type) {
+        case "NEW_CONTACT":
+            return { ...state, contacts: [...state.contacts, action.payload] }
         case "LOAD_CONTACTS":
             return { ...state, contacts: action.payload }
         case "LOAD_CONVERSATIONS":

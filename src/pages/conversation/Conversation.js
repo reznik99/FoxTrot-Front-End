@@ -70,7 +70,7 @@ export default function Conversation(props) {
             'keyboardDidHide',
             _keyboardDidHide,
         ))
-        scrollView.current?.scrollToEnd({ animated: true })
+        scrollView.current?.scrollToEnd({ animated: false })
         return () => {
             keyboardDidShowListener.remove();
             keyboardDidHideListener.remove();

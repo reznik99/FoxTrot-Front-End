@@ -20,7 +20,7 @@ export function generateAndSyncKeys() {
             dispatch({ type: "KEY_GEN", payload: keys })
 
         } catch (err) {
-            console.error(err)
+            console.log(`Error generating and syncing keys: ${err}`)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }
@@ -95,6 +95,48 @@ export function loadContacts() {
             console.error(`Error loading contacts: ${err}`)
         } finally {
             dispatch({ type: "SET_REFRESHING", payload: false })
+        }
+    }
+}
+
+export function addContact(user) {
+    return async (dispatch, getState) => {
+        try {
+            dispatch({ type: "SET_LOADING", payload: true })
+            let state = getState().userReducer
+            // Load contacts
+            await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
+
+            dispatch({ type: "NEW_CONTACT", payload: user })
+
+        } catch (err) {
+            console.error(`Error adding contact: ${err}`)
+        } finally {
+            dispatch({ type: "SET_LOADING", payload: false })
+        }
+    }
+}
+
+export function searchUsers(prefix) {
+    return async (dispatch, getState) => {
+        try {
+            dispatch({ type: "SET_LOADING", payload: true })
+            let state = getState().userReducer
+
+            const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token))
+
+            const users = []
+            response.data.forEach(user => {
+                users.push({ ...user, pic: `https://robohash.org/${user.phone_no}` })
+            });
+
+            return users
+
+        } catch (err) {
+            console.error(`Error searching users: ${err}`)
+            return []
+        } finally {
+            dispatch({ type: "SET_LOADING", payload: false })
         }
     }
 }
