@@ -13,7 +13,7 @@ import globalStyle from "../../global/globalStyle"
 export default function NewConversation(props) {
 
     const { navigation } = props
-    const { contacts } = useSelector(state => state.userReducer)
+    const { contacts, conversations } = useSelector(state => state.userReducer)
     const [loading, setLoading] = useState(false)
     const [results, setResults] = useState([])
 
@@ -66,8 +66,7 @@ export default function NewConversation(props) {
                             ? results.map((res, index) => {
                                 return <ContactPeek data={res} key={index} navigation={navigation}
                                     onSelect={() => {
-                                        // If conversation doesn't exist, create one
-                                        let conversation = userData.getOrCreateConversation(res)
+                                        let conversation = conversations.find(convo => convo.other_user.phone_no === res.phone_no)
                                         navigation.navigate('Conversation', { data: conversation })
                                     }} />
                             })
