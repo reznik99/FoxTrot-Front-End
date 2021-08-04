@@ -49,8 +49,7 @@ const styles = StyleSheet.create({
 
 export default function Conversation(props) {
 
-    const { navigation } = props;
-    const data = navigation.state.params.data;
+    const data = props.route.params.data;
 
     const state = useSelector(state => state.userReducer)
     const dispatch = useDispatch()
@@ -76,6 +75,10 @@ export default function Conversation(props) {
             keyboardDidHideListener.remove();
         }
     }, [])
+
+    useEffect(() => {
+        scrollView.current?.scrollToEnd({ animated: false })
+    }, [scrollView])
 
     const _keyboardDidShow = useCallback(() => {
         scrollView.current?.scrollToEnd({ animated: true })

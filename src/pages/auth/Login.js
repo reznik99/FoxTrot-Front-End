@@ -23,14 +23,21 @@ export default function Login(props) {
             // Load data from disk into redux store
             await dispatch(syncFromStorage())
 
-            // Auto-login if Token still valid
-            let loggedIn = await dispatch(validateToken())
-            if (loggedIn)
-                return props.navigation.navigate('Home')
-
             // Auto-fill phone_no from storage
             setPhone_number(phone_no)
-            console.log("Token expired")
+
+            // Auto-login if Token still valid
+            if (props.route.params?.data?.loggedOut) {
+                console.log("User logged out")
+                return
+            }
+
+            let loggedIn = await dispatch(validateToken())
+            if (loggedIn)
+                return props.navigation.replace('App', { screen: 'Home' })
+            else {
+                console.log("Token expired")
+            }
         } finally {
             setGloablLoading(false)
         }
@@ -40,7 +47,7 @@ export default function Login(props) {
         Keyboard.dismiss()
         let loggedIn = await dispatch(logIn(phone_number, password))
         if (loggedIn) {
-            props.navigation.navigate('Home')
+            props.navigation.replace('App', { screen: 'Home' })
         }
     }, [phone_number, password]);
 
