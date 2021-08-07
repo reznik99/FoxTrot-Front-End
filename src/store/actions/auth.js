@@ -6,7 +6,7 @@ import { API_URL } from '../../global/variables'
 export function logIn(phone_no, password) {
     return async (dispatch) => {
         if (phone_no === '' || password === '') {
-            dispatch({ type: "ERROR_MSG", payload: "Textfields cannot be blank!" })
+            dispatch({ type: "LOGIN_ERROR_MSG", payload: "Textfields cannot be blank!" })
             return;
         }
         try {
@@ -27,12 +27,12 @@ export function logIn(phone_no, password) {
             // Save data in phone storage
             AsyncStorage.setItem('user', phone_no)
             AsyncStorage.setItem('JWT', res.data.token)
-            dispatch({ type: "ERROR_MSG", payload: "" })
+            dispatch({ type: "LOGIN_ERROR_MSG", payload: "" })
             return true
         }
         catch (err) {
-            console.error(`Error logging in: ${err}`)
-            dispatch({ type: "ERROR_MSG", payload: err.response?.data })
+            console.log(`Error logging in: ${err}`)
+            dispatch({ type: "LOGIN_ERROR_MSG", payload: err.response?.data })
             return false
         }
         finally {
@@ -44,10 +44,10 @@ export function logIn(phone_no, password) {
 export function signUp(phone_no, password, re_password) {
     return async (dispatch) => {
         if (phone_no === '' || password === '' || re_password === '') {
-            dispatch({ type: "ERROR_MSG", payload: "Textfields cannot be blank!" })
+            dispatch({ type: "SIGNUP_ERROR_MSG", payload: "Textfields cannot be blank!" })
             return false
         } else if (password !== re_password) {
-            dispatch({ type: "ERROR_MSG", payload: "Passwords do not match!" })
+            dispatch({ type: "SIGNUP_ERROR_MSG", payload: "Passwords do not match!" })
             return false
         }
         try {
@@ -59,12 +59,12 @@ export function signUp(phone_no, password, re_password) {
             })
             // Save data in phone storage
             AsyncStorage.setItem('user', phone_no)
-            dispatch({ type: "ERROR_MSG", payload: "" })
+            dispatch({ type: "SIGNUP_ERROR_MSG", payload: "" })
             return true
         }
         catch (err) {
-            console.error(`Error logging in: ${err}`)
-            dispatch({ type: "ERROR_MSG", payload: err.response?.data })
+            console.log(`Error signing up: ${err}`)
+            dispatch({ type: "SIGNUP_ERROR_MSG", payload: err.response?.data })
             return false
         }
         finally {

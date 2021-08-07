@@ -9,7 +9,7 @@ import { logIn } from '../../store/actions/auth'
 
 export default function Login(props) {
 
-    const { errorMsg, loading, phone_no } = useSelector(state => state.userReducer);
+    const { loginErr, loading, phone_no } = useSelector(state => state.userReducer);
     const [gloablLoading, setGloablLoading] = useState(false)
     const [phone_number, setPhone_number] = useState('')
     const [password, setPassword] = useState('')
@@ -19,25 +19,19 @@ export default function Login(props) {
     useEffect(async () => {
         try {
             setGloablLoading(true)
-
             // Load data from disk into redux store
             await dispatch(syncFromStorage())
-
             // Auto-fill phone_no from storage
             setPhone_number(phone_no)
-
-            // Auto-login if Token still valid
+            // If user manually logged out, don't try autologin
             if (props.route.params?.data?.loggedOut) {
-                console.log("User logged out")
-                return
+                return console.log("User logged out")
             }
-
+            // Auto-login if Token still valid
             let loggedIn = await dispatch(validateToken())
             if (loggedIn)
                 return props.navigation.replace('App', { screen: 'Home' })
-            else {
-                console.log("Token expired")
-            }
+            console.log("Token expired")
         } finally {
             setGloablLoading(false)
         }
@@ -59,21 +53,21 @@ export default function Login(props) {
                     <Text style={styles.title} h4>FoxTrot</Text>
                     <Text style={styles.title} h6 muted>secure communications</Text>
                 </View>
-                {errorMsg ? <Text style={styles.errorMsg}>{errorMsg}</Text> : null}
+                {loginErr ? <Text style={styles.errorMsg}>{loginErr}</Text> : null}
 
                 {gloablLoading
                     ? <ActivityIndicator color="#00FFFF" size="large" />
                     : <>
                         <Input onChangeText={val => setPhone_number(val)}
                             value={phone_number}
-                            style={errorMsg ? { borderColor: "red" } : null}
+                            style={loginErr ? { borderColor: "red" } : null}
                             help="Phone number"
                             placeholder="Phone no."
                             placeholderTextColor="#333"
                         />
                         <Input onChangeText={val => setPassword(val)}
                             value={password}
-                            style={errorMsg ? { borderColor: "red" } : null}
+                            style={loginErr ? { borderColor: "red" } : null}
                             secureTextEntry={true}
                             help="Password"
                             placeholder="Password"

@@ -24,8 +24,10 @@ function userReducer(state = initialState, action) {
             return { ...state, tokenValid: action.payload }
         case "LOGGED_IN":
             return { ...state, token: action.payload.token, phone_no: action.payload.phone_no }
-        case "ERROR_MSG":
-            return { ...state, errorMsg: action.payload }
+        case "LOGIN_ERROR_MSG":
+            return { ...state, loginErr: action.payload }
+        case "SIGNUP_ERROR_MSG":
+            return { ...state, signupErr: action.payload }
         case "SET_LOADING":
             return { ...state, loading: action.payload }
         case "SET_REFRESHING":
