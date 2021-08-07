@@ -30,7 +30,7 @@ class HeaderConversation extends Component {
                                 style={styles.profilePic}
                                 PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                         </View>
-                        <Text style={styles.topBarText}>{navigation.state.params.data.other_user.identifier || navigation.state.params.data.other_user.phone_no}</Text>
+                        <Text style={styles.topBarText}>{this.props.data.other_user.identifier || this.props.data.other_user.phone_no}</Text>
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.buttonContainer, { width: '50%' }]}>

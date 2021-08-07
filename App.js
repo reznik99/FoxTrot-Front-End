@@ -29,10 +29,15 @@ const AppNavigator = createDrawerNavigator()
 const AppDrawer = () => {
     return (
         <AppNavigator.Navigator drawerContent={(props) => <CustomDrawerContent {...props} />}>
-            <AppNavigator.Screen name="Foxtrot" component={Home} />
-            {/* <AppNavigator.Screen name="Settings" component={Conversation} />
-            <AppNavigator.Screen name="About" component={NewConversation} />
-            <AppNavigator.Screen name="Logout" component={AddContact} /> */}
+            <AppNavigator.Screen name="Foxtrot" component={Home} options={{
+                headerStyle: {
+                    backgroundColor: '#f4511e',
+                },
+                headerTintColor: '#fff',
+                headerTitleStyle: {
+                    fontWeight: 'bold',
+                },
+            }} />
         </AppNavigator.Navigator>
     );
 };
@@ -40,11 +45,19 @@ const AppDrawer = () => {
 const HomeStack = createStackNavigator();
 const HomeNavigator = () => {
     return (
-        <HomeStack.Navigator initialRouteName='Home'>
+        <HomeStack.Navigator initialRouteName='Home' screenOptions={{
+            headerStyle: {
+                backgroundColor: '#f4511e',
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+                fontWeight: 'bold',
+            },
+        }}>
             <HomeStack.Screen name="Home" component={AppDrawer} options={{ headerShown: false }} />
-            <HomeStack.Screen name="Conversation" component={Conversation} />
-            <HomeStack.Screen name="NewConversation" component={NewConversation} />
-            <HomeStack.Screen name="AddContact" component={AddContact} />
+            <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
+            <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: "Contacts" })} />
+            <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: "Search Users" })} />
         </HomeStack.Navigator>
     );
 };
