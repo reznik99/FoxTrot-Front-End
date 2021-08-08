@@ -67,7 +67,7 @@ const AuthNavigator = () => {
     return (
         <NavigationContainer>
             <AuthStack.Navigator>
-                <AuthStack.Screen name="Login" component={Login} />
+                <AuthStack.Screen name="Login" component={Login} options={{ headerShown: false }} />
                 <AuthStack.Screen name="Signup" component={Signup} />
                 <AuthStack.Screen name="App" component={HomeNavigator} options={{ headerShown: false }} />
             </AuthStack.Navigator>
