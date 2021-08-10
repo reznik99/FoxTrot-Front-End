@@ -1,16 +1,20 @@
 
 import 'react-native-gesture-handler'
 import React from 'react'
-import { ScrollView, SafeAreaView } from 'react-native'
+import { ScrollView, View, Text } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
-import { createStackNavigator, CardStyleInterpolators, TransitionPresets } from '@react-navigation/stack'
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack'
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer'
-import { Provider } from 'react-redux'
-import { store } from './src/store/store'
+import { Provider, useSelector } from 'react-redux'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faDoorOpen, faHome, faCog } from '@fortawesome/free-solid-svg-icons'
+import { faDoorOpen, faHome, faCog, faUser, faPhoneAlt } from '@fortawesome/free-solid-svg-icons'
+import { ActivityIndicator, Avatar } from 'react-native-paper'
+
+import { store } from './src/store/store'
 import { Login, Signup, Home, Conversation, NewConversation, AddContact } from './src'
 import HeaderConversation from "./src/components/HeaderConversation"
+import Drawer from "./src/components/Drawer"
+
 
 const defaultHeaderOptions = {
     headerStyle: {
@@ -30,40 +34,11 @@ const animationDefaults = {
     gestureDirection: 'horizontal'
 }
 
-function CustomDrawerContent(props) {
-    return (
-        <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: "#222" }} {...props}>
-            <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
-                <SafeAreaView forceInset={{ top: 'always', horizontal: 'never' }}>
-                    <DrawerItemList {...props} />
-                </SafeAreaView>
-                <DrawerItem
-                    inactiveTintColor="#aaf"
-                    label="Settings"
-                    onPress={() => props.navigation.navigate('Login', { data: { loggedOut: true } })}
-                    icon={({ focused, size, color }) => (
-                        <FontAwesomeIcon size={size} icon={faCog} style={{ color: color }} />
-                    )}
-                />
-                <DrawerItem
-                    inactiveTintColor="#e60e59"
-                    label="Logout"
-                    style={{ borderBottomWidth: 1, borderBottomColor: "#e60e59" }}
-                    onPress={() => props.navigation.navigate('Login', { data: { loggedOut: true } })}
-                    icon={({ focused, size, color }) => (
-                        <FontAwesomeIcon size={size} icon={faDoorOpen} style={{ color: color }} />
-                    )}
-                />
-            </ScrollView>
-        </DrawerContentScrollView>
-    )
-}
-
 const AppNavigator = createDrawerNavigator()
 const AppDrawer = () => {
     return (
         <AppNavigator.Navigator screenOptions={{ swipeEdgeWidth: 200 }}
-            drawerContent={(props) => <CustomDrawerContent {...props} />} >
+            drawerContent={(props) => <Drawer {...props} />} >
             <AppNavigator.Screen name="Foxtrot" component={Home} options={defaultHeaderOptions} />
         </AppNavigator.Navigator>
     )
