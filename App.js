@@ -3,7 +3,7 @@ import 'react-native-gesture-handler'
 import React from 'react'
 import { ScrollView, SafeAreaView } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
-import { createStackNavigator } from '@react-navigation/stack'
+import { createStackNavigator, CardStyleInterpolators, TransitionPresets } from '@react-navigation/stack'
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer'
 import { Provider } from 'react-redux'
 import { store } from './src/store/store'
@@ -23,7 +23,11 @@ const defaultHeaderOptions = {
     drawerIcon: ({ focused, size, color }) => (
         <FontAwesomeIcon size={size} icon={faHome} style={{ color: color }} />
     )
-
+}
+const animationDefaults = {
+    cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+    gestureEnabled: true,
+    gestureDirection: 'horizontal'
 }
 
 function CustomDrawerContent(props) {
@@ -34,7 +38,6 @@ function CustomDrawerContent(props) {
                     <DrawerItemList {...props} />
                 </SafeAreaView>
                 <DrawerItem
-
                     inactiveTintColor="#aaf"
                     label="Settings"
                     onPress={() => props.navigation.navigate('Login', { data: { loggedOut: true } })}
@@ -69,7 +72,7 @@ const AppDrawer = () => {
 const HomeStack = createStackNavigator();
 const HomeNavigator = () => {
     return (
-        <HomeStack.Navigator initialRouteName='Home' screenOptions={defaultHeaderOptions}>
+        <HomeStack.Navigator initialRouteName='Home' screenOptions={{ ...defaultHeaderOptions, ...animationDefaults }}>
             <HomeStack.Screen name="Home" component={AppDrawer} options={{ headerShown: false }} />
             <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
             <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: "Contacts" })} />
@@ -82,7 +85,7 @@ const AuthStack = createStackNavigator();
 const AuthNavigator = () => {
     return (
         <NavigationContainer>
-            <AuthStack.Navigator>
+            <AuthStack.Navigator screenOptions={animationDefaults}>
                 <AuthStack.Screen name="Login" component={Login} options={{ headerShown: false }} />
                 <AuthStack.Screen name="Signup" component={Signup} />
                 <AuthStack.Screen name="App" component={HomeNavigator} options={{ headerShown: false }} />
