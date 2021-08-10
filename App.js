@@ -1,17 +1,16 @@
 
 import 'react-native-gesture-handler'
 import React from 'react'
-import { ScrollView, View, Text } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack'
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer'
 import { Provider, useSelector } from 'react-redux'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faDoorOpen, faHome, faCog, faUser, faPhoneAlt } from '@fortawesome/free-solid-svg-icons'
-import { ActivityIndicator, Avatar } from 'react-native-paper'
+import { Provider as PaperProvider } from 'react-native-paper';
 
 import { store } from './src/store/store'
-import { Login, Signup, Home, Conversation, NewConversation, AddContact } from './src'
+import { Login, Signup, Home, Conversation, NewConversation, AddContact, Settings } from './src'
 import HeaderConversation from "./src/components/HeaderConversation"
 import Drawer from "./src/components/Drawer"
 
@@ -52,6 +51,7 @@ const HomeNavigator = () => {
             <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
             <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: "Contacts" })} />
             <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: "Search Users" })} />
+            <HomeStack.Screen name="Settings" component={Settings} options={defaultHeaderOptions} />
         </HomeStack.Navigator>
     )
 }
@@ -73,7 +73,9 @@ const AuthNavigator = () => {
 export default function App() {
     return (
         <Provider store={store}>
-            <AuthNavigator />
+            <PaperProvider>
+                <AuthNavigator />
+            </PaperProvider>
         </Provider>
     )
 }

@@ -20,9 +20,7 @@ export default function Login(props) {
         try {
             setGloablLoading(true)
             // Load data from disk into redux store
-            let payload = await dispatch(syncFromStorage())
-            // Auto-fill phone_no from storage
-            setPhone_number(payload.phone_no)
+            await dispatch(syncFromStorage())
             // If user manually logged out, don't try autologin
             if (props.route.params?.data?.loggedOut) {
                 return console.log("User logged out")
@@ -36,6 +34,11 @@ export default function Login(props) {
             setGloablLoading(false)
         }
     }, []);
+
+    useEffect(() => {
+        // Auto-fill phone_no from storage
+        setPhone_number(phone_no)
+    }, [phone_no])
 
     const handle_login = useCallback(async () => {
         Keyboard.dismiss()

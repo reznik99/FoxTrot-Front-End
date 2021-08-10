@@ -209,11 +209,8 @@ export function syncFromStorage() {
                 type: "SYNC_FROM_STORAGE",
                 payload: payload,
             })
-
-            return payload
         } catch (err) {
             console.error(`Error syncing from storage: ${err}`)
-            return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }

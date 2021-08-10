@@ -62,7 +62,7 @@ export default function Drawer(props) {
                 <DrawerItem
                     inactiveTintColor="#aaf"
                     label="Settings"
-                    onPress={() => props.navigation.navigate('Login', { data: { loggedOut: true } })}
+                    onPress={() => props.navigation.navigate('Settings')}
                     icon={({ focused, size, color }) => (
                         <FontAwesomeIcon size={size} icon={faCog} style={{ color: color }} />
                     )}
