@@ -200,16 +200,17 @@ export function syncFromStorage() {
             console.log('Reading userInfo from local storage into store')
             const phone_no = await AsyncStorage.getItem('user')
 
+            const payload = {
+                keys: JSON.parse(keys),
+                token: JWT,
+                phone_no: phone_no,
+            }
             dispatch({
                 type: "SYNC_FROM_STORAGE",
-                payload: {
-                    keys: JSON.parse(keys),
-                    token: JWT,
-                    phone_no: phone_no,
-                },
+                payload: payload,
             })
 
-            return true
+            return payload
         } catch (err) {
             console.error(`Error syncing from storage: ${err}`)
             return false

@@ -20,9 +20,9 @@ export default function Login(props) {
         try {
             setGloablLoading(true)
             // Load data from disk into redux store
-            await dispatch(syncFromStorage())
+            let payload = await dispatch(syncFromStorage())
             // Auto-fill phone_no from storage
-            setPhone_number(phone_no)
+            setPhone_number(payload.phone_no)
             // If user manually logged out, don't try autologin
             if (props.route.params?.data?.loggedOut) {
                 return console.log("User logged out")

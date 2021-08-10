@@ -7,7 +7,8 @@ import { createStackNavigator } from '@react-navigation/stack'
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer'
 import { Provider } from 'react-redux'
 import { store } from './src/store/store'
-
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
+import { faDoorOpen, faHome, faCog } from '@fortawesome/free-solid-svg-icons'
 import { Login, Signup, Home, Conversation, NewConversation, AddContact } from './src'
 import HeaderConversation from "./src/components/HeaderConversation"
 
@@ -19,21 +20,36 @@ const defaultHeaderOptions = {
     headerTitleStyle: {
         fontWeight: 'bold',
     },
+    drawerIcon: ({ focused, size, color }) => (
+        <FontAwesomeIcon size={size} icon={faHome} style={{ color: color }} />
+    )
 
 }
 
 function CustomDrawerContent(props) {
     return (
-        <DrawerContentScrollView {...props} contentContainerStyle={{ height: '100%', backgroundColor: "#666" }}>
-            <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: "#222" }} {...props}>
+            <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
                 <SafeAreaView forceInset={{ top: 'always', horizontal: 'never' }}>
                     <DrawerItemList {...props} />
                 </SafeAreaView>
                 <DrawerItem
-                    inactiveBackgroundColor="#e60e59"
-                    inactiveTintColor="#fff"
-                    label="Logout"
+
+                    inactiveTintColor="#aaf"
+                    label="Settings"
                     onPress={() => props.navigation.navigate('Login', { data: { loggedOut: true } })}
+                    icon={({ focused, size, color }) => (
+                        <FontAwesomeIcon size={size} icon={faCog} style={{ color: color }} />
+                    )}
+                />
+                <DrawerItem
+                    inactiveTintColor="#e60e59"
+                    label="Logout"
+                    style={{ borderBottomWidth: 1, borderBottomColor: "#e60e59" }}
+                    onPress={() => props.navigation.navigate('Login', { data: { loggedOut: true } })}
+                    icon={({ focused, size, color }) => (
+                        <FontAwesomeIcon size={size} icon={faDoorOpen} style={{ color: color }} />
+                    )}
                 />
             </ScrollView>
         </DrawerContentScrollView>
