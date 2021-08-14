@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faUserPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
 
-import ContactPeek from './../../components/ContactPeek'
+import { ContactPeek } from './../../components'
 import globalStyle from "../../global/globalStyle"
 
 

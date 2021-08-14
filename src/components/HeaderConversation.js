@@ -6,7 +6,7 @@ import { Image } from "react-native-elements"
 
 import styles from "./HeaderStyles"
 
-class HeaderConversation extends Component {
+export default class HeaderConversation extends Component {
     constructor(props) {
         super(props);
     }
@@ -48,5 +48,3 @@ class HeaderConversation extends Component {
         );
     }
 }
-
-export default HeaderConversation;
