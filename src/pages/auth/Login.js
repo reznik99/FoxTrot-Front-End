@@ -37,7 +37,7 @@ export default function Login(props) {
 
     useEffect(() => {
         // Auto-fill phone_no from storage
-        setPhone_number(user_data.phone_no)
+        setPhone_number(user_data?.phone_no || '')
     }, [user_data])
 
     const handle_login = useCallback(async () => {

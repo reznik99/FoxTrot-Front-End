@@ -11,7 +11,7 @@ export function loadKeys() {
 
             let state = getState().userReducer
 
-            console.log('Reading keys from local storage into store')
+            console.log('Loading Crypto Keys from local storage into store')
             const keys = await AsyncStorage.getItem(state.user_data.phone_no + "-keys")
             if (!keys) throw Error("No keys")
 
@@ -219,10 +219,10 @@ export function syncFromStorage() {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
-            console.log('Reading userInfo from local storage into store')
+            console.log('Loading user_data from local storage into store')
             const user_data = await AsyncStorage.getItem('user_data')
 
-            console.log('Reading JWT from local storage into store')
+            console.log('Loading JSON Web Token from local storage into store')
             const token = await AsyncStorage.getItem('auth_token')
 
             const payload = {

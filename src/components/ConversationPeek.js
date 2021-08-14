@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
 
 export default function ConversationPeek(props) {
 
-    const user_phone_no = useSelector(state => state.userReducer.phone_no)
+    const user_phone_no = useSelector(state => state.userReducer.user_data.phone_no)
 
     // Return style for unseen message only if message wasn't sent by user AND message wasn't seen before
     const shouldNotify = useCallback((lastMessage) => {
