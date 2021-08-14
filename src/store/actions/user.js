@@ -89,7 +89,7 @@ export function loadContacts() {
             dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 
         } catch (err) {
-            console.error(`Error loading contacts: ${err}`)
+            console.log(`Error loading contacts: ${err}`)
         } finally {
             dispatch({ type: "SET_REFRESHING", payload: false })
         }
@@ -99,18 +99,24 @@ export function loadContacts() {
 export function addContact(user) {
     return async (dispatch, getState) => {
         try {
-            dispatch({ type: "SET_LOADING", payload: true })
+            dispatch({ type: "ADDING_CONTACT", payload: user })
             let state = getState().userReducer
             // Load contacts
             await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
 
-            dispatch({ type: "NEW_CONTACT", payload: user })
-
+            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: user })
         } catch (err) {
-            console.error(`Error adding contact: ${err}`)
+            console.log(`Error adding contact: ${err}`)
         } finally {
-            dispatch({ type: "SET_LOADING", payload: false })
+            dispatch({ type: "ADD_CONTACT_FAILURE", payload: user })
         }
+    }
+}
+
+export function clearAddingContact() {
+    return (dispatch) => {
+        dispatch({ type: "ADDING_CONTACT", payload: null })
+        dispatch({ type: "ADD_CONTACT_FAILURE", payload: null })
     }
 }
 
@@ -122,15 +128,11 @@ export function searchUsers(prefix) {
 
             const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token))
 
-            const users = []
-            response.data.forEach(user => {
-                users.push({ ...user, pic: `https://robohash.org/${user.phone_no}` })
-            });
-
-            return users
+            // Append fake picture to users
+            return response.data.map(user => ({ ...user, pic: `https://robohash.org/${user.phone_no}` }))
 
         } catch (err) {
-            console.error(`Error searching users: ${err}`)
+            console.log(`Error searching users: ${err}`)
             return []
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -157,7 +159,7 @@ export function sendMessage(message, to_user) {
             await axios.post(`${API_URL}/sendMessage`, { message: message, contact_id: to_user.id }, axiosBearerConfig(state.token))
 
         } catch (err) {
-            console.error(`Error sending message: ${err}`)
+            console.log(`Error sending message: ${err}`)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }

@@ -24,7 +24,7 @@ export default class ContactPeek extends Component {
     }
 
     render() {
-        const { data, onSelect } = this.props
+        const { data, onSelect, loading } = this.props
         return (
             <TouchableOpacity style={styles.profilePeek}
                 onPress={onSelect}>
@@ -36,7 +36,10 @@ export default class ContactPeek extends Component {
                     <Text style={globalStyle.textInfo}>{data.identifier || data.phone_no}</Text>
                 </View>
                 <View>
-                    <Text style={globalStyle.textInfo}>{data.lastActive ? humanTime(data.lastActive) : null}</Text>
+                    {loading
+                        ? <Text>LOADING</Text>
+                        : <Text style={globalStyle.textInfo}>{data.lastActive ? humanTime(data.lastActive) : null}</Text>
+                    }
                 </View>
             </TouchableOpacity>
         );

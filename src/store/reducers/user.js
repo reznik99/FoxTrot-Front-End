@@ -10,8 +10,12 @@ const initialState = {
 
 function userReducer(state = initialState, action) {
     switch (action.type) {
-        case "NEW_CONTACT":
-            return { ...state, contacts: [...state.contacts, action.payload] }
+        case "ADDING_CONTACT":
+            return { ...state, adding_contact: action.payload }
+        case "ADD_CONTACT_FAILURE":
+            return { ...state, failed_contact: action.payload }
+        case "ADD_CONTACT_SUCCESS":
+            return { ...state, contacts: [...state.contacts, action.payload], new_contact: action.payload }
         case "LOAD_CONTACTS":
             return { ...state, contacts: action.payload }
         case "LOAD_CONVERSATIONS":
