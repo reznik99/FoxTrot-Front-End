@@ -7,7 +7,7 @@ import { useSelector, useDispatch } from 'react-redux'
 
 import { ConversationPeek } from '../../components'
 import globalStyle from "../../global/globalStyle"
-import { loadMessages, loadContacts, generateAndSyncKeys } from '../../store/actions/user'
+import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys } from '../../store/actions/user'
 
 export default function Home(props) {
 
@@ -18,8 +18,10 @@ export default function Home(props) {
     useEffect(async () => {
         if (state.loading) return
 
+        const loadedKeys = await (dispatch(loadKeys()))
+
         // If keys not loaded, generate them (first time login)
-        if (!state.keys) {
+        if (!loadedKeys) {
             setLoadingMsg("Generating cryptographic keys...")
             await dispatch(generateAndSyncKeys())
             setLoadingMsg('')

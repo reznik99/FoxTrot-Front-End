@@ -9,7 +9,7 @@ import { logIn } from '../../store/actions/auth'
 
 export default function Login(props) {
 
-    const { loginErr, loading, phone_no } = useSelector(state => state.userReducer);
+    const { loginErr, loading, user_data } = useSelector(state => state.userReducer);
     const [gloablLoading, setGloablLoading] = useState(false)
     const [phone_number, setPhone_number] = useState('')
     const [password, setPassword] = useState('')
@@ -37,8 +37,8 @@ export default function Login(props) {
 
     useEffect(() => {
         // Auto-fill phone_no from storage
-        setPhone_number(phone_no)
-    }, [phone_no])
+        setPhone_number(user_data.phone_no)
+    }, [user_data])
 
     const handle_login = useCallback(async () => {
         Keyboard.dismiss()

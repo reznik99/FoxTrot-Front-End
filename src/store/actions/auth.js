@@ -21,12 +21,12 @@ export function logIn(phone_no, password) {
                 type: "LOGGED_IN",
                 payload: {
                     token: res.data.token,
-                    phone_no: phone_no
+                    user_data: { phone_no: phone_no }
                 },
             })
             // Save data in phone storage
-            AsyncStorage.setItem('user', phone_no)
-            AsyncStorage.setItem('JWT', res.data.token)
+            await AsyncStorage.setItem('user_data', JSON.stringify({ phone_no: phone_no }))
+            await AsyncStorage.setItem('auth_token', res.data.token)
             dispatch({ type: "LOGIN_ERROR_MSG", payload: "" })
             return true
         }
@@ -58,7 +58,7 @@ export function signUp(phone_no, password, re_password) {
                 password: password
             })
             // Save data in phone storage
-            AsyncStorage.setItem('user', phone_no)
+            await AsyncStorage.setItem('user_data', JSON.stringify({ phone_no: phone_no }))
             dispatch({ type: "SIGNUP_ERROR_MSG", payload: "" })
             return true
         }

@@ -4,6 +4,29 @@ import { RSA } from 'react-native-rsa-native'
 
 import { API_URL } from '../../global/variables'
 
+export function loadKeys() {
+    return async (dispatch, getState) => {
+        try {
+            dispatch({ type: "SET_LOADING", payload: true })
+
+            let state = getState().userReducer
+
+            console.log('Reading keys from local storage into store')
+            const keys = await AsyncStorage.getItem(state.user_data.phone_no + "-keys")
+            if (!keys) throw Error("No keys")
+
+            // Store keypair in memory
+            dispatch({ type: "KEY_LOAD", payload: JSON.parse(keys) })
+            return true
+        } catch (err) {
+            console.log(`Couldn't find keys for user in storage: ${err}`)
+            return false
+        } finally {
+            dispatch({ type: "SET_LOADING", payload: false })
+        }
+    }
+}
+
 export function generateAndSyncKeys() {
     return async (dispatch, getState) => {
         try {
@@ -12,10 +35,11 @@ export function generateAndSyncKeys() {
             let state = getState().userReducer
             // Generate Keypair
             const keys = await RSA.generateKeys(4096)
+            console.log("Generated RSA 4096 Keypair. Storing in: " + state.user_data.phone_no + "-keys")
             // Store on device 
-            await AsyncStorage.setItem('rsa-user-keys', JSON.stringify(keys))
+            await AsyncStorage.setItem(state.user_data.phone_no + "-keys", JSON.stringify(keys))
             // Upload public key
-            const response = await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.publicKey }, axiosBearerConfig(state.token))
+            const response = await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.public }, axiosBearerConfig(state.token))
             // Store keypair in memory
             dispatch({ type: "KEY_GEN", payload: keys })
 
@@ -45,7 +69,7 @@ export function loadMessages() {
 
             // TODO: Fix this mess up
             response.data.forEach(message => {
-                let other = message.sender === state.phone_no
+                let other = message.sender === state.user_data.phone_no
                     ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` }
                     : { phone_no: message.sender, id: message.sender_id }
                 let exists = conversations.has(other.phone_no)
@@ -150,7 +174,7 @@ export function sendMessage(message, to_user) {
 
             let msg = {
                 message: message,
-                sender: state.phone_no,
+                sender: state.user_data.phone_no,
                 reciever: to_user.phone_no,
                 sent_at: Date.now(),
                 seen: false
@@ -195,19 +219,15 @@ export function syncFromStorage() {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
-            console.log('Reading keys from local storage into store')
-            const keys = await AsyncStorage.getItem('rsa-user-keys')
+            console.log('Reading userInfo from local storage into store')
+            const user_data = await AsyncStorage.getItem('user_data')
 
             console.log('Reading JWT from local storage into store')
-            const JWT = await AsyncStorage.getItem('JWT')
-
-            console.log('Reading userInfo from local storage into store')
-            const phone_no = await AsyncStorage.getItem('user')
+            const token = await AsyncStorage.getItem('auth_token')
 
             const payload = {
-                keys: JSON.parse(keys),
-                token: JWT,
-                phone_no: phone_no,
+                token: token,
+                user_data: JSON.parse(user_data),
             }
             dispatch({
                 type: "SYNC_FROM_STORAGE",

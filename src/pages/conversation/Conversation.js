@@ -103,7 +103,7 @@ export default function Conversation(props) {
             <ScrollView style={styles.messageContainer} ref={scrollView} >
                 {
                     data && data.messages ? data.messages.map((packet, index) => {
-                        return packet.sender === state.phone_no
+                        return packet.sender === state.user_data.phone_no
                             ? <Text key={index} style={[styles.message, styles.sent]}>{packet.message}</Text>
                             : <Text key={index} style={[styles.message, styles.received]}>{packet.message}</Text>
                     }) : <Text style={[styles.message, styles.system]} >No messages</Text>

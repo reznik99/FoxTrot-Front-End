@@ -41,20 +41,20 @@ export default function Drawer(props) {
 
                 <View style={styles.profileContainer}>
                     <Avatar.Image size={150}
-                        source={{ uri: `https://robohash.org/${state.phone_no}` }}
+                        source={{ uri: `https://robohash.org/${state.user_data?.phone_no}` }}
                         PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                     <View>
                         <View style={styles.profileInfoContainer}>
                             <FontAwesomeIcon size={15} icon={faPhoneAlt} style={styles.profileInfoIcon} />
-                            <Text style={styles.profileInfo}> {state.phone_no}</Text>
+                            <Text style={styles.profileInfo}> {state.user_data?.phone_no}</Text>
                         </View>
                         <View style={styles.profileInfoContainer}>
                             <FontAwesomeIcon size={18} icon={faUser} style={styles.profileInfoIcon} />
-                            <Text style={styles.profileInfo}>Contacts: {state.contacts.length}</Text>
+                            <Text style={styles.profileInfo}>Contacts: {state.contacts?.length}</Text>
                         </View>
                         <View style={styles.profileInfoContainer}>
                             <FontAwesomeIcon size={18} icon={faLock} style={styles.profileInfoIcon} />
-                            <Text style={styles.profileInfo}>Keys: RSA {state.keys.privateKey.length}</Text>
+                            <Text style={styles.profileInfo}>Keys: RSA {state.keys?.private?.length}</Text>
                         </View>
                     </View>
                 </View>
