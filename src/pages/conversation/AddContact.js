@@ -56,10 +56,6 @@ export default function AddContact(props) {
 
     return (
         <View style={globalStyle.wrapper}>
-            {console.log("\n------------")}
-            {console.log(adding_contact)}
-            {console.log(failed_contact)}
-            {console.log("-----------")}
             {/* Search */}
             <View style={globalStyle.searchContainer}>
                 <Searchbar

@@ -129,7 +129,9 @@ export function searchUsers(prefix) {
             const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token))
 
             // Append fake picture to users
-            return response.data.map(user => ({ ...user, pic: `https://robohash.org/${user.phone_no}` }))
+            const results = response.data.map(user => ({ ...user, pic: `https://robohash.org/${user.phone_no}`, isContact: state.contacts.some(contact => contact.id === user.id) }))
+
+            return results
 
         } catch (err) {
             console.log(`Error searching users: ${err}`)

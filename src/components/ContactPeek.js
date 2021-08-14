@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native'
-import { Avatar } from 'react-native-paper'
+import { Avatar, Button, IconButton, Colors } from 'react-native-paper'
 
 import { humanTime } from '../global/helper'
 import globalStyle from "../global/globalStyle"
@@ -24,10 +24,10 @@ export default class ContactPeek extends Component {
     }
 
     render() {
-        const { data, onSelect, loading } = this.props
+        const { data, onSelect, loading, isContact } = this.props
         return (
             <TouchableOpacity style={styles.profilePeek}
-                onPress={onSelect}>
+                onPress={isContact ? null : onSelect}>
                 <Avatar.Image size={55} style={styles.profilePicContainer}
                     source={{ uri: data.pic }}
                     PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
@@ -35,12 +35,17 @@ export default class ContactPeek extends Component {
                 <View style={{ flex: 1 }}>
                     <Text style={globalStyle.textInfo}>{data.identifier || data.phone_no}</Text>
                 </View>
+                {loading
+                    ? <ActivityIndicator color="#00FFFF" />
+                    : null
+                }
                 <View>
-                    {loading
-                        ? <Text>LOADING</Text>
-                        : <Text style={globalStyle.textInfo}>{data.lastActive ? humanTime(data.lastActive) : null}</Text>
-                    }
+                    <Text style={globalStyle.textInfo}>{data.lastActive ? humanTime(data.lastActive) : null}</Text>
                 </View>
+                {data.isContact
+                    ? <IconButton icon="account" color={Colors.blue800} size={25} />
+                    : <IconButton icon="account-plus" color={Colors.lightGreen300} size={25} />
+                }
             </TouchableOpacity>
         );
     }
