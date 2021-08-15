@@ -1,11 +1,12 @@
 import { StyleSheet } from "react-native";
+import { PRIMARY, SECONDARY, ACCENT } from './variables'
 
 const globalStyle = StyleSheet.create({
     wrapper: {
         flex: 1,
         width: "100%",
         height: "100%",
-        backgroundColor: '#526a84'
+        backgroundColor: SECONDARY, //'#526a84'
     }, textInfo: {
         color: '#fff'
     }, searchContainer: {

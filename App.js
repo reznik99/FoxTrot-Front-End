@@ -5,18 +5,19 @@ import { Provider } from 'react-redux'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack'
 import { createDrawerNavigator } from '@react-navigation/drawer'
-import { Provider as PaperProvider, DefaultTheme } from 'react-native-paper'
+import { Provider as PaperProvider, DefaultTheme, DarkTheme } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faHome } from '@fortawesome/free-solid-svg-icons'
 
 import { store } from './src/store/store'
 import { Login, Signup, Home, Conversation, NewConversation, AddContact, Settings } from './src'
 import { Drawer, HeaderConversation } from "./src/components"
+import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT } from './src/global/variables'
 
 
 const defaultHeaderOptions = {
     headerStyle: {
-        backgroundColor: '#f4511e',
+        backgroundColor: PRIMARY,
     },
     headerTintColor: '#fff',
     headerTitleStyle: {
@@ -69,21 +70,34 @@ const AuthNavigator = () => {
 }
 
 
-const theme = {
+const darkTheme = {
+    ...DarkTheme,
+    roundness: 2,
+    colors: {
+        ...DarkTheme.colors,
+        primary: PRIMARY,
+        background: SECONDARY,
+        accent: ACCENT,
+    },
+    dark: true,
+};
+
+const defaultTheme = {
     ...DefaultTheme,
     roundness: 2,
     colors: {
         ...DefaultTheme.colors,
-        primary: '#3498db',
-        accent: '#f1c40f',
+        primary: PRIMARY,
+        background: SECONDARY_LITE,
+        accent: ACCENT,
     },
-    dark: true
+    dark: false,
 };
 
 export default function App() {
     return (
         <Provider store={store}>
-            <PaperProvider theme={theme}>
+            <PaperProvider theme={darkTheme}>
                 <AuthNavigator />
             </PaperProvider>
         </Provider>

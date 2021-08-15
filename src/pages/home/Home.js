@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, ScrollView, RefreshControl, ActivityIndicator, Text } from 'react-native'
-import { Divider, FAB } from 'react-native-paper'
+import { View, ScrollView, RefreshControl, Text } from 'react-native'
+import { Divider, FAB, ActivityIndicator } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
@@ -44,7 +44,7 @@ export default function Home(props) {
                 state.loading == true
                     ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                         <Text>{loadingMsg}</Text>
-                        <ActivityIndicator color="#00FFFF" size="large" />
+                        <ActivityIndicator size="large" />
                     </View>
                     : <>
                         <ScrollView refreshControl={<RefreshControl refreshing={state.refreshing} onRefresh={loadAllMessages} />}>
@@ -62,7 +62,7 @@ export default function Home(props) {
                             }
                         </ScrollView>
                         <FAB
-                            style={[globalStyle.fab, { backgroundColor: "red" }]} color="#fff"
+                            style={globalStyle.fab} color='#fff'
                             onPress={() => props.navigation.navigate('NewConversation')}
                             icon={({ size, color }) => (
                                 <FontAwesomeIcon size={size} icon={faEnvelope} style={{ color: color }} />

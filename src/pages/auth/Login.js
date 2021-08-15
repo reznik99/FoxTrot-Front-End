@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, ScrollView, ActivityIndicator, Keyboard } from 'react-native';
-import { Button, Input, Text } from 'galio-framework';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useCallback, useEffect } from 'react'
+import { View, ScrollView, Keyboard } from 'react-native'
+import { Button, Input, Text } from 'galio-framework'
+import { useSelector, useDispatch } from 'react-redux'
+import { ActivityIndicator } from 'react-native-paper'
 
 import styles from './style'
 import { validateToken, syncFromStorage } from '../../store/actions/user'
@@ -59,7 +60,7 @@ export default function Login(props) {
                 {loginErr ? <Text style={styles.errorMsg}>{loginErr}</Text> : null}
 
                 {gloablLoading
-                    ? <ActivityIndicator color="#00FFFF" size="large" />
+                    ? <ActivityIndicator size="large" />
                     : <>
                         <Input onChangeText={val => setPhone_number(val)}
                             value={phone_number}
@@ -78,7 +79,7 @@ export default function Login(props) {
                         />
                         {
                             loading
-                                ? <Button style={styles.button}><ActivityIndicator color="#00FFFF" /></Button>
+                                ? <Button style={styles.button}><ActivityIndicator /></Button>
                                 : <Button style={styles.button} onPress={handle_login}>Login</Button>
                         }
                         <Text>Or</Text>

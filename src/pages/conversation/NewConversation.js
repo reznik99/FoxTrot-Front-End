@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react"
-import { Text, View, ActivityIndicator, ScrollView } from "react-native"
-import { Searchbar, FAB } from 'react-native-paper'
+import { Text, View, ScrollView } from "react-native"
+import { Searchbar, FAB, ActivityIndicator } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faUserPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
@@ -46,7 +46,7 @@ export default function NewConversation(props) {
             </View>
 
             {loading || !results
-                ? <ActivityIndicator size="large" color='#fc501c' />
+                ? <ActivityIndicator size="large" />
                 : <ScrollView>
                     {results.length > 0
                         ? results.map((contact, index) => {

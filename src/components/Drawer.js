@@ -4,7 +4,7 @@ import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer'
 import { useSelector } from 'react-redux'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faDoorOpen, faCog } from '@fortawesome/free-solid-svg-icons'
-import { ActivityIndicator, Avatar, Chip, DarkTheme, DefaultTheme } from 'react-native-paper'
+import { ActivityIndicator, Avatar, Chip } from 'react-native-paper'
 
 const styles = {
     profileContainer: {
@@ -42,16 +42,16 @@ export default function Drawer(props) {
                 <View style={styles.profileContainer}>
                     <Avatar.Image size={150}
                         source={{ uri: `https://robohash.org/${state.user_data?.phone_no}` }}
-                        PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
+                        PlaceholderContent={<ActivityIndicator />} />
                     <View>
                         <View style={styles.profileInfoContainer}>
-                            <Chip icon="phone-forward" theme={DefaultTheme}>{state.user_data?.phone_no}</Chip>
+                            <Chip icon="phone-forward">{state.user_data?.phone_no}</Chip>
                         </View>
                         <View style={styles.profileInfoContainer}>
-                            <Chip icon="account" theme={DefaultTheme}>Contacts: {state.contacts?.length}</Chip>
+                            <Chip icon="account">Contacts: {state.contacts?.length}</Chip>
                         </View>
                         <View style={styles.profileInfoContainer}>
-                            <Chip icon="account-key" theme={DefaultTheme}>Keys: RSA {state.keys?.private?.length}</Chip>
+                            <Chip icon="account-key">Keys: RSA {state.keys?.private?.length}</Chip>
                         </View>
                     </View>
                 </View>

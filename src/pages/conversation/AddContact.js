@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react"
-import { Text, View, ActivityIndicator, ScrollView } from "react-native"
-import { Divider, Searchbar, Snackbar } from 'react-native-paper'
+import { Text, View, ScrollView } from "react-native"
+import { Divider, Searchbar, Snackbar, ActivityIndicator } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
@@ -70,7 +70,7 @@ export default function AddContact(props) {
             { /* Contact List */
                 loading
                     ? <View style={{ flex: 1, justifyContent: 'center' }}>
-                        <ActivityIndicator size="large" color='#fc501c' />
+                        <ActivityIndicator size="large" />
                     </View>
                     : <ScrollView>
                         {results && results.length > 0
