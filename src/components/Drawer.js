@@ -3,8 +3,8 @@ import { ScrollView, View, Text } from 'react-native'
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer'
 import { useSelector } from 'react-redux'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faDoorOpen, faCog, faUser, faPhoneAlt, faLock } from '@fortawesome/free-solid-svg-icons'
-import { ActivityIndicator, Avatar } from 'react-native-paper'
+import { faDoorOpen, faCog } from '@fortawesome/free-solid-svg-icons'
+import { ActivityIndicator, Avatar, Chip, DarkTheme, DefaultTheme } from 'react-native-paper'
 
 const styles = {
     profileContainer: {
@@ -45,16 +45,13 @@ export default function Drawer(props) {
                         PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
                     <View>
                         <View style={styles.profileInfoContainer}>
-                            <FontAwesomeIcon size={15} icon={faPhoneAlt} style={styles.profileInfoIcon} />
-                            <Text style={styles.profileInfo}> {state.user_data?.phone_no}</Text>
+                            <Chip icon="phone-forward" theme={DefaultTheme}>{state.user_data?.phone_no}</Chip>
                         </View>
                         <View style={styles.profileInfoContainer}>
-                            <FontAwesomeIcon size={18} icon={faUser} style={styles.profileInfoIcon} />
-                            <Text style={styles.profileInfo}>Contacts: {state.contacts?.length}</Text>
+                            <Chip icon="account" theme={DefaultTheme}>Contacts: {state.contacts?.length}</Chip>
                         </View>
                         <View style={styles.profileInfoContainer}>
-                            <FontAwesomeIcon size={18} icon={faLock} style={styles.profileInfoIcon} />
-                            <Text style={styles.profileInfo}>Keys: RSA {state.keys?.private?.length}</Text>
+                            <Chip icon="account-key" theme={DefaultTheme}>Keys: RSA {state.keys?.private?.length}</Chip>
                         </View>
                     </View>
                 </View>
@@ -76,7 +73,7 @@ export default function Drawer(props) {
                         <FontAwesomeIcon size={size} icon={faDoorOpen} style={{ color: color }} />
                     )}
                 />
-            </ScrollView>
-        </DrawerContentScrollView>
+            </ScrollView >
+        </DrawerContentScrollView >
     )
 }

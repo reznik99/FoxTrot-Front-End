@@ -5,7 +5,7 @@ import { Provider } from 'react-redux'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack'
 import { createDrawerNavigator } from '@react-navigation/drawer'
-import { Provider as PaperProvider } from 'react-native-paper'
+import { Provider as PaperProvider, DefaultTheme } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faHome } from '@fortawesome/free-solid-svg-icons'
 
@@ -69,10 +69,21 @@ const AuthNavigator = () => {
 }
 
 
+const theme = {
+    ...DefaultTheme,
+    roundness: 2,
+    colors: {
+        ...DefaultTheme.colors,
+        primary: '#3498db',
+        accent: '#f1c40f',
+    },
+    dark: true
+};
+
 export default function App() {
     return (
         <Provider store={store}>
-            <PaperProvider>
+            <PaperProvider theme={theme}>
                 <AuthNavigator />
             </PaperProvider>
         </Provider>
