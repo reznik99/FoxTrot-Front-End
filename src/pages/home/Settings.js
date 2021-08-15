@@ -1,8 +1,8 @@
-import AsyncStorage from '@react-native-community/async-storage'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, ScrollView } from 'react-native'
-import { Button, Switch, Checkbox, Title, Snackbar, Paragraph, Dialog, Portal, Chip, DefaultTheme, List, Text } from 'react-native-paper'
+import { Button, Switch, Checkbox, Title, Snackbar, Paragraph, Dialog, Portal, Chip, List, Text } from 'react-native-paper'
 import { useSelector } from 'react-redux'
+import AsyncStorage from '@react-native-community/async-storage'
 
 import globalStyle from "../../global/globalStyle"
 
@@ -18,9 +18,7 @@ export default function Settings(props) {
     const [keys, setKeys] = useState([])
 
     useEffect(() => {
-        AsyncStorage.getAllKeys((err, keys) => {
-            setKeys(keys)
-        })
+        AsyncStorage.getAllKeys((err, keys) => setKeys(keys))
     }, [])
 
     const resetApp = useCallback(() => {
@@ -38,12 +36,8 @@ export default function Settings(props) {
                     <Text>Tokens stored on device:</Text>
                     {
                         keys.map((key, idx) => (
-                            <List.Item
-                                title={key}
-                                left={props => <List.Icon {...props} icon="account-key" />}
-                            />
+                            <List.Item title={key} key={idx} left={props => <List.Icon {...props} icon="account-key" />} />
                         ))
-
                     }
                 </View>
                 <Button mode='contained' onPress={() => setVisibleDialog(true)} loading={visibleDialog}>Factory Reset App</Button>
@@ -54,7 +48,7 @@ export default function Settings(props) {
                             <Paragraph>Are you sure you want to reset your account? All message data will be lost. Keys being removed:</Paragraph>
                             {
                                 keys.map((key, idx) => (
-                                    <Chip key={idx} icon="account-key" theme={DefaultTheme}>{key}</Chip>
+                                    <Chip key={idx} icon="account-key">{key}</Chip>
                                 ))
                             }
                         </Dialog.Content>

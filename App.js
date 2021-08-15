@@ -1,11 +1,12 @@
 
 import 'react-native-gesture-handler'
 import React from 'react'
+import { StatusBar } from 'react-native'
 import { Provider } from 'react-redux'
+import { Provider as PaperProvider, DefaultTheme, DarkTheme } from 'react-native-paper'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack'
 import { createDrawerNavigator } from '@react-navigation/drawer'
-import { Provider as PaperProvider, DefaultTheme, DarkTheme } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faHome } from '@fortawesome/free-solid-svg-icons'
 
@@ -60,7 +61,7 @@ const AuthStack = createStackNavigator()
 const AuthNavigator = () => {
     return (
         <NavigationContainer>
-            <AuthStack.Navigator screenOptions={animationDefaults}>
+            <AuthStack.Navigator screenOptions={{ ...defaultHeaderOptions, ...animationDefaults }}>
                 <AuthStack.Screen name="Login" component={Login} options={{ headerShown: false }} />
                 <AuthStack.Screen name="Signup" component={Signup} />
                 <AuthStack.Screen name="App" component={HomeNavigator} options={{ headerShown: false }} />
@@ -98,6 +99,7 @@ export default function App() {
     return (
         <Provider store={store}>
             <PaperProvider theme={darkTheme}>
+                <StatusBar backgroundColor={PRIMARY} barStyle="light-content" />
                 <AuthNavigator />
             </PaperProvider>
         </Provider>
