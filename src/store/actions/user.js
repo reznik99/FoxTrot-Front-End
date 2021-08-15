@@ -71,7 +71,7 @@ export function loadMessages() {
             response.data.forEach(message => {
                 let other = message.sender === state.user_data.phone_no
                     ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` }
-                    : { phone_no: message.sender, id: message.sender_id }
+                    : { phone_no: message.sender, id: message.sender_id, pic: `https://robohash.org/${message.sender}` }
                 let exists = conversations.has(other.phone_no)
                 if (!exists) {
                     conversations.set(other.phone_no, {
