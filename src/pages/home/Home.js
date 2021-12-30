@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, ScrollView, RefreshControl, Text } from 'react-native'
-import { Divider, FAB, ActivityIndicator } from 'react-native-paper'
+import { Divider, FAB, ActivityIndicator, Snackbar } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { ConversationPeek } from '../../components'
 import globalStyle from "../../global/globalStyle"
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys } from '../../store/actions/user'
+import { initializeWebsocket, destroyWebsocket } from '../../store/actions/websocket'
 
 export default function Home(props) {
 
@@ -28,6 +29,13 @@ export default function Home(props) {
         }
 
         loadAllMessages()
+
+        configureWebsocket()
+
+        // returned function will be called on component unmount 
+        return async () => {
+            await dispatch(destroyWebsocket())
+        }
     }, [])
 
     const loadAllMessages = useCallback(async () => {
@@ -37,9 +45,21 @@ export default function Home(props) {
         setLoadingMsg('')
     }, [])
 
+    const configureWebsocket = useCallback(async () => {
+        setLoadingMsg("Initializing websocket...")
+        await dispatch(initializeWebsocket())
+        setLoadingMsg('')
+    }, [])
 
     return (
         <View style={globalStyle.wrapper}>
+            <Snackbar visible={state.socketErr} style={{ zIndex: 100 }}
+                onDismiss={configureWebsocket}
+                action={{
+                    label: 'Reconnect',
+                    onPress: configureWebsocket,
+                }}> {`Connection to servers lost! Please try again later`}
+            </Snackbar>
             {
                 state.loading == true
                     ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
