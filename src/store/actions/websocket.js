@@ -1,5 +1,5 @@
 import { WEBSOCKET_URL } from '../../global/variables'
-
+import PushNotification from 'react-native-push-notification'
 
 export function initializeWebsocket() {
     return async (dispatch, getState) => {
@@ -29,6 +29,22 @@ export function initializeWebsocket() {
                 try {
                     const message = JSON.parse(event.data)
                     dispatch({ type: "RECV_MESSAGE", payload: message })
+                    PushNotification.createChannel(
+                        {
+                            channelId: 'Messages',
+                            channelName: 'Notifications for incoming messages',
+                            channelDescription: 'Notifications for incoming messages',
+                        },
+                        () => { },
+                    )
+                    PushNotification.localNotification({
+                        channelId: 'Messages',
+                        title: `🔔 Message from ${message.sender}`,
+                        message: message.message,
+                        when: message.sent_at,
+                        visibility: "public",
+                        picture: `https://robohash.org/${message.sender}`
+                    })
                 } catch (err) {
                     console.log(err)
                 }
