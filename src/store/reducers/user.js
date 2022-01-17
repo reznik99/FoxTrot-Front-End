@@ -39,14 +39,27 @@ function userReducer(state = initialState, action) {
         case "SET_REFRESHING":
             return { ...state, refreshing: action.payload }
         case "SEND_MESSAGE":
-            const newState = { ...state }
-            const message = action.payload
+            newState = { ...state }
+            message = action.payload
             newState.conversations.forEach(convo => {
                 if (convo.other_user.phone_no === message.reciever) {
                     convo.messages.push(message)
                 }
             });
             return newState
+        case "RECV_MESSAGE":
+            newState = { ...state }
+            message = action.payload
+            newState.conversations.forEach(convo => {
+                if (convo.other_user.phone_no === message.sender) {
+                    convo.messages.push(message)
+                }
+            });
+            return newState
+        case "WEBSOCKET_CONNECT":
+            return { ...state, socketConn: action.payload, socketErr: '' }
+        case "WEBSOCKET_ERROR":
+            return { ...state, socketErr: action.payload }
         default:
             return state
     }
