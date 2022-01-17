@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native'
-import { Avatar } from 'react-native-paper'
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
+import { Avatar, ActivityIndicator } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
 
 export default function ConversationPeek(props) {
 
-    const user_phone_no = useSelector(state => state.userReducer.phone_no)
+    const user_phone_no = useSelector(state => state.userReducer.user_data.phone_no)
 
     // Return style for unseen message only if message wasn't sent by user AND message wasn't seen before
     const shouldNotify = useCallback((lastMessage) => {
@@ -37,12 +37,11 @@ export default function ConversationPeek(props) {
     const lastMessage = data.messages[data.messages.length - 1] || { content: "", sent_at: null }
     const isNew = shouldNotify(lastMessage)
     const boldIfUnseen = isNew ? styles.unseenMessage : null
-
     return (
         <TouchableOpacity style={[styles.conversationPeek]} onPress={() => { navigation.navigate('Conversation', { data }) }}>
             <Avatar.Image size={55} style={styles.profilePicContainer}
                 source={{ uri: data.other_user.pic }}
-                PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
+                PlaceholderContent={<ActivityIndicator />} />
 
             <View style={{ flex: 1 }}>
                 <Text style={[globalStyle.textInfo, boldIfUnseen]}>{data.other_user.phone_no}</Text>

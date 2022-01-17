@@ -9,7 +9,7 @@ export function humanTime(lastTime) {
     return diff / 1000 > 60
         ? diff / 1000 / 60 > 60
             ? diff / 1000 / 60 / 60 > 24
-                ? `${parseInt(diff / 1000 / 60 / 60 / 24)} days ago`
+                ? `${new Date(lastTime).toLocaleDateString()}`
                 : `${parseInt(diff / 1000 / 60 / 60)} h ago`
             : `${parseInt(diff / 1000 / 60)} m ago`
         : 'just now';

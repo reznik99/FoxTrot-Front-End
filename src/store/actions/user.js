@@ -4,6 +4,29 @@ import { RSA } from 'react-native-rsa-native'
 
 import { API_URL } from '../../global/variables'
 
+export function loadKeys() {
+    return async (dispatch, getState) => {
+        try {
+            dispatch({ type: "SET_LOADING", payload: true })
+
+            let state = getState().userReducer
+
+            console.log('Loading Crypto Keys from local storage into store')
+            const keys = await AsyncStorage.getItem(state.user_data.phone_no + "-keys")
+            if (!keys) throw Error("No keys")
+
+            // Store keypair in memory
+            dispatch({ type: "KEY_LOAD", payload: JSON.parse(keys) })
+            return true
+        } catch (err) {
+            console.log(`Couldn't find keys for user in storage: ${err}`)
+            return false
+        } finally {
+            dispatch({ type: "SET_LOADING", payload: false })
+        }
+    }
+}
+
 export function generateAndSyncKeys() {
     return async (dispatch, getState) => {
         try {
@@ -12,10 +35,11 @@ export function generateAndSyncKeys() {
             let state = getState().userReducer
             // Generate Keypair
             const keys = await RSA.generateKeys(4096)
+            console.log("Generated RSA 4096 Keypair. Storing in: " + state.user_data.phone_no + "-keys")
             // Store on device 
-            await AsyncStorage.setItem('rsa-user-keys', JSON.stringify(keys))
+            await AsyncStorage.setItem(state.user_data.phone_no + "-keys", JSON.stringify(keys))
             // Upload public key
-            const response = await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.publicKey }, axiosBearerConfig(state.token))
+            const response = await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.public }, axiosBearerConfig(state.token))
             // Store keypair in memory
             dispatch({ type: "KEY_GEN", payload: keys })
 
@@ -45,9 +69,9 @@ export function loadMessages() {
 
             // TODO: Fix this mess up
             response.data.forEach(message => {
-                let other = message.sender === state.phone_no
+                let other = message.sender === state.user_data.phone_no
                     ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` }
-                    : { phone_no: message.sender, id: message.sender_id }
+                    : { phone_no: message.sender, id: message.sender_id, pic: `https://robohash.org/${message.sender}` }
                 let exists = conversations.has(other.phone_no)
                 if (!exists) {
                     conversations.set(other.phone_no, {
@@ -89,7 +113,7 @@ export function loadContacts() {
             dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 
         } catch (err) {
-            console.error(`Error loading contacts: ${err}`)
+            console.log(`Error loading contacts: ${err}`)
         } finally {
             dispatch({ type: "SET_REFRESHING", payload: false })
         }
@@ -99,18 +123,24 @@ export function loadContacts() {
 export function addContact(user) {
     return async (dispatch, getState) => {
         try {
-            dispatch({ type: "SET_LOADING", payload: true })
+            dispatch({ type: "ADDING_CONTACT", payload: user })
             let state = getState().userReducer
             // Load contacts
             await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
 
-            dispatch({ type: "NEW_CONTACT", payload: user })
-
+            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: user })
         } catch (err) {
-            console.error(`Error adding contact: ${err}`)
+            console.log(`Error adding contact: ${err}`)
         } finally {
-            dispatch({ type: "SET_LOADING", payload: false })
+            dispatch({ type: "ADD_CONTACT_FAILURE", payload: user })
         }
+    }
+}
+
+export function clearAddingContact() {
+    return (dispatch) => {
+        dispatch({ type: "ADDING_CONTACT", payload: null })
+        dispatch({ type: "ADD_CONTACT_FAILURE", payload: null })
     }
 }
 
@@ -122,15 +152,13 @@ export function searchUsers(prefix) {
 
             const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token))
 
-            const users = []
-            response.data.forEach(user => {
-                users.push({ ...user, pic: `https://robohash.org/${user.phone_no}` })
-            });
+            // Append fake picture to users
+            const results = response.data.map(user => ({ ...user, pic: `https://robohash.org/${user.phone_no}`, isContact: state.contacts.some(contact => contact.id === user.id) }))
 
-            return users
+            return results
 
         } catch (err) {
-            console.error(`Error searching users: ${err}`)
+            console.log(`Error searching users: ${err}`)
             return []
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -146,7 +174,7 @@ export function sendMessage(message, to_user) {
 
             let msg = {
                 message: message,
-                sender: state.phone_no,
+                sender: state.user_data.phone_no,
                 reciever: to_user.phone_no,
                 sent_at: Date.now(),
                 seen: false
@@ -157,7 +185,7 @@ export function sendMessage(message, to_user) {
             await axios.post(`${API_URL}/sendMessage`, { message: message, contact_id: to_user.id }, axiosBearerConfig(state.token))
 
         } catch (err) {
-            console.error(`Error sending message: ${err}`)
+            console.log(`Error sending message: ${err}`)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }
@@ -191,28 +219,22 @@ export function syncFromStorage() {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
-            console.log('Reading keys from local storage into store')
-            const keys = await AsyncStorage.getItem('rsa-user-keys')
+            console.log('Loading user_data from local storage into store')
+            const user_data = await AsyncStorage.getItem('user_data')
 
-            console.log('Reading JWT from local storage into store')
-            const JWT = await AsyncStorage.getItem('JWT')
+            console.log('Loading JSON Web Token from local storage into store')
+            const token = await AsyncStorage.getItem('auth_token')
 
-            console.log('Reading userInfo from local storage into store')
-            const phone_no = await AsyncStorage.getItem('user')
-
+            const payload = {
+                token: token,
+                user_data: JSON.parse(user_data),
+            }
             dispatch({
                 type: "SYNC_FROM_STORAGE",
-                payload: {
-                    keys: JSON.parse(keys),
-                    token: JWT,
-                    phone_no: phone_no,
-                },
+                payload: payload,
             })
-
-            return true
         } catch (err) {
             console.error(`Error syncing from storage: ${err}`)
-            return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }

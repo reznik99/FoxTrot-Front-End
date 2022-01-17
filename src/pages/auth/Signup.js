@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
-import { Button, Input, Text } from 'galio-framework';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useCallback } from 'react'
+import { View, ScrollView } from 'react-native'
+import { Button, Input, Text } from 'galio-framework'
+import { useSelector, useDispatch } from 'react-redux'
+import { ActivityIndicator } from 'react-native-paper'
 
 import styles from './style'
 import { signUp } from '../../store/actions/auth'
@@ -53,7 +54,7 @@ export default function Signup(props) {
                     placeholderTextColor="#333"
                 />
                 {loading
-                    ? <Button style={[styles.button, styles.buttonCyan]}><ActivityIndicator color="#00FFFF" /></Button>
+                    ? <Button style={[styles.button, styles.buttonCyan]}><ActivityIndicator /></Button>
                     : <Button style={[styles.button, styles.buttonCyan]} onPress={signup}>Signup</Button>
                 }
             </View>

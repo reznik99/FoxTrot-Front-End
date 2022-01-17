@@ -1,12 +1,13 @@
 import React, { Component } from 'react'
-import { Text, View, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { Text, View, TouchableOpacity } from 'react-native'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faVideo, faPhoneAlt, faBars, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { Image } from "react-native-elements"
+import { ActivityIndicator } from 'react-native-paper'
 
 import styles from "./HeaderStyles"
 
-class HeaderConversation extends Component {
+export default class HeaderConversation extends Component {
     constructor(props) {
         super(props);
     }
@@ -28,7 +29,7 @@ class HeaderConversation extends Component {
                         <View style={styles.profilePicContainer}>
                             <Image source={{ uri: this.props.data.other_user.pic }}
                                 style={styles.profilePic}
-                                PlaceholderContent={<ActivityIndicator color="#00FFFF" />} />
+                                PlaceholderContent={<ActivityIndicator />} />
                         </View>
                         <Text style={styles.topBarText}>{this.props.data.other_user.identifier || this.props.data.other_user.phone_no}</Text>
                     </TouchableOpacity>
@@ -48,5 +49,3 @@ class HeaderConversation extends Component {
         );
     }
 }
-
-export default HeaderConversation;

@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, ScrollView, RefreshControl, ActivityIndicator, Text } from 'react-native'
-import { Divider, FAB } from 'react-native-paper'
+import { View, ScrollView, RefreshControl, Text } from 'react-native'
+import { Divider, FAB, ActivityIndicator, Snackbar } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
 
-import ConversationPeek from '../../components/ConversationPeek'
+import { ConversationPeek } from '../../components'
 import globalStyle from "../../global/globalStyle"
-import { loadMessages, loadContacts, generateAndSyncKeys } from '../../store/actions/user'
+import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys } from '../../store/actions/user'
+import { initializeWebsocket, destroyWebsocket } from '../../store/actions/websocket'
 
 export default function Home(props) {
 
@@ -18,14 +19,23 @@ export default function Home(props) {
     useEffect(async () => {
         if (state.loading) return
 
+        const loadedKeys = await (dispatch(loadKeys()))
+
         // If keys not loaded, generate them (first time login)
-        if (!state.keys) {
+        if (!loadedKeys) {
             setLoadingMsg("Generating cryptographic keys...")
             await dispatch(generateAndSyncKeys())
             setLoadingMsg('')
         }
 
         loadAllMessages()
+
+        configureWebsocket()
+
+        // returned function will be called on component unmount 
+        return async () => {
+            await dispatch(destroyWebsocket())
+        }
     }, [])
 
     const loadAllMessages = useCallback(async () => {
@@ -35,14 +45,26 @@ export default function Home(props) {
         setLoadingMsg('')
     }, [])
 
+    const configureWebsocket = useCallback(async () => {
+        setLoadingMsg("Initializing websocket...")
+        await dispatch(initializeWebsocket())
+        setLoadingMsg('')
+    }, [])
 
     return (
         <View style={globalStyle.wrapper}>
+            <Snackbar visible={state.socketErr} style={{ zIndex: 100 }}
+                onDismiss={configureWebsocket}
+                action={{
+                    label: 'Reconnect',
+                    onPress: configureWebsocket,
+                }}> {`Connection to servers lost! Please try again later`}
+            </Snackbar>
             {
                 state.loading == true
                     ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                         <Text>{loadingMsg}</Text>
-                        <ActivityIndicator color="#00FFFF" size="large" />
+                        <ActivityIndicator size="large" />
                     </View>
                     : <>
                         <ScrollView refreshControl={<RefreshControl refreshing={state.refreshing} onRefresh={loadAllMessages} />}>
@@ -60,7 +82,7 @@ export default function Home(props) {
                             }
                         </ScrollView>
                         <FAB
-                            style={[globalStyle.fab, { backgroundColor: "red" }]} color="#fff"
+                            style={globalStyle.fab} color='#fff'
                             onPress={() => props.navigation.navigate('NewConversation')}
                             icon={({ size, color }) => (
                                 <FontAwesomeIcon size={size} icon={faEnvelope} style={{ color: color }} />

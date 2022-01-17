@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, ScrollView, ActivityIndicator, Keyboard } from 'react-native';
-import { Button, Input, Text } from 'galio-framework';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useCallback, useEffect } from 'react'
+import { View, ScrollView, Keyboard } from 'react-native'
+import { Button, Input, Text } from 'galio-framework'
+import { useSelector, useDispatch } from 'react-redux'
+import { ActivityIndicator } from 'react-native-paper'
 
 import styles from './style'
 import { validateToken, syncFromStorage } from '../../store/actions/user'
@@ -9,7 +10,7 @@ import { logIn } from '../../store/actions/auth'
 
 export default function Login(props) {
 
-    const { loginErr, loading, phone_no } = useSelector(state => state.userReducer);
+    const { loginErr, loading, user_data } = useSelector(state => state.userReducer);
     const [gloablLoading, setGloablLoading] = useState(false)
     const [phone_number, setPhone_number] = useState('')
     const [password, setPassword] = useState('')
@@ -21,8 +22,6 @@ export default function Login(props) {
             setGloablLoading(true)
             // Load data from disk into redux store
             await dispatch(syncFromStorage())
-            // Auto-fill phone_no from storage
-            setPhone_number(phone_no)
             // If user manually logged out, don't try autologin
             if (props.route.params?.data?.loggedOut) {
                 return console.log("User logged out")
@@ -36,6 +35,11 @@ export default function Login(props) {
             setGloablLoading(false)
         }
     }, []);
+
+    useEffect(() => {
+        // Auto-fill phone_no from storage
+        setPhone_number(user_data?.phone_no || '')
+    }, [user_data])
 
     const handle_login = useCallback(async () => {
         Keyboard.dismiss()
@@ -56,7 +60,7 @@ export default function Login(props) {
                 {loginErr ? <Text style={styles.errorMsg}>{loginErr}</Text> : null}
 
                 {gloablLoading
-                    ? <ActivityIndicator color="#00FFFF" size="large" />
+                    ? <ActivityIndicator size="large" />
                     : <>
                         <Input onChangeText={val => setPhone_number(val)}
                             value={phone_number}
@@ -75,7 +79,7 @@ export default function Login(props) {
                         />
                         {
                             loading
-                                ? <Button style={styles.button}><ActivityIndicator color="#00FFFF" /></Button>
+                                ? <Button style={styles.button}><ActivityIndicator /></Button>
                                 : <Button style={styles.button} onPress={handle_login}>Login</Button>
                         }
                         <Text>Or</Text>
