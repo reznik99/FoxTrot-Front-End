@@ -1,6 +1,6 @@
 
-export const API_URL = 'http://francescogorini.com:1234';
-export const WEBSOCKET_URL = 'ws://francescogorini.com:1234/ws';
+export const API_URL = 'https://francescogorini.com/foxtrot-api';
+export const WEBSOCKET_URL = 'wss://francescogorini.com/foxtrot-api/ws';
 
 export const PRIMARY = '#199187';
 
