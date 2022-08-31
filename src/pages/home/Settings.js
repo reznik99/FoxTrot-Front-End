@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { View, ScrollView } from 'react-native'
 import { Button, Switch, Checkbox, Title, Snackbar, Paragraph, Dialog, Portal, Chip, List, Text } from 'react-native-paper'
 import { useSelector } from 'react-redux'
-import AsyncStorage from '@react-native-community/async-storage'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import globalStyle from "../../global/globalStyle"
 
