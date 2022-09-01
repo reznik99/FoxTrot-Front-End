@@ -16,21 +16,25 @@ export default function Home(props) {
     const dispatch = useDispatch()
     const [loadingMsg, setLoadingMsg] = useState('')
 
-    useEffect(async () => {
-        if (state.loading) return
+    useEffect(() => {
+        const initLoad = async () => {
+            if (state.loading) return
 
-        const loadedKeys = await (dispatch(loadKeys()))
+            const loadedKeys = await (dispatch(loadKeys()))
 
-        // If keys not loaded, generate them (first time login)
-        if (!loadedKeys) {
-            setLoadingMsg("Generating cryptographic keys...")
-            await dispatch(generateAndSyncKeys())
-            setLoadingMsg('')
+            // If keys not loaded, generate them (first time login)
+            if (!loadedKeys) {
+                setLoadingMsg("Generating cryptographic keys...")
+                await dispatch(generateAndSyncKeys())
+                setLoadingMsg('')
+            }
+
+            loadAllMessages()
+
+            configureWebsocket()
         }
 
-        loadAllMessages()
-
-        configureWebsocket()
+        initLoad()
 
         // returned function will be called on component unmount 
         return async () => {

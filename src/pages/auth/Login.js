@@ -17,23 +17,26 @@ export default function Login(props) {
 
     const dispatch = useDispatch()
 
-    useEffect(async () => {
-        try {
-            setGloablLoading(true)
-            // Load data from disk into redux store
-            await dispatch(syncFromStorage())
-            // If user manually logged out, don't try autologin
-            if (props.route.params?.data?.loggedOut) {
-                return console.log("User logged out")
+    useEffect(() => {
+        const autoLogin = async () => {
+            try {
+                setGloablLoading(true)
+                // Load data from disk into redux store
+                await dispatch(syncFromStorage())
+                // If user manually logged out, don't try autologin
+                if (props.route.params?.data?.loggedOut) {
+                    return console.log("User logged out")
+                }
+                // Auto-login if Token still valid
+                let loggedIn = await dispatch(validateToken())
+                if (loggedIn)
+                    return props.navigation.replace('App', { screen: 'Home' })
+                console.log("Token expired")
+            } finally {
+                setGloablLoading(false)
             }
-            // Auto-login if Token still valid
-            let loggedIn = await dispatch(validateToken())
-            if (loggedIn)
-                return props.navigation.replace('App', { screen: 'Home' })
-            console.log("Token expired")
-        } finally {
-            setGloablLoading(false)
         }
+        autoLogin()
     }, []);
 
     useEffect(() => {
