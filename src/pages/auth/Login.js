@@ -1,8 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import { View, ScrollView, Keyboard } from 'react-native'
-import { Button, Input, Text } from 'galio-framework'
 import { useSelector, useDispatch } from 'react-redux'
-import { ActivityIndicator } from 'react-native-paper'
+import { View, ScrollView, Keyboard } from 'react-native'
+import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper'
 
 import styles from './style'
 import { validateToken, syncFromStorage } from '../../store/actions/user'
@@ -12,7 +11,7 @@ export default function Login(props) {
 
     const { loginErr, loading, user_data } = useSelector(state => state.userReducer);
     const [gloablLoading, setGloablLoading] = useState(false)
-    const [phone_number, setPhone_number] = useState('')
+    const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
 
     const dispatch = useDispatch()
@@ -41,53 +40,51 @@ export default function Login(props) {
 
     useEffect(() => {
         // Auto-fill phone_no from storage
-        setPhone_number(user_data?.phone_no || '')
+        setUsername(user_data?.phone_no || '')
     }, [user_data])
 
-    const handle_login = useCallback(async () => {
+    const handleLogin = useCallback(async () => {
+        if (loading) return
+
         Keyboard.dismiss()
-        let loggedIn = await dispatch(logIn(phone_number, password))
+        let loggedIn = await dispatch(logIn(username, password))
         if (loggedIn) {
             props.navigation.replace('App', { screen: 'Home' })
         }
-    }, [phone_number, password]);
+    }, [username, password, loading]);
 
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.wrapper}>
-                <View>
-                    <Text style={styles.title} h4>FoxTrot</Text>
-                    <Text style={styles.title} h6 muted>secure communications</Text>
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>FoxTrot</Text>
+                    <Text style={styles.subTitle}>secure communications</Text>
                 </View>
-                {loginErr ? <Text style={styles.errorMsg}>{loginErr}</Text> : null}
+                { loginErr && <Text style={styles.errorMsg}>{loginErr}</Text> }
 
-                {gloablLoading
-                    ? <ActivityIndicator size="large" />
-                    : <>
-                        <Input onChangeText={val => setPhone_number(val)}
-                            value={phone_number}
+                { gloablLoading ? <ActivityIndicator size="large" />
+                    : <View>
+                        <TextInput mode="outlined" 
+                            onChangeText={val => setUsername(val)}
+                            value={username}
+                            label="Phone no."
                             style={loginErr ? { borderColor: "red" } : null}
-                            help="Phone number"
-                            placeholder="Phone no."
-                            placeholderTextColor="#333"
                         />
-                        <Input onChangeText={val => setPassword(val)}
-                            value={password}
-                            style={loginErr ? { borderColor: "red" } : null}
+                        <TextInput mode="outlined" 
+                            onChangeText={val => setPassword(val)} 
+                            value={password} 
+                            label="Password"
                             secureTextEntry={true}
-                            help="Password"
-                            placeholder="Password"
-                            placeholderTextColor="#333"
+                            style={loginErr ? { borderColor: "red" } : null}
                         />
-                        {
-                            loading
-                                ? <Button style={styles.button}><ActivityIndicator /></Button>
-                                : <Button style={styles.button} onPress={handle_login}>Login</Button>
-                        }
-                        <Text>Or</Text>
-                        <Button style={[styles.button, styles.buttonCyan]} onPress={() => props.navigation.navigate('Signup')}>Signup </Button>
-                    </>
+                        
+                        <View>
+                            <Button mode="contained" color="red" style={styles.button} loading={loading} onPress={handleLogin}> Login </Button>
+                            <Text>Or</Text>
+                            <Button mode="contained" style={[styles.button]} onPress={() => props.navigation.navigate('Signup')}> Signup </Button>
+                        </View>
+                    </View>
                 }
             </View>
         </ScrollView>

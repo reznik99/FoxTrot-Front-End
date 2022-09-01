@@ -1,28 +1,46 @@
 import { StyleSheet } from 'react-native';
+import { PRIMARY, SECONDARY, ACCENT } from '@/global/variables'
+
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-    }, wrapper: {
+        backgroundColor: '#232323'
+    }, 
+    wrapper: {
         flex: 1,
         width: "70%",
         height: "100%",
-        alignItems: 'center',
         justifyContent: 'center',
-    }, formWrapper: {
+        padding: 10
+    }, 
+    formWrapper: {
         flex: 1,
         width: "100%",
         height: "100%",
         alignItems: 'center',
-    }, button: {
+    }, 
+    button: {
         width: '100%',
-    }, buttonCyan: {
+        backgroundColor: PRIMARY
+    }, 
+    buttonCyan: {
         backgroundColor: "#00aaaa"
-    }, title: {
-        textAlign: "center",
-        paddingVertical: 10,
-    }, errorMsg: {
+    }, 
+    titleContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        marginVertical: 25
+    }, 
+    title:{
+        fontSize: 35
+    }, 
+    subTitle: {
+        fontSize: 20, 
+        color: 'gray'
+    }, 
+    errorMsg: {
         color: 'red',
         textAlign: 'center'
     }

@@ -21,7 +21,6 @@
         "@react-navigation/native": "^6.0.12",
         "@react-navigation/stack": "^6.2.3",
         "axios": "^0.21.2",
-        "galio-framework": "^0.8.0",
         "react": "^18.0.0",
         "react-native": "^0.69.3",
         "react-native-elements": "^3.4.2",
@@ -41,6 +40,7 @@
         "@babel/core": "^7.14.8",
         "@babel/runtime": "^7.14.8",
         "@react-native-community/eslint-config": "^3.1.0",
+        "babel-plugin-root-import": "^6.6.0",
         "eslint": "^8.23.0",
         "metro-react-native-babel-preset": "^0.72.1"
     },
