@@ -83,7 +83,7 @@ export default function Login(props) {
                         <View style={{marginTop: 30, display: 'flex', alignItems: 'center'}}>
                             <Button mode="contained" icon="login" style={styles.button} loading={loading} onPress={handleLogin}>Login</Button>
                             <Text style={{paddingVertical: 10}}>Or</Text>
-                            <Button mode="outlined" icon="account-plus" style={{width: '100%'}} onPress={() => props.navigation.navigate('Signup')}>Signup</Button>
+                            <Button icon="account-plus" style={[styles.button, {backgroundColor: 'none'}]} onPress={() => props.navigation.navigate('Signup')}>Signup</Button>
                         </View>
                     </View>
                 }
