@@ -4,8 +4,8 @@ import { View, ScrollView, Keyboard } from 'react-native'
 import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper'
 
 import styles from './style'
-import { validateToken, syncFromStorage } from '../../store/actions/user'
-import { logIn } from '../../store/actions/auth'
+import { validateToken, syncFromStorage } from '~/store/actions/user'
+import { logIn } from '~/store/actions/auth'
 
 export default function Login(props) {
 
@@ -69,20 +69,21 @@ export default function Login(props) {
                             onChangeText={val => setUsername(val)}
                             value={username}
                             label="Phone no."
-                            style={loginErr ? { borderColor: "red" } : null}
+                            outlineColor={loginErr ? "red"  : null}
                         />
                         <TextInput mode="outlined" 
                             onChangeText={val => setPassword(val)} 
                             value={password} 
                             label="Password"
                             secureTextEntry={true}
-                            style={loginErr ? { borderColor: "red" } : null}
+                            outlineColor={loginErr ? "red"  : null}
                         />
                         
-                        <View>
-                            <Button mode="contained" color="red" style={styles.button} loading={loading} onPress={handleLogin}> Login </Button>
-                            <Text>Or</Text>
-                            <Button mode="contained" style={[styles.button]} onPress={() => props.navigation.navigate('Signup')}> Signup </Button>
+                        {/* Actions */}
+                        <View style={{marginTop: 30, display: 'flex', alignItems: 'center'}}>
+                            <Button mode="contained" icon="login" style={styles.button} loading={loading} onPress={handleLogin}>Login</Button>
+                            <Text style={{paddingVertical: 10}}>Or</Text>
+                            <Button mode="outlined" icon="account-plus" style={{width: '100%'}} onPress={() => props.navigation.navigate('Signup')}>Signup</Button>
                         </View>
                     </View>
                 }

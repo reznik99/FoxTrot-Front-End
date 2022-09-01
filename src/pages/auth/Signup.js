@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react'
 import { View, ScrollView } from 'react-native'
 import { useSelector, useDispatch } from 'react-redux'
-import { ActivityIndicator, Button, TextInput, Text  } from 'react-native-paper'
+import { Button, TextInput, Text  } from 'react-native-paper'
 
 import styles from './style'
-import { signUp } from '../../store/actions/auth'
+import { signUp } from '~/store/actions/auth'
 
 
 export default function Signup(props) {
@@ -38,24 +38,27 @@ export default function Signup(props) {
                     onChangeText={val => setUsername(val)}
                     value={username}
                     label="Phone number"
-                    style={signupErr && !username ? { borderColor: "red" } : null}
+                    outlineColor={signupErr && !username ? "red"  : null}
                 />
                 <TextInput mode="outlined"  
                     onChangeText={val => setPassword(val)}
                     value={password}
                     secureTextEntry={true}
                     label="Password"
-                    style={signupErr && !password ? { borderColor: "red" } : null}
+                    outlineColor={signupErr && !password ? "red"  : null}
                 />
                 <TextInput mode="outlined" 
                     onChangeText={val => setRePassword(val)}
                     value={rePassword}
                     secureTextEntry={true}
                     label="Repeat Password"
-                    style={signupErr && (!rePassword || rePassword !== password) ? { borderColor: "red" } : null}
+                    outlineColor={signupErr && (!rePassword || rePassword !== password) ? "red"  : null}
                 />
-                
-                <Button mode="contained" style={[styles.button, styles.buttonCyan]} onPress={signup} loading={loading}>Signup</Button>
+
+                {/* Actions */}
+                <View style={{marginTop: 30, display: 'flex', alignItems: 'center'}}>
+                    <Button mode="contained" icon="account-plus" style={[styles.button, styles.buttonCyan]} onPress={signup} loading={loading}>Signup</Button>
+                </View>
             </View>
         </ScrollView>
     );

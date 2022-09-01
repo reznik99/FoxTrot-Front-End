@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { PRIMARY, SECONDARY, ACCENT } from '@/global/variables'
+import { PRIMARY, SECONDARY, ACCENT } from '~/global/variables'
 
 
 const styles = StyleSheet.create({
@@ -23,7 +23,8 @@ const styles = StyleSheet.create({
     }, 
     button: {
         width: '100%',
-        backgroundColor: PRIMARY
+        paddingVertical: 6,
+        backgroundColor: ACCENT
     }, 
     buttonCyan: {
         backgroundColor: "#00aaaa"
@@ -31,7 +32,7 @@ const styles = StyleSheet.create({
     titleContainer: {
         display: 'flex',
         alignItems: 'center',
-        marginVertical: 25
+        marginBottom: 30
     }, 
     title:{
         fontSize: 35
