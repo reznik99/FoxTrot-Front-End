@@ -1,6 +1,6 @@
-import axios from 'axios'
+import axios from 'axios';
 // Storage
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 // Crypto
 var Buffer = require("@craftzdog/react-native-buffer").Buffer;
@@ -15,19 +15,26 @@ export function loadKeys() {
             let state = getState().userReducer
 
             console.debug('Loading Crypto Keys from secure storage...')
-            const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`,{
-                accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE
-            })
+            const options = {
+                authenticationPrompt: {
+                  title: 'Authentication required',
+                  subtitle: 'Subtitle',
+                  description: 'Some descriptive text',
+                  cancel: 'Cancel',
+                },
+            };
+            const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`, options)
             if (!credentials || credentials.service !== `${state.user_data.phone_no}-keys`) {
-                console.warn('No keys:', credentials)
-                return
+                console.log('Warn: No keys found')
+                return false
             }
+            console.log("Loaded keys", credentials.password)
             
             // Store keypair in memory
             dispatch({ type: "KEY_LOAD", payload: JSON.parse(credentials.password) })
             return true
         } catch (err) {
-            console.error(`Error loading keys: ${err}`)
+            console.error(`Error loading keys: ${err}: ${JSON.stringify(await Keychain.getSupportedBiometryType())}`)
             return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -56,7 +63,9 @@ export function generateAndSyncKeys() {
 
             // Store on device
             await Keychain.setInternetCredentials(`${state.user_data.phone_no}-keys`, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
-                accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE
+                accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
+                accessGroup: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+                storage: Keychain.STORAGE_TYPE.AES,
             })
 
             // Upload public key
@@ -64,9 +73,11 @@ export function generateAndSyncKeys() {
 
             // Store keypair in memory
             dispatch({ type: "KEY_GEN", payload: keys })
+            return true
 
         } catch (err) {
             console.error(`Error generating and syncing keys: ${err}`)
+            return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }

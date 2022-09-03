@@ -25,8 +25,9 @@ export default function Home(props) {
             // If keys not loaded, generate them (first time login)
             if (!loadedKeys) {
                 setLoadingMsg("Generating cryptographic keys...")
-                await dispatch(generateAndSyncKeys())
+                const success = await dispatch(generateAndSyncKeys())
                 setLoadingMsg('')
+                if(!success) return props.navigation.navigate('Login', { data: { loggedOut: true } })
             }
 
             loadAllMessages()

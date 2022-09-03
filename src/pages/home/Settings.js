@@ -2,9 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { View, ScrollView } from 'react-native'
 import { Button, Switch, Checkbox, Title, Snackbar, Paragraph, Dialog, Portal, Chip, List, Text } from 'react-native-paper'
 import { useSelector } from 'react-redux'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import globalStyle from "../../global/globalStyle"
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Keychain from 'react-native-keychain';
+
+import globalStyle from "~/global/globalStyle"
 
 export default function Settings(props) {
 
@@ -24,8 +26,9 @@ export default function Settings(props) {
     const resetApp = useCallback(() => {
         setVisibleDialog(false)
         AsyncStorage.multiRemove(keys)
+        Keychain.resetInternetCredentials(`${state.user_data?.phone_no}-keys`)
         props.navigation.navigate('Login', { data: { loggedOut: true } })
-    }, [keys])
+    }, [keys, state])
 
     return (
         <View style={globalStyle.wrapper}>
