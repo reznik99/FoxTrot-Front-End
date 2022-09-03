@@ -1,8 +1,11 @@
 import axios from 'axios'
+// Storage
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { RSA } from 'react-native-rsa-native'
+import * as Keychain from 'react-native-keychain';
+// Crypto
+var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 
-import { API_URL } from '../../global/variables'
+import { API_URL, UserKeypairConf } from '~/global/variables';
 
 export function loadKeys() {
     return async (dispatch, getState) => {
@@ -11,15 +14,20 @@ export function loadKeys() {
 
             let state = getState().userReducer
 
-            console.debug('Loading Crypto Keys from local storage into store')
-            const keys = await AsyncStorage.getItem(state.user_data.phone_no + "-keys")
-            if (!keys) throw Error("No keys")
-
+            console.debug('Loading Crypto Keys from secure storage...')
+            const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`,{
+                accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE
+            })
+            if (!credentials || credentials.service !== `${state.user_data.phone_no}-keys`) {
+                console.warn('No keys:', credentials)
+                return
+            }
+            
             // Store keypair in memory
-            dispatch({ type: "KEY_LOAD", payload: JSON.parse(keys) })
+            dispatch({ type: "KEY_LOAD", payload: JSON.parse(credentials.password) })
             return true
         } catch (err) {
-            console.debug(`Couldn't find keys for user in storage: ${err}`)
+            console.error(`Error loading keys: ${err}`)
             return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -33,13 +41,27 @@ export function generateAndSyncKeys() {
             dispatch({ type: "SET_LOADING", payload: true })
 
             let state = getState().userReducer
-            // Generate Keypair
-            const keys = await RSA.generateKeys(4096)
-            console.debug("Generated RSA 4096 Keypair. Storing in: " + state.user_data.phone_no + "-keys")
-            // Store on device 
-            await AsyncStorage.setItem(state.user_data.phone_no + "-keys", JSON.stringify(keys))
+
+            // Generate RSA Keypair
+            const keyPair = await window.crypto.subtle.generateKey(
+                UserKeypairConf,
+                true,
+                ['sign', 'verify']
+            )
+            const keys = {
+                public: Buffer.from(await window.crypto.subtle.exportKey('spki', keyPair.publicKey)).toString('base64'),
+                private: Buffer.from(await window.crypto.subtle.exportKey('pkcs8', keyPair.privateKey)).toString('base64')
+            }
+            console.debug(`Generated '${UserKeypairConf.name} ${UserKeypairConf.modulusLength}' Keypair. Storing in: ${state.user_data.phone_no}-keys`)
+
+            // Store on device
+            await Keychain.setInternetCredentials(`${state.user_data.phone_no}-keys`, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
+                accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE
+            })
+
             // Upload public key
-            const response = await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.public }, axiosBearerConfig(state.token))
+            await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.public }, axiosBearerConfig(state.token))
+
             // Store keypair in memory
             dispatch({ type: "KEY_GEN", payload: keys })
 
@@ -224,6 +246,8 @@ export function syncFromStorage() {
 
             console.debug('Loading JSON Web Token from local storage into store')
             const token = await AsyncStorage.getItem('auth_token')
+
+            // TODO: Load existing messages/contacts and stuff
 
             const payload = {
                 token: token,

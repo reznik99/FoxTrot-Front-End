@@ -12,6 +12,7 @@
         "build-android": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res"
     },
     "dependencies": {
+        "@craftzdog/react-native-buffer": "^6.0.5",
         "@fortawesome/fontawesome-svg-core": "^1.2.34",
         "@fortawesome/free-solid-svg-icons": "^5.15.2",
         "@fortawesome/react-native-fontawesome": "^0.3.0",
@@ -25,11 +26,12 @@
         "react-native": "^0.69.3",
         "react-native-elements": "^3.4.2",
         "react-native-gesture-handler": "^2.6.0",
+        "react-native-keychain": "^8.1.1",
         "react-native-paper": "^4.12.4",
         "react-native-push-notification": "^8.1.1",
+        "react-native-quick-base64": "^2.0.5",
         "react-native-randombytes": "^3.6.1",
         "react-native-reanimated": "^2.9.1",
-        "react-native-rsa-native": "^2.0.5",
         "react-native-safe-area-context": "^3.1.9",
         "react-native-screens": "^3.17.0",
         "react-native-svg": "^13.1.0",

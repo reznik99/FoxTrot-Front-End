@@ -10,7 +10,6 @@ import { createDrawerNavigator } from '@react-navigation/drawer'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faHome } from '@fortawesome/free-solid-svg-icons'
 // Crypto
-import 'react-native-crypto'
 import WebviewCrypto from 'react-native-webview-crypto'
 
 import { store } from './src/store/store'
