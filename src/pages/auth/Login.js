@@ -1,97 +1,131 @@
-import React, { useState, useCallback, useEffect } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import { View, ScrollView, Keyboard } from 'react-native'
-import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper'
+import React, { Component } from 'react';
+import { connect } from 'react-redux'
+import { View, ScrollView, Keyboard } from 'react-native';
+import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
+import * as Keychain from 'react-native-keychain';
 
-import styles from './style'
-import { validateToken, syncFromStorage } from '~/store/actions/user'
-import { logIn } from '~/store/actions/auth'
+import styles from './style';
+import { validateToken, syncFromStorage } from '~/store/actions/user';
+import { logIn } from '~/store/actions/auth';
 
-export default function Login(props) {
 
-    const { loginErr, loading, user_data, token } = useSelector(state => state.userReducer);
-    const [gloablLoading, setGloablLoading] = useState(false)
-    const [username, setUsername] = useState('')
-    const [password, setPassword] = useState('')
+class Login extends Component {
 
-    const dispatch = useDispatch()
-
-    useEffect(() => {
-        const autoLogin = async () => {
-            try {
-                setGloablLoading(true)
-                // Load data from disk into redux store
-                if(!user_data?.phone_no || !token) await dispatch(syncFromStorage())
-                
-                // If user manually logged out, don't try autologin
-                if (props.route.params?.data?.loggedOut) {
-                    return console.debug("User logged out")
-                }
-                
-                // Auto-login if Token still valid
-                if(token) {
-                    let loggedIn = await dispatch(validateToken())
-                    if (loggedIn) return props.navigation.replace('App', { screen: 'Home' })
-                }
-                console.debug("Token missing or expired")
-            } finally {
-                setGloablLoading(false)
-            }
+    constructor(props) {
+        super(props)
+        this.state = {
+            gloablLoading: false,
+            username: '',
+            password: '',
         }
-        autoLogin()
-    }, [user_data?.phone_no, token]);
+    }
 
-    useEffect(() => {
-        // Auto-fill phone_no from storage
-        setUsername(user_data?.phone_no || '')
-    }, [user_data])
+    async componentDidMount() {
+        // If user manually logged out, don't try autologin
+        if (this.props.route.params?.data?.loggedOut) {
+            return console.debug("User logged out")
+        }
 
-    const handleLogin = useCallback(async () => {
-        if (loading) return
+        try {
+            this.setState({gloablLoading: true})
+
+            // Load data from disk into redux store
+            if(!this.props.user_data?.phone_no) {
+                await this.props.syncFromStorage()
+                this.setState({username: this.props.user_data?.phone_no || ''})
+            }
+
+            // Auto-login if Token still valid
+            if(this.props.token && false) {
+                let loggedIn = await this.props.validateToken()
+                if (loggedIn) return this.props.navigation.replace('App', { screen: 'Home' })
+            }
+
+            // Auto-login if password stored in secure storage
+            if(this.props.user_data?.phone_no && !this.props.loading) {
+                console.log('Getting keychain password', `${this.props.user_data?.phone_no}-password`)
+                const res = await Keychain.getGenericPassword({
+                    service: `${this.props.user_data?.phone_no}-password`,
+                })
+                console.debug(res)
+                if(res) {
+                    this.setState({password: res.password}, () => this.handleLogin())
+                    return
+                }
+            }
+
+            console.debug("Token missing or expired")
+        } catch(err){
+            console.error('Error on auto-login: ', err)
+        } finally {
+            this.setState({gloablLoading: false})
+        }
+    }
+
+    handleLogin = async () => {
+        if (this.props.loading) return
 
         Keyboard.dismiss()
-        let loggedIn = await dispatch(logIn(username, password))
+        let loggedIn = await this.props.logIn(this.state.username, this.state.password)
         if (loggedIn) {
-            props.navigation.replace('App', { screen: 'Home' })
+            this.props.navigation.replace('App', { screen: 'Home' })
         }
-    }, [username, password, loading]);
+    }
 
 
-    return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.wrapper}>
-                <View style={styles.titleContainer}>
-                    <Text style={styles.title}>FoxTrot</Text>
-                    <Text style={styles.subTitle}>secure communications</Text>
-                </View>
-                { loginErr && <Text style={styles.errorMsg}>{loginErr}</Text> }
-
-                { gloablLoading ? <ActivityIndicator size="large" />
-                    : <View>
-                        <TextInput mode="outlined" 
-                            onChangeText={val => setUsername(val)}
-                            value={username}
-                            label="Phone no."
-                            outlineColor={loginErr ? "red"  : null}
-                        />
-                        <TextInput mode="outlined" 
-                            onChangeText={val => setPassword(val)} 
-                            value={password} 
-                            label="Password"
-                            secureTextEntry={true}
-                            outlineColor={loginErr ? "red"  : null}
-                        />
-                        
-                        {/* Actions */}
-                        <View style={{marginTop: 30, display: 'flex', alignItems: 'center'}}>
-                            <Button mode="contained" icon="login" style={styles.button} loading={loading} onPress={handleLogin}>Login</Button>
-                            <Text style={{paddingVertical: 10}}>Or</Text>
-                            <Button icon="account-plus" style={[styles.button, {backgroundColor: 'none'}]} onPress={() => props.navigation.navigate('Signup')}>Signup</Button>
-                        </View>
+    render() {
+        return (
+            <ScrollView contentContainerStyle={styles.container}>
+                <View style={styles.wrapper}>
+                    <View style={styles.titleContainer}>
+                        <Text style={styles.title}>FoxTrot</Text>
+                        <Text style={styles.subTitle}>secure communications</Text>
                     </View>
-                }
-            </View>
-        </ScrollView>
-    )
+                    { this.props.loginErr && <Text style={styles.errorMsg}>{this.props.loginErr}</Text> }
+    
+                    { this.state.gloablLoading ? <ActivityIndicator size="large" />
+                        : <View>
+                            <TextInput mode="outlined" 
+                                onChangeText={val => this.setState({username: val})}
+                                value={this.state.username}
+                                label="Phone no."
+                                outlineColor={this.props.loginErr ? "red"  : null}
+                            />
+                            <TextInput mode="outlined" 
+                                onChangeText={val => this.setState({password: val})}
+                                value={this.state.password} 
+                                label="Password"
+                                secureTextEntry={true}
+                                outlineColor={this.props.loginErr ? "red"  : null}
+                            />
+                            
+                            {/* Actions */}
+                            <View style={{marginTop: 30, display: 'flex', alignItems: 'center'}}>
+                                <Button mode="contained" icon="login" style={styles.button} loading={this.props.loading} onPress={this.handleLogin}>Login</Button>
+                                <Text style={{paddingVertical: 10}}>Or</Text>
+                                <Button icon="account-plus" style={[styles.button, {backgroundColor: 'none'}]} onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
+                            </View>
+                        </View>
+                    }
+                </View>
+            </ScrollView>
+        )
+    }
 }
 
+const mapStateToProps = (state, ownProps) => ({
+    user_data: state.userReducer.user_data,
+    token: state.userReducer.token,
+    loading: state.userReducer.loading,
+    loginErr: state.userReducer.loginErr,
+})
+  
+const mapDispatchToProps = {
+    syncFromStorage,
+    validateToken,
+    logIn
+}
+
+
+// We normally do both in one step, like this:
+export default connect(mapStateToProps, mapDispatchToProps)(Login)

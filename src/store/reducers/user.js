@@ -27,7 +27,7 @@ function userReducer(state = initialState, action) {
         case "TOKEN_VALID":
             return { ...state, tokenValid: action.payload }
         case "LOGGED_IN":
-            return { ...state, token: action.payload.token, user_data: action.payload.user_data }
+            return { ...state, token: action.payload.token, user_data: action.payload.user_data, loginErr: "" }
         case "LOGIN_ERROR_MSG":
             return { ...state, loginErr: action.payload }
         case "SIGNUP_ERROR_MSG":

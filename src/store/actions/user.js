@@ -261,6 +261,8 @@ export function syncFromStorage() {
 
             // TODO: Load existing messages/contacts and stuff
 
+            if(!user_data && !token) return false
+            
             const payload = {
                 token: token,
                 user_data: JSON.parse(user_data),
