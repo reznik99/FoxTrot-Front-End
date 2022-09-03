@@ -9,6 +9,9 @@ import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faHome } from '@fortawesome/free-solid-svg-icons'
+// Crypto
+import 'react-native-crypto'
+import WebviewCrypto from 'react-native-webview-crypto'
 
 import { store } from './src/store/store'
 import { Login, Signup, Home, Conversation, NewConversation, AddContact, Settings } from './src'
@@ -99,6 +102,7 @@ export default function App() {
     return (
         <Provider store={store}>
             <PaperProvider theme={darkTheme}>
+                <WebviewCrypto />
                 <StatusBar backgroundColor={PRIMARY} barStyle="light-content" />
                 <AuthNavigator />
             </PaperProvider>
