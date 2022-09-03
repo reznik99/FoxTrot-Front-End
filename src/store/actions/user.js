@@ -6,6 +6,14 @@ import * as Keychain from 'react-native-keychain';
 var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 
 import { API_URL, UserKeypairConf } from '~/global/variables';
+const options = {
+    authenticationPrompt: {
+      title: 'Authentication required',
+      subtitle: 'Subtitle',
+      description: 'Some descriptive text',
+      cancel: 'Cancel',
+    },
+};
 
 export function loadKeys() {
     return async (dispatch, getState) => {
@@ -15,14 +23,7 @@ export function loadKeys() {
             let state = getState().userReducer
 
             console.debug('Loading Crypto Keys from secure storage...')
-            const options = {
-                authenticationPrompt: {
-                  title: 'Authentication required',
-                  subtitle: 'Subtitle',
-                  description: 'Some descriptive text',
-                  cancel: 'Cancel',
-                },
-            };
+
             const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`, options)
             if (!credentials || credentials.service !== `${state.user_data.phone_no}-keys`) {
                 console.log('Warn: No keys found')
@@ -64,7 +65,7 @@ export function generateAndSyncKeys() {
             // Store on device
             await Keychain.setInternetCredentials(`${state.user_data.phone_no}-keys`, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
                 accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
-                accessGroup: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+                authenticationPrompt: options.authenticationPrompt,
                 storage: Keychain.STORAGE_TYPE.AES,
             })
 
@@ -72,7 +73,7 @@ export function generateAndSyncKeys() {
             await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.public }, axiosBearerConfig(state.token))
 
             // Store keypair in memory
-            dispatch({ type: "KEY_GEN", payload: keys })
+            dispatch({ type: "KEY_LOAD", payload: keys })
             return true
 
         } catch (err) {
@@ -268,8 +269,10 @@ export function syncFromStorage() {
                 type: "SYNC_FROM_STORAGE",
                 payload: payload,
             })
+            return true
         } catch (err) {
             console.error(`Error syncing from storage: ${err}`)
+            return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }

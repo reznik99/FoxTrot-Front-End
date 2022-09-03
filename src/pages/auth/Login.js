@@ -9,7 +9,7 @@ import { logIn } from '~/store/actions/auth'
 
 export default function Login(props) {
 
-    const { loginErr, loading, user_data } = useSelector(state => state.userReducer);
+    const { loginErr, loading, user_data, token } = useSelector(state => state.userReducer);
     const [gloablLoading, setGloablLoading] = useState(false)
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
@@ -21,22 +21,25 @@ export default function Login(props) {
             try {
                 setGloablLoading(true)
                 // Load data from disk into redux store
-                await dispatch(syncFromStorage())
+                if(!user_data?.phone_no || !token) await dispatch(syncFromStorage())
+                
                 // If user manually logged out, don't try autologin
                 if (props.route.params?.data?.loggedOut) {
                     return console.debug("User logged out")
                 }
+                
                 // Auto-login if Token still valid
-                let loggedIn = await dispatch(validateToken())
-                if (loggedIn)
-                    return props.navigation.replace('App', { screen: 'Home' })
-                console.debug("Token expired")
+                if(token) {
+                    let loggedIn = await dispatch(validateToken())
+                    if (loggedIn) return props.navigation.replace('App', { screen: 'Home' })
+                }
+                console.debug("Token missing or expired")
             } finally {
                 setGloablLoading(false)
             }
         }
         autoLogin()
-    }, []);
+    }, [user_data?.phone_no, token]);
 
     useEffect(() => {
         // Auto-fill phone_no from storage

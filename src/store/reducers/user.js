@@ -22,8 +22,6 @@ function userReducer(state = initialState, action) {
             return { ...state, conversations: action.payload }
         case "SYNC_FROM_STORAGE":
             return { ...state, token: action.payload.token, user_data: action.payload.user_data }
-        case "KEY_GEN":
-            return { ...state, keys: action.payload }
         case "KEY_LOAD":
             return { ...state, keys: action.payload }
         case "TOKEN_VALID":
