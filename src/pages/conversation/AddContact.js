@@ -7,7 +7,7 @@ import { useSelector, useDispatch } from 'react-redux'
 
 import { searchUsers, addContact, clearAddingContact } from '../../store/actions/user'
 import { ContactPeek } from './../../components/'
-import globalStyle from "../../global/globalStyle"
+import globalStyle from "~/global/globalStyle"
 
 
 export default function AddContact(props) {
@@ -73,7 +73,7 @@ export default function AddContact(props) {
                         <ActivityIndicator size="large" />
                     </View>
                     : <ScrollView>
-                        {results && results.length > 0
+                        { results?.length
                             ? results.map((user, index) => {
                                 return (
                                     <View key={index}>
@@ -84,7 +84,7 @@ export default function AddContact(props) {
                                     </View>
                                 )
                             })
-                            : <Text style={globalStyle.errorMsg}>No results</Text>
+                            : <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No results</Text>
                         }
                     </ScrollView>
             }

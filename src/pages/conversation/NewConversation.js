@@ -48,7 +48,7 @@ export default function NewConversation(props) {
             {loading || !results
                 ? <ActivityIndicator size="large" />
                 : <ScrollView>
-                    {results.length > 0
+                    { results?.length
                         ? results.map((contact, index) => {
                             return <ContactPeek data={{ ...contact, isContact: true }} key={index} navigation={navigation}
                                 onSelect={() => {
@@ -58,7 +58,7 @@ export default function NewConversation(props) {
                                     navigation.navigate('Conversation', { data: conversation })
                                 }} />
                         })
-                        : <Text style={globalStyle.errorMsg}>No results</Text>
+                        : <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No Contacts</Text>
                     }
                 </ScrollView>
             }
