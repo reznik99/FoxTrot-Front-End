@@ -31,7 +31,7 @@ export function logIn(phone_no, password) {
             return true
         }
         catch (err) {
-            console.log(`Error logging in: ${err}`)
+            console.error(`Error logging in: ${err}`)
             dispatch({ type: "LOGIN_ERROR_MSG", payload: err.response?.data })
             return false
         }
@@ -63,7 +63,7 @@ export function signUp(phone_no, password, re_password) {
             return true
         }
         catch (err) {
-            console.log(`Error signing up: ${err}`)
+            console.error(`Error signing up: ${err}`)
             dispatch({ type: "SIGNUP_ERROR_MSG", payload: err.response?.data })
             return false
         }

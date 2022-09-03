@@ -11,7 +11,7 @@ export function loadKeys() {
 
             let state = getState().userReducer
 
-            console.log('Loading Crypto Keys from local storage into store')
+            console.debug('Loading Crypto Keys from local storage into store')
             const keys = await AsyncStorage.getItem(state.user_data.phone_no + "-keys")
             if (!keys) throw Error("No keys")
 
@@ -19,7 +19,7 @@ export function loadKeys() {
             dispatch({ type: "KEY_LOAD", payload: JSON.parse(keys) })
             return true
         } catch (err) {
-            console.log(`Couldn't find keys for user in storage: ${err}`)
+            console.debug(`Couldn't find keys for user in storage: ${err}`)
             return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -35,7 +35,7 @@ export function generateAndSyncKeys() {
             let state = getState().userReducer
             // Generate Keypair
             const keys = await RSA.generateKeys(4096)
-            console.log("Generated RSA 4096 Keypair. Storing in: " + state.user_data.phone_no + "-keys")
+            console.debug("Generated RSA 4096 Keypair. Storing in: " + state.user_data.phone_no + "-keys")
             // Store on device 
             await AsyncStorage.setItem(state.user_data.phone_no + "-keys", JSON.stringify(keys))
             // Upload public key
@@ -44,7 +44,7 @@ export function generateAndSyncKeys() {
             dispatch({ type: "KEY_GEN", payload: keys })
 
         } catch (err) {
-            console.log(`Error generating and syncing keys: ${err}`)
+            console.error(`Error generating and syncing keys: ${err}`)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }
@@ -113,7 +113,7 @@ export function loadContacts() {
             dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 
         } catch (err) {
-            console.log(`Error loading contacts: ${err}`)
+            console.error(`Error loading contacts: ${err}`)
         } finally {
             dispatch({ type: "SET_REFRESHING", payload: false })
         }
@@ -130,7 +130,7 @@ export function addContact(user) {
 
             dispatch({ type: "ADD_CONTACT_SUCCESS", payload: user })
         } catch (err) {
-            console.log(`Error adding contact: ${err}`)
+            console.error(`Error adding contact: ${err}`)
         } finally {
             dispatch({ type: "ADD_CONTACT_FAILURE", payload: user })
         }
@@ -158,7 +158,7 @@ export function searchUsers(prefix) {
             return results
 
         } catch (err) {
-            console.log(`Error searching users: ${err}`)
+            console.error(`Error searching users: ${err}`)
             return []
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -185,7 +185,7 @@ export function sendMessage(message, to_user) {
             await axios.post(`${API_URL}/sendMessage`, { message: message, contact_id: to_user.id }, axiosBearerConfig(state.token))
 
         } catch (err) {
-            console.log(`Error sending message: ${err}`)
+            console.error(`Error sending message: ${err}`)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }
@@ -205,7 +205,7 @@ export function validateToken() {
             dispatch({ type: "TOKEN_VALID", payload: res.data?.valid })
             return res.data?.valid
         } catch (err) {
-            console.log(`Error validating JWT: ${err}`)
+            console.error(`Error validating JWT: ${err}`)
             dispatch({ type: "TOKEN_VALID", payload: false })
             return false
         } finally {
@@ -219,10 +219,10 @@ export function syncFromStorage() {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
-            console.log('Loading user_data from local storage into store')
+            console.debug('Loading user_data from local storage into store')
             const user_data = await AsyncStorage.getItem('user_data')
 
-            console.log('Loading JSON Web Token from local storage into store')
+            console.debug('Loading JSON Web Token from local storage into store')
             const token = await AsyncStorage.getItem('auth_token')
 
             const payload = {
