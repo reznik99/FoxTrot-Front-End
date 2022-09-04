@@ -1,7 +1,8 @@
 import axios from 'axios'
-import AsyncStorage from '@react-native-community/async-storage'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Keychain from 'react-native-keychain';
 
-import { API_URL } from '../../global/variables'
+import { API_URL } from '~/global/variables';
 
 export function logIn(phone_no, password) {
     return async (dispatch) => {
@@ -16,6 +17,18 @@ export function logIn(phone_no, password) {
                 phone_no: phone_no,
                 password: password
             })
+
+            console.debug('Saving user in storage')
+            // Save data in phone storage
+            await AsyncStorage.setItem('user_data', JSON.stringify({ phone_no: phone_no }))
+            await AsyncStorage.setItem('auth_token', res.data.token)
+
+            // Save password in secure storage
+            await Keychain.setGenericPassword(`${phone_no}-password`, password, {
+                storage: Keychain.STORAGE_TYPE.AES,
+                service: `${phone_no}-password`
+            })
+
             // Save data in redux store
             dispatch({
                 type: "LOGGED_IN",
@@ -24,14 +37,11 @@ export function logIn(phone_no, password) {
                     user_data: { phone_no: phone_no }
                 },
             })
-            // Save data in phone storage
-            await AsyncStorage.setItem('user_data', JSON.stringify({ phone_no: phone_no }))
-            await AsyncStorage.setItem('auth_token', res.data.token)
-            dispatch({ type: "LOGIN_ERROR_MSG", payload: "" })
+
             return true
         }
         catch (err) {
-            console.log(`Error logging in: ${err}`)
+            console.error(`Error logging in: ${err}`)
             dispatch({ type: "LOGIN_ERROR_MSG", payload: err.response?.data })
             return false
         }
@@ -63,7 +73,7 @@ export function signUp(phone_no, password, re_password) {
             return true
         }
         catch (err) {
-            console.log(`Error signing up: ${err}`)
+            console.error(`Error signing up: ${err}`)
             dispatch({ type: "SIGNUP_ERROR_MSG", payload: err.response?.data })
             return false
         }

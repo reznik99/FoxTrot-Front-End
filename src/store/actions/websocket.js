@@ -15,17 +15,17 @@ export function initializeWebsocket() {
             // Enstablish websocket
             const socketConn = new WebSocket(`${WEBSOCKET_URL}?token=${state.token}`)
             socketConn.onopen = () => {
-                console.log("Socket to server opened succesfully")
+                console.debug("Socket to server opened succesfully")
             }
             socketConn.onclose = () => {
-                console.log("Websocket connection has been closed gracefully")
+                console.debug("Websocket connection has been closed gracefully")
             }
             socketConn.onerror = (err) => {
-                console.log(err)
+                console.debug(err)
                 dispatch({ type: "WEBSOCKET_ERROR", payload: err })
             }
             socketConn.onmessage = (event) => {
-                console.log(`Data from server: ${event.data}`)
+                console.debug(`Data from server: ${event.data}`)
                 try {
                     const message = JSON.parse(event.data)
                     dispatch({ type: "RECV_MESSAGE", payload: message })
@@ -46,12 +46,12 @@ export function initializeWebsocket() {
                         picture: `https://robohash.org/${message.sender}`
                     })
                 } catch (err) {
-                    console.log(err)
+                    console.debug(err)
                 }
             }
             dispatch({ type: "WEBSOCKET_CONNECT", payload: socketConn })
         } catch (err) {
-            console.log(`Error establishing websocket: ${err}`)
+            console.error(`Error establishing websocket: ${err}`)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }
@@ -71,7 +71,7 @@ export function destroyWebsocket() {
 
             dispatch({ type: "WEBSOCKET_CONNECT", payload: null })
         } catch (err) {
-            console.log(`Error establishing websocket: ${err}`)
+            console.error(`Error establishing websocket: ${err}`)
         }
     }
 }

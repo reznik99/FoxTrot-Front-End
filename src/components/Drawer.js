@@ -1,10 +1,11 @@
-import React from 'react'
-import { ScrollView, View } from 'react-native'
-import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer'
-import { useSelector } from 'react-redux'
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faDoorOpen, faCog } from '@fortawesome/free-solid-svg-icons'
-import { ActivityIndicator, Avatar, Chip } from 'react-native-paper'
+import React from 'react';
+import { ScrollView, View } from 'react-native';
+import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import { useSelector } from 'react-redux';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faDoorOpen, faCog } from '@fortawesome/free-solid-svg-icons';
+import { ActivityIndicator, Avatar, Chip } from 'react-native-paper';
+import { UserKeypairConf } from '~/global/variables';
 
 const styles = {
     profileContainer: {
@@ -35,9 +36,6 @@ export default function Drawer(props) {
     return (
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: "#222" }} {...props}>
             <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
-                {/* <SafeAreaView forceInset={{ top: 'always', horizontal: 'never' }}>
-                    <DrawerItemList {...props} />
-                </SafeAreaView> */}
 
                 <View style={styles.profileContainer}>
                     <Avatar.Image size={150}
@@ -51,7 +49,7 @@ export default function Drawer(props) {
                             <Chip icon="account">Contacts: {state.contacts?.length}</Chip>
                         </View>
                         <View style={styles.profileInfoContainer}>
-                            <Chip icon="account-key">Keys: RSA {state.keys?.private?.length}</Chip>
+                            <Chip icon="account-key">Keys: RSA {UserKeypairConf.modulusLength}bit</Chip>
                         </View>
                     </View>
                 </View>
@@ -73,6 +71,7 @@ export default function Drawer(props) {
                         <FontAwesomeIcon size={size} icon={faDoorOpen} style={{ color: color }} />
                     )}
                 />
+
             </ScrollView >
         </DrawerContentScrollView >
     )
