@@ -3,6 +3,7 @@ import { connect } from 'react-redux'
 import { View, ScrollView, Keyboard } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 import styles from './style';
 import {  KeychainOpts } from '~/global/variables';
@@ -36,32 +37,72 @@ class Login extends Component {
                 this.setState({username: this.props.user_data?.phone_no || ''})
             }
 
+            if(!this.state.username && !this.props.token) {
+                console.debug("No data for auto-login");
+                return
+            }
+
             // Auto-login if Token still valid (temporary disabled)
-            if(this.props.token && false) {
-                let loggedIn = await this.props.validateToken()
-                if (loggedIn) return this.props.navigation.replace('App', { screen: 'Home' })
-            }
+            const success = await this.attemptAutoLoginToken();
+            if (success) return
 
-            // Auto-login if password stored in secure storage
-            if(this.props.user_data?.phone_no && !this.props.loading) {
-                console.debug('Loading password from secure storage')
-                const res = await Keychain.getGenericPassword({
-                    authenticationPrompt: KeychainOpts.authenticationPrompt,
-                    service: `${this.props.user_data?.phone_no}-password`,
-                })
-                
-                if(res) {
-                    this.setState({password: res.password}, () => this.handleLogin())
-                    return
-                }
-            }
+            // Check if user's password was saved to secure storage
+            await this.attemptAutoLoginPassword();
 
-            console.debug("Token missing or expired")
         } catch(err){
-            console.error('Error on auto-login: ', err, await Keychain.getSupportedBiometryType())
+            console.error('Error on auto-login: ', err)
         } finally {
             this.setState({gloablLoading: false})
         }
+    }
+
+    attemptAutoLoginToken = async () => {
+        if (!this.props.token) {
+            console.debug('Token not present')
+            return false
+        }
+        
+        let loggedIn = await this.props.validateToken()
+        if (!loggedIn) {
+            console.debug('Token expired')
+            return false
+        }
+
+        this.props.navigation.replace('App', { screen: 'Home' })
+        return true
+    }
+
+    attemptAutoLoginPassword = async () => {
+        const serviceKey = `${this.props.user_data?.phone_no}-password`
+        const passwordsSaved = await Keychain.getAllGenericPasswordServices()
+
+        if(!this.state.username || !passwordsSaved.includes(serviceKey)) {
+            console.debug('No credentials found for password auto-login')
+            return false
+        }
+
+        // Saved password is present. Auth user before retrieving
+        console.debug('Attempting biometric auth')
+        const biometricAuth = await LocalAuthentication.authenticateAsync()
+        if(!biometricAuth.success) {
+            console.error('Biometric auth failed: ', biometricAuth.error)
+            return false
+        }
+
+        // User is auth'd. Load password from secure storage
+        console.debug('Loading password from secure storage')
+        const res = await Keychain.getGenericPassword({
+            authenticationPrompt: KeychainOpts.authenticationPrompt,
+            service: serviceKey,
+        })
+        if(!res || !res.password) {
+            console.debug('Failed to load password form secure storage')
+            return false
+        }
+
+        // We loaded password from Keychain. Now Auto-login
+        this.setState({password: res.password}, () => this.handleLogin())
+        return true
     }
 
     handleLogin = async () => {

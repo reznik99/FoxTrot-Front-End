@@ -2,7 +2,7 @@ import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Keychain from 'react-native-keychain';
 
-import { API_URL, KeychainOpts } from '~/global/variables';
+import { API_URL } from '~/global/variables';
 
 export function logIn(phone_no, password) {
     return async (dispatch) => {
@@ -25,7 +25,6 @@ export function logIn(phone_no, password) {
 
             // Save password in secure storage
             await Keychain.setGenericPassword(`${phone_no}-password`, password, {
-                authenticationPrompt: KeychainOpts.authenticationPrompt,
                 storage: Keychain.STORAGE_TYPE.AES,
                 service: `${phone_no}-password`
             })
