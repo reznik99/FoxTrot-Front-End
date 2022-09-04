@@ -2,7 +2,7 @@ import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Keychain from 'react-native-keychain';
 
-import { API_URL } from '../../global/variables'
+import { API_URL, KeychainOpts } from '~/global/variables';
 
 export function logIn(phone_no, password) {
     return async (dispatch) => {
@@ -18,17 +18,18 @@ export function logIn(phone_no, password) {
                 password: password
             })
 
+            console.debug('Saving user in storage')
             // Save data in phone storage
             await AsyncStorage.setItem('user_data', JSON.stringify({ phone_no: phone_no }))
             await AsyncStorage.setItem('auth_token', res.data.token)
 
             // Save password in secure storage
             await Keychain.setGenericPassword(`${phone_no}-password`, password, {
-                // accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
+                accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
+                authenticationPrompt: KeychainOpts.authenticationPrompt,
                 storage: Keychain.STORAGE_TYPE.RSA,
                 service: `${phone_no}-password`
             })
-            console.log("Storing passwrod in keychain: ", `${phone_no}-password`)
 
             // Save data in redux store
             dispatch({

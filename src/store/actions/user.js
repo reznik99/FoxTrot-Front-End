@@ -5,15 +5,7 @@ import * as Keychain from 'react-native-keychain';
 // Crypto
 var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 
-import { API_URL, UserKeypairConf } from '~/global/variables';
-const options = {
-    authenticationPrompt: {
-      title: 'Authentication required',
-      subtitle: 'Subtitle',
-      description: 'Some descriptive text',
-      cancel: 'Cancel',
-    },
-};
+import { API_URL, UserKeypairConf, KeychainOpts } from '~/global/variables';
 
 export function loadKeys() {
     return async (dispatch, getState) => {
@@ -22,14 +14,13 @@ export function loadKeys() {
 
             let state = getState().userReducer
 
-            console.debug('Loading Crypto Keys from secure storage...')
+            console.debug(`Loading '${UserKeypairConf.name} ${UserKeypairConf.modulusLength}' keys from secure storage`)
 
-            const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`, options)
+            const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`, KeychainOpts)
             if (!credentials || credentials.service !== `${state.user_data.phone_no}-keys`) {
-                console.log('Warn: No keys found')
+                console.debug('Warn: No keys found. First time login on device')
                 return false
             }
-            console.log("Loaded keys", credentials.password)
             
             // Store keypair in memory
             dispatch({ type: "KEY_LOAD", payload: JSON.parse(credentials.password) })
@@ -60,12 +51,12 @@ export function generateAndSyncKeys() {
                 public: Buffer.from(await window.crypto.subtle.exportKey('spki', keyPair.publicKey)).toString('base64'),
                 private: Buffer.from(await window.crypto.subtle.exportKey('pkcs8', keyPair.privateKey)).toString('base64')
             }
-            console.debug(`Generated '${UserKeypairConf.name} ${UserKeypairConf.modulusLength}' Keypair. Storing in: ${state.user_data.phone_no}-keys`)
+            console.debug(`Saving '${UserKeypairConf.name} ${UserKeypairConf.modulusLength}' keys to secure storage`)
 
             // Store on device
             await Keychain.setInternetCredentials(`${state.user_data.phone_no}-keys`, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
                 accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
-                authenticationPrompt: options.authenticationPrompt,
+                authenticationPrompt: KeychainOpts.authenticationPrompt,
                 storage: Keychain.STORAGE_TYPE.AES,
             })
 
@@ -253,16 +244,14 @@ export function syncFromStorage() {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
-            console.debug('Loading user_data from local storage into store')
+            console.debug('Loading user from local storage')
             const user_data = await AsyncStorage.getItem('user_data')
-
-            console.debug('Loading JSON Web Token from local storage into store')
             const token = await AsyncStorage.getItem('auth_token')
 
             // TODO: Load existing messages/contacts and stuff
 
             if(!user_data && !token) return false
-            
+
             const payload = {
                 token: token,
                 user_data: JSON.parse(user_data),

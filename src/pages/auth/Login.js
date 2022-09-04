@@ -35,7 +35,7 @@ class Login extends Component {
                 this.setState({username: this.props.user_data?.phone_no || ''})
             }
 
-            // Auto-login if Token still valid
+            // Auto-login if Token still valid (temporary disabled)
             if(this.props.token && false) {
                 let loggedIn = await this.props.validateToken()
                 if (loggedIn) return this.props.navigation.replace('App', { screen: 'Home' })
@@ -43,11 +43,11 @@ class Login extends Component {
 
             // Auto-login if password stored in secure storage
             if(this.props.user_data?.phone_no && !this.props.loading) {
-                console.log('Getting keychain password', `${this.props.user_data?.phone_no}-password`)
+                console.debug('Loading password from secure storage')
                 const res = await Keychain.getGenericPassword({
                     service: `${this.props.user_data?.phone_no}-password`,
                 })
-                console.debug(res)
+                
                 if(res) {
                     this.setState({password: res.password}, () => this.handleLogin())
                     return
@@ -56,7 +56,7 @@ class Login extends Component {
 
             console.debug("Token missing or expired")
         } catch(err){
-            console.error('Error on auto-login: ', err)
+            console.error('Error on auto-login: ', err, await Keychain.getSupportedBiometryType())
         } finally {
             this.setState({gloablLoading: false})
         }
