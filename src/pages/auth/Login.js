@@ -5,6 +5,7 @@ import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
 
 import styles from './style';
+import {  KeychainOpts } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
 
@@ -45,6 +46,7 @@ class Login extends Component {
             if(this.props.user_data?.phone_no && !this.props.loading) {
                 console.debug('Loading password from secure storage')
                 const res = await Keychain.getGenericPassword({
+                    authenticationPrompt: KeychainOpts.authenticationPrompt,
                     service: `${this.props.user_data?.phone_no}-password`,
                 })
                 

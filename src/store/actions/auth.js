@@ -25,9 +25,8 @@ export function logIn(phone_no, password) {
 
             // Save password in secure storage
             await Keychain.setGenericPassword(`${phone_no}-password`, password, {
-                accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
                 authenticationPrompt: KeychainOpts.authenticationPrompt,
-                storage: Keychain.STORAGE_TYPE.RSA,
+                storage: Keychain.STORAGE_TYPE.AES,
                 service: `${phone_no}-password`
             })
 
