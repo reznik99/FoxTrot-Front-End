@@ -101,15 +101,16 @@ class Login extends Component {
         }
 
         // We loaded password from Keychain. Now Auto-login
-        this.setState({password: res.password}, () => this.handleLogin())
+        await this.handleLogin(this.state.username, res.password);
+
         return true
     }
 
-    handleLogin = async () => {
+    handleLogin = async (username = this.state.username, password = this.state.password) => {
         if (this.props.loading) return
 
         Keyboard.dismiss()
-        let loggedIn = await this.props.logIn(this.state.username, this.state.password)
+        let loggedIn = await this.props.logIn(username, password)
         if (loggedIn) {
             this.props.navigation.replace('App', { screen: 'Home' })
         }
