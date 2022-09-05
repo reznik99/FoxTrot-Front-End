@@ -279,10 +279,21 @@ export function registerPushNotifications() {
             let state = getState().userReducer
             
             console.debug('Registering for Push Notifications');
-            await messaging().registerDeviceForRemoteMessages();
-            const token = await messaging().getToken();
+            const authStatus = await messaging().requestPermission();
+            const enabled =
+                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-            await axios.post(`${API_URL}/registerPushNotifications`, {token}, axiosBearerConfig(state.token))
+            if (enabled) {
+                console.log('Authorization status:', authStatus);
+                await messaging().registerDeviceForRemoteMessages();
+                const token = await messaging().getToken();
+                await axios.post(`${API_URL}/registerPushNotifications`, {token}, axiosBearerConfig(state.token))
+                // Register background handler
+                messaging().setBackgroundMessageHandler(async remoteMessage => {
+                    console.log('Message handled in the background!', remoteMessage);
+                });
+            }
 
         } catch (err) {
             console.error('Error Registering for Push Notifications:', err)

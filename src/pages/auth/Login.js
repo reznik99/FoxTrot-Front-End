@@ -106,9 +106,10 @@ class Login extends Component {
         return true
     }
 
-    handleLogin = async (username = this.state.username, password = this.state.password) => {
+    handleLogin = async (username, password) => {
         if (this.props.loading) return
 
+        console.debug('Auth:', username, password)
         Keyboard.dismiss()
         let loggedIn = await this.props.logIn(username, password)
         if (loggedIn) {
@@ -145,7 +146,7 @@ class Login extends Component {
                             
                             {/* Actions */}
                             <View style={{marginTop: 30, display: 'flex', alignItems: 'center'}}>
-                                <Button mode="contained" icon="login" style={styles.button} loading={this.props.loading} onPress={this.handleLogin}>Login</Button>
+                                <Button mode="contained" icon="login" style={styles.button} loading={this.props.loading} onPress={() => this.handleLogin(this.state.username, this.state.password)}>Login</Button>
                                 <Text style={{paddingVertical: 10}}>Or</Text>
                                 <Button icon="account-plus" style={[styles.button, {backgroundColor: 'none'}]} onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
                             </View>
