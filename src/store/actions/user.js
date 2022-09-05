@@ -209,7 +209,7 @@ export function sendMessage(message, to_user) {
 
             dispatch({ type: "SEND_MESSAGE", payload: msg })
 
-            await axios.post(`${API_URL}/sendMessage`, { message: message, contact_id: to_user.id }, axiosBearerConfig(state.token))
+            await axios.post(`${API_URL}/sendMessage`, { message: message, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
         } catch (err) {
             console.error(`Error sending message: ${err}`)
