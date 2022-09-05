@@ -2,6 +2,8 @@ import axios from 'axios';
 // Storage
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
+// Push Notifications
+import messaging from '@react-native-firebase/messaging'
 // Crypto
 var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 
@@ -264,6 +266,26 @@ export function syncFromStorage() {
         } catch (err) {
             console.error(`Error syncing from storage: ${err}`)
             return false
+        } finally {
+            dispatch({ type: "SET_LOADING", payload: false })
+        }
+    }
+}
+
+export function registerPushNotifications() {
+    return async (dispatch, getState) => {
+        try {
+            dispatch({ type: "SET_LOADING", payload: true })
+            let state = getState().userReducer
+            
+            console.debug('Registering for Push Notifications');
+            await messaging().registerDeviceForRemoteMessages();
+            const token = await messaging().getToken();
+
+            await axios.post(`${API_URL}/registerPushNotifications`, {token}, axiosBearerConfig(state.token))
+
+        } catch (err) {
+            console.error('Error Registering for Push Notifications:', err)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }

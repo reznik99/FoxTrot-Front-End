@@ -7,8 +7,9 @@ import { useSelector, useDispatch } from 'react-redux'
 
 import { ConversationPeek } from '../../components'
 import globalStyle from "~/global/globalStyle"
-import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys } from '~/store/actions/user'
+import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user'
 import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket'
+
 
 export default function Home(props) {
 
@@ -29,9 +30,10 @@ export default function Home(props) {
                 setLoadingMsg('')
                 if(!success) return props.navigation.navigate('Login', { data: { loggedOut: true } })
             }
-
+            // Register device for push notifications
+            dispatch(registerPushNotifications())
+            // Load messages & start websocket connection to server
             loadAllMessages()
-
             configureWebsocket()
         }
 
