@@ -61,6 +61,7 @@ export default function Home(props) {
     return (
         <View style={globalStyle.wrapper}>
             <Snackbar visible={state.socketErr} style={{ zIndex: 100 }}
+                onDismiss={() =>{}}
                 action={{
                     label: 'Reconnect',
                     onPress: configureWebsocket,
