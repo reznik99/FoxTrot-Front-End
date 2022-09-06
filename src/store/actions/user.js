@@ -127,7 +127,7 @@ export function loadMessages() {
     }
 }
 
-export function loadContacts() {
+export function loadContacts(atomic = true) {
     return async (dispatch, getState) => {
         try {
             dispatch({ type: "SET_REFRESHING", payload: true })
@@ -142,7 +142,7 @@ export function loadContacts() {
         } catch (err) {
             console.error(`Error loading contacts: ${err}`)
         } finally {
-            dispatch({ type: "SET_REFRESHING", payload: false })
+            if(atomic) dispatch({ type: "SET_REFRESHING", payload: false })
         }
     }
 }
@@ -224,15 +224,14 @@ export function validateToken() {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
-            if (!state.token)
-                return false
+
+            if (!state.token) return false
 
             const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(state.token))
 
             dispatch({ type: "TOKEN_VALID", payload: res.data?.valid })
             return res.data?.valid
         } catch (err) {
-            console.error(`Error validating JWT: ${err}`)
             dispatch({ type: "TOKEN_VALID", payload: false })
             return false
         } finally {
