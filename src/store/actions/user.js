@@ -2,6 +2,8 @@ import axios from 'axios';
 // Storage
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
+// Push Notifications
+import messaging from '@react-native-firebase/messaging'
 // Crypto
 var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 
@@ -95,8 +97,8 @@ export function loadMessages() {
             // TODO: Fix this mess up
             response.data.forEach(message => {
                 let other = message.sender === state.user_data.phone_no
-                    ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` }
-                    : { phone_no: message.sender, id: message.sender_id, pic: `https://robohash.org/${message.sender}` }
+                    ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever_id}` }
+                    : { phone_no: message.sender, id: message.sender_id, pic: `https://robohash.org/${message.sender_id}` }
                 let exists = conversations.has(other.phone_no)
                 if (!exists) {
                     conversations.set(other.phone_no, {
@@ -125,7 +127,7 @@ export function loadMessages() {
     }
 }
 
-export function loadContacts() {
+export function loadContacts(atomic = true) {
     return async (dispatch, getState) => {
         try {
             dispatch({ type: "SET_REFRESHING", payload: true })
@@ -133,14 +135,14 @@ export function loadContacts() {
             // Load contacts
             const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
 
-            const contacts = response.data.map(contact => ({ ...contact, pic: `https://robohash.org/${contact.phone_no}` }));
+            const contacts = response.data.map(contact => ({ ...contact, pic: `https://robohash.org/${contact.id}` }));
 
             dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 
         } catch (err) {
             console.error(`Error loading contacts: ${err}`)
         } finally {
-            dispatch({ type: "SET_REFRESHING", payload: false })
+            if(atomic) dispatch({ type: "SET_REFRESHING", payload: false })
         }
     }
 }
@@ -178,7 +180,7 @@ export function searchUsers(prefix) {
             const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token))
 
             // Append fake picture to users
-            const results = response.data.map(user => ({ ...user, pic: `https://robohash.org/${user.phone_no}`, isContact: state.contacts.some(contact => contact.id === user.id) }))
+            const results = response.data.map(user => ({ ...user, pic: `https://robohash.org/${user.id}`, isContact: state.contacts.some(contact => contact.id === user.id) }))
 
             return results
 
@@ -207,7 +209,7 @@ export function sendMessage(message, to_user) {
 
             dispatch({ type: "SEND_MESSAGE", payload: msg })
 
-            await axios.post(`${API_URL}/sendMessage`, { message: message, contact_id: to_user.id }, axiosBearerConfig(state.token))
+            await axios.post(`${API_URL}/sendMessage`, { message: message, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
         } catch (err) {
             console.error(`Error sending message: ${err}`)
@@ -222,15 +224,14 @@ export function validateToken() {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
-            if (!state.token)
-                return false
+
+            if (!state.token) return false
 
             const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(state.token))
 
             dispatch({ type: "TOKEN_VALID", payload: res.data?.valid })
             return res.data?.valid
         } catch (err) {
-            console.error(`Error validating JWT: ${err}`)
             dispatch({ type: "TOKEN_VALID", payload: false })
             return false
         } finally {
@@ -266,6 +267,34 @@ export function syncFromStorage() {
             return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
+        }
+    }
+}
+
+export function registerPushNotifications() {
+    return async (dispatch, getState) => {
+        try {
+            let state = getState().userReducer
+            
+            console.debug('Registering for Push Notifications');
+            const authStatus = await messaging().requestPermission();
+            const enabled =
+                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+            if (enabled) {
+                console.log('Authorization status:', authStatus);
+                await messaging().registerDeviceForRemoteMessages();
+                const token = await messaging().getToken();
+                await axios.post(`${API_URL}/registerPushNotifications`, {token}, axiosBearerConfig(state.token))
+                // Register background handler
+                messaging().setBackgroundMessageHandler(async remoteMessage => {
+                    console.log('Message handled in the background!', remoteMessage);
+                });
+            }
+
+        } catch (err) {
+            console.error('Error Registering for Push Notifications:', err)
         }
     }
 }

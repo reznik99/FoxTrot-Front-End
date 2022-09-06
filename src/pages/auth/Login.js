@@ -43,11 +43,11 @@ class Login extends Component {
             }
 
             // Auto-login if Token still valid (temporary disabled)
-            const success = await this.attemptAutoLoginToken();
-            if (success) return
+            const auth = await this.attemptAutoLoginToken();
+            if (auth.biometric && auth.success) return
 
             // Check if user's password was saved to secure storage
-            await this.attemptAutoLoginPassword();
+            await this.attemptAutoLogin(auth.biometric);
 
         } catch(err){
             console.error('Error on auto-login: ', err)
@@ -59,20 +59,24 @@ class Login extends Component {
     attemptAutoLoginToken = async () => {
         if (!this.props.token) {
             console.debug('Token not present')
-            return false
+            return {success: false, biometric: false}
         }
-        
+
+        // Saved JWT token is present. Auth user before login
+        const biometricSuccess = await this.biometricAuth()
+        if(!biometricSuccess) return {success: false, biometric: biometricSuccess}
+
         let loggedIn = await this.props.validateToken()
         if (!loggedIn) {
             console.debug('Token expired')
-            return false
+            return {success: false, biometric: biometricSuccess}
         }
 
         this.props.navigation.replace('App', { screen: 'Home' })
-        return true
+        return {success: true, biometric: biometricSuccess}
     }
 
-    attemptAutoLoginPassword = async () => {
+    attemptAutoLogin = async (biometricSuccess) => {
         const serviceKey = `${this.props.user_data?.phone_no}-password`
         const passwordsSaved = await Keychain.getAllGenericPasswordServices()
 
@@ -82,11 +86,9 @@ class Login extends Component {
         }
 
         // Saved password is present. Auth user before retrieving
-        console.debug('Attempting biometric auth')
-        const biometricAuth = await LocalAuthentication.authenticateAsync()
-        if(!biometricAuth.success) {
-            console.error('Biometric auth failed: ', biometricAuth.error)
-            return false
+        if(!biometricSuccess) {
+            const biometricSuccess = await this.biometricAuth()
+            if(!biometricSuccess) return false
         }
 
         // User is auth'd. Load password from secure storage
@@ -106,7 +108,17 @@ class Login extends Component {
         return true
     }
 
-    handleLogin = async (username = this.state.username, password = this.state.password) => {
+    biometricAuth = async() => {
+        console.debug('Attempting biometric auth')
+        const biometricAuth = await LocalAuthentication.authenticateAsync()
+        if(!biometricAuth.success) {
+            console.error('Biometric auth failed: ', biometricAuth.error)
+            return false
+        }
+        return true
+    }
+
+    handleLogin = async (username, password) => {
         if (this.props.loading) return
 
         Keyboard.dismiss()
@@ -145,7 +157,7 @@ class Login extends Component {
                             
                             {/* Actions */}
                             <View style={{marginTop: 30, display: 'flex', alignItems: 'center'}}>
-                                <Button mode="contained" icon="login" style={styles.button} loading={this.props.loading} onPress={this.handleLogin}>Login</Button>
+                                <Button mode="contained" icon="login" style={styles.button} loading={this.props.loading} onPress={() => this.handleLogin(this.state.username, this.state.password)}>Login</Button>
                                 <Text style={{paddingVertical: 10}}>Or</Text>
                                 <Button icon="account-plus" style={[styles.button, {backgroundColor: 'none'}]} onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
                             </View>

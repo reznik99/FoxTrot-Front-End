@@ -1,6 +1,7 @@
-apply plugin: "com.android.application"
-
 import com.android.build.OutputFile
+
+apply plugin: 'com.android.application'
+
 
 /**
  * The react.gradle file registers a task for each build variant (e.g. bundleDebugJsAndAssets
@@ -177,6 +178,8 @@ android {
 
         }
     }
+
+    
 }
 
 dependencies {
@@ -190,6 +193,15 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // Import the Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:30.3.2')
+
+    // TODO: Add the dependencies for Firebase products you want to use
+    // When using the BoM, don't specify versions in Firebase dependencies
+    implementation 'com.google.firebase:firebase-analytics'
+    
+    implementation project(':react-native-push-notification')
 }
 
 // Run this once to be able to run the application with BUCK
@@ -208,3 +220,5 @@ def isNewArchitectureEnabled() {
     // - Set an environment variable `ORG_GRADLE_PROJECT_newArchEnabled=true`
     return project.hasProperty("newArchEnabled") && project.newArchEnabled == "true"
 }
+
+apply plugin: 'com.google.gms.google-services'

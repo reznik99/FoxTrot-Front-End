@@ -7,8 +7,9 @@ import { useSelector, useDispatch } from 'react-redux'
 
 import { ConversationPeek } from '../../components'
 import globalStyle from "~/global/globalStyle"
-import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys } from '~/store/actions/user'
+import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user'
 import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket'
+
 
 export default function Home(props) {
 
@@ -18,8 +19,7 @@ export default function Home(props) {
 
     useEffect(() => {
         const initLoad = async () => {
-            if (state.loading) return
-
+            setLoadingMsg("Loading keys...")
             const loadedKeys = await (dispatch(loadKeys()))
 
             // If keys not loaded, generate them (first time login)
@@ -29,10 +29,11 @@ export default function Home(props) {
                 setLoadingMsg('')
                 if(!success) return props.navigation.navigate('Login', { data: { loggedOut: true } })
             }
-
-            loadAllMessages()
-
-            configureWebsocket()
+            // Register device for push notifications
+            dispatch(registerPushNotifications())
+            // Load messages & start websocket connection to server
+            await configureWebsocket()
+            await loadAllMessages()
         }
 
         initLoad()
@@ -44,8 +45,9 @@ export default function Home(props) {
     }, [])
 
     const loadAllMessages = useCallback(async () => {
+        setLoadingMsg("Loading contacts...")
+        await dispatch(loadContacts(false))
         setLoadingMsg("Loading messages...")
-        await dispatch(loadContacts())
         await dispatch(loadMessages())
         setLoadingMsg('')
     }, [])
@@ -59,20 +61,19 @@ export default function Home(props) {
     return (
         <View style={globalStyle.wrapper}>
             <Snackbar visible={state.socketErr} style={{ zIndex: 100 }}
-                onDismiss={configureWebsocket}
                 action={{
                     label: 'Reconnect',
                     onPress: configureWebsocket,
                 }}> {`Connection to servers lost! Please try again later`}
             </Snackbar>
             {
-                state.loading == true
+                state.loading || loadingMsg
                     ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                         <Text style={[globalStyle.errorMsg, {color: 'white', marginBottom: 10}]}>{loadingMsg}</Text>
                         <ActivityIndicator size="large" />
                     </View>
                     : <>
-                        { !state.conversations?.length
+                        { !state.conversations?.length && !loadingMsg
                             ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center"}}>
                                 <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No Conversations.</Text>
                             </View>

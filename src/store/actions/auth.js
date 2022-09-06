@@ -20,7 +20,7 @@ export function logIn(phone_no, password) {
 
             console.debug('Saving user in storage')
             // Save data in phone storage
-            await AsyncStorage.setItem('user_data', JSON.stringify({ phone_no: phone_no }))
+            await AsyncStorage.setItem('user_data', JSON.stringify(res.data.user_data))
             await AsyncStorage.setItem('auth_token', res.data.token)
 
             // Save password in secure storage
@@ -34,7 +34,7 @@ export function logIn(phone_no, password) {
                 type: "LOGGED_IN",
                 payload: {
                     token: res.data.token,
-                    user_data: { phone_no: phone_no }
+                    user_data: res.data.user_data
                 },
             })
 
