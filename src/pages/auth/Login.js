@@ -109,7 +109,6 @@ class Login extends Component {
     handleLogin = async (username, password) => {
         if (this.props.loading) return
 
-        console.debug('Auth:', username, password)
         Keyboard.dismiss()
         let loggedIn = await this.props.logIn(username, password)
         if (loggedIn) {

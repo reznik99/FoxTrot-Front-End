@@ -97,8 +97,8 @@ export function loadMessages() {
             // TODO: Fix this mess up
             response.data.forEach(message => {
                 let other = message.sender === state.user_data.phone_no
-                    ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever}` }
-                    : { phone_no: message.sender, id: message.sender_id, pic: `https://robohash.org/${message.sender}` }
+                    ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever_id}` }
+                    : { phone_no: message.sender, id: message.sender_id, pic: `https://robohash.org/${message.sender_id}` }
                 let exists = conversations.has(other.phone_no)
                 if (!exists) {
                     conversations.set(other.phone_no, {
@@ -135,7 +135,7 @@ export function loadContacts(atomic = true) {
             // Load contacts
             const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
 
-            const contacts = response.data.map(contact => ({ ...contact, pic: `https://robohash.org/${contact.phone_no}` }));
+            const contacts = response.data.map(contact => ({ ...contact, pic: `https://robohash.org/${contact.id}` }));
 
             dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 
@@ -180,7 +180,7 @@ export function searchUsers(prefix) {
             const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token))
 
             // Append fake picture to users
-            const results = response.data.map(user => ({ ...user, pic: `https://robohash.org/${user.phone_no}`, isContact: state.contacts.some(contact => contact.id === user.id) }))
+            const results = response.data.map(user => ({ ...user, pic: `https://robohash.org/${user.id}`, isContact: state.contacts.some(contact => contact.id === user.id) }))
 
             return results
 
@@ -274,7 +274,6 @@ export function syncFromStorage() {
 export function registerPushNotifications() {
     return async (dispatch, getState) => {
         try {
-            dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
             
             console.debug('Registering for Push Notifications');
@@ -296,8 +295,6 @@ export function registerPushNotifications() {
 
         } catch (err) {
             console.error('Error Registering for Push Notifications:', err)
-        } finally {
-            dispatch({ type: "SET_LOADING", payload: false })
         }
     }
 }

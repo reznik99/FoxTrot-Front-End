@@ -10,8 +10,8 @@ export function initializeWebsocket() {
             if (!state.token) throw new Error("Token is not present. Re-auth required")
 
             // Close existing socket 
-            if (state.socketConn)
-                state.socketConn.close()
+            if (state.socketConn) state.socketConn.close()
+            
             // Enstablish websocket
             const socketConn = new WebSocket(`${WEBSOCKET_URL}?token=${state.token}`)
             socketConn.onopen = () => {
@@ -39,11 +39,11 @@ export function initializeWebsocket() {
                     )
                     PushNotification.localNotification({
                         channelId: 'Messages',
-                        title: `🔔 Message from ${message.sender}`,
+                        title: `Message from ${message.sender}`,
                         message: message.message,
                         when: message.sent_at,
                         visibility: "public",
-                        picture: `https://robohash.org/${message.sender}`
+                        picture: `https://robohash.org/${message.sender_id}`
                     })
                 } catch (err) {
                     console.debug(err)

@@ -30,8 +30,7 @@ export default function Home(props) {
                 if(!success) return props.navigation.navigate('Login', { data: { loggedOut: true } })
             }
             // Register device for push notifications
-            setLoadingMsg("Registering notifications...")
-            await dispatch(registerPushNotifications())
+            dispatch(registerPushNotifications())
             // Load messages & start websocket connection to server
             await configureWebsocket()
             await loadAllMessages()
