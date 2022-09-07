@@ -144,7 +144,7 @@ class Login extends Component {
                             <TextInput mode="outlined" 
                                 onChangeText={val => this.setState({username: val})}
                                 value={this.state.username}
-                                label="Phone no."
+                                label="Username"
                                 outlineColor={this.props.loginErr ? "red"  : null}
                             />
                             <TextInput mode="outlined" 

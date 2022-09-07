@@ -37,7 +37,7 @@ export default function Signup(props) {
                 <TextInput mode="outlined" 
                     onChangeText={val => setUsername(val)}
                     value={username}
-                    label="Phone number"
+                    label="Username"
                     outlineColor={signupErr && !username ? "red"  : null}
                 />
                 <TextInput mode="outlined"  
