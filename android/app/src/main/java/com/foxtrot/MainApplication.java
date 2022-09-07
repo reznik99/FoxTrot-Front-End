@@ -1,4 +1,4 @@
-package com.foxtrot;
+package com.francescogorini.foxtrot;
 
 import android.content.res.Configuration;
 import expo.modules.ApplicationLifecycleDispatcher;
