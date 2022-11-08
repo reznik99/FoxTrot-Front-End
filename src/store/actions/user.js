@@ -4,10 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 // Push Notifications
 import messaging from '@react-native-firebase/messaging'
-// Crypto
-var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 
-import { API_URL, UserKeypairConf, KeychainOpts } from '~/global/variables';
+import { API_URL, KeypairGen, KeychainOpts } from '~/global/variables';
+import { importRSAKeypair, exportRSAKeypair } from '~/global/crypto';
 
 export function loadKeys() {
     return async (dispatch, getState) => {
@@ -16,16 +15,18 @@ export function loadKeys() {
 
             let state = getState().userReducer
 
-            console.debug(`Loading '${UserKeypairConf.name} ${UserKeypairConf.modulusLength}' keys from secure storage`)
+            console.debug(`Loading '${KeypairGen.name} ${KeypairGen.modulusLength}' keys from secure storage`)
 
             const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`, KeychainOpts)
             if (!credentials || credentials.service !== `${state.user_data.phone_no}-keys`) {
                 console.debug('Warn: No keys found. First time login on device')
                 return false
             }
-            
+
+            const keys = await importRSAKeypair(JSON.parse(credentials.password))
+
             // Store keypair in memory
-            dispatch({ type: "KEY_LOAD", payload: JSON.parse(credentials.password) })
+            dispatch({ type: "KEY_LOAD", payload: keys })
             return true
         } catch (err) {
             console.error(`Error loading keys: ${err}: ${JSON.stringify(await Keychain.getSupportedBiometryType())}`)
@@ -45,15 +46,12 @@ export function generateAndSyncKeys() {
 
             // Generate RSA Keypair
             const keyPair = await window.crypto.subtle.generateKey(
-                UserKeypairConf,
+                KeypairGen,
                 true,
-                ['sign', 'verify']
+                ['encrypt', 'decrypt']
             )
-            const keys = {
-                public: Buffer.from(await window.crypto.subtle.exportKey('spki', keyPair.publicKey)).toString('base64'),
-                private: Buffer.from(await window.crypto.subtle.exportKey('pkcs8', keyPair.privateKey)).toString('base64')
-            }
-            console.debug(`Saving '${UserKeypairConf.name} ${UserKeypairConf.modulusLength}' keys to secure storage`)
+            const keys = await exportRSAKeypair(keyPair)
+            console.debug(`Saving '${KeypairGen.name} ${KeypairGen.modulusLength}' keys to secure storage`)
 
             // Store on device
             await Keychain.setInternetCredentials(`${state.user_data.phone_no}-keys`, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
@@ -66,7 +64,7 @@ export function generateAndSyncKeys() {
             await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.public }, axiosBearerConfig(state.token))
 
             // Store keypair in memory
-            dispatch({ type: "KEY_LOAD", payload: keys })
+            dispatch({ type: "KEY_LOAD", payload: keyPair })
             return true
 
         } catch (err) {
