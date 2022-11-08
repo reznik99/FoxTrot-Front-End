@@ -4,12 +4,18 @@ export const API_URL = 'https://francescogorini.com/foxtrot-api';
 export const WEBSOCKET_URL = 'wss://francescogorini.com/foxtrot-api/ws';
 
 // Crypto
-export const UserKeypairConf = {
-    name: "RSA-PSS",
+export const KeypairGen = {
+    name: "RSA-OAEP",
     modulusLength: 2048,
     publicExponent: new Uint8Array([1, 0, 1]),
     hash: "SHA-256"
 }
+export const KeypairImport = {
+  name: "RSA-OAEP",
+  hash: "SHA-256"
+}
+
+
 export const KeychainOpts = {
     authenticationPrompt: {
       title: 'Authentication required',

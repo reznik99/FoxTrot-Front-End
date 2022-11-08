@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faDoorOpen, faCog } from '@fortawesome/free-solid-svg-icons';
 import { ActivityIndicator, Avatar, Chip } from 'react-native-paper';
-import { UserKeypairConf } from '~/global/variables';
+import { KeypairGen } from '~/global/variables';
 
 const styles = {
     profileContainer: {
@@ -49,7 +49,7 @@ export default function Drawer(props) {
                             <Chip icon="account">Contacts: {state.contacts?.length}</Chip>
                         </View>
                         <View style={styles.profileInfoContainer}>
-                            <Chip icon="account-key">Keys: RSA {UserKeypairConf.modulusLength}bit</Chip>
+                            <Chip icon="account-key">Keys: RSA {KeypairGen.modulusLength}bit</Chip>
                         </View>
                     </View>
                 </View>
