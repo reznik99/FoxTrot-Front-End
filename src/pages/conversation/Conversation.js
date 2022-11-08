@@ -88,10 +88,20 @@ export default function Conversation(props) {
         scrollView.current?.scrollToEnd({ animated: true })
     }, [scrollView])
 
-    const handle_send = useCallback(() => {
+    const handle_send = useCallback(async () => {
         if (message.trim() === "") return
+
+        // Encrypt message
+        const ciphertext = await window.crypto.subtle.encrypt(
+            {
+                name: "RSA-OAEP",
+            },
+            state.keys.private,
+            new TextEncoder().encode(message)
+        )
+
         // Send message
-        dispatch(sendMessage(message, data.other_user))
+        dispatch(sendMessage(Buffer.from(ciphertext).toString("base64"), data.other_user))
         // UX
         setMessage('')
         scrollView.current?.scrollToEnd({ animated: true })
