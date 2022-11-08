@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground, Keyboard } from "react-native";
 import { useSelector, useDispatch } from 'react-redux'
+var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons"
@@ -91,20 +92,24 @@ export default function Conversation(props) {
     const handle_send = useCallback(async () => {
         if (message.trim() === "") return
 
-        // Encrypt message
-        const ciphertext = await window.crypto.subtle.encrypt(
-            {
-                name: "RSA-OAEP",
-            },
-            state.keys.private,
-            new TextEncoder().encode(message)
-        )
+        try{
+            // Encrypt message
+            const ciphertext = await window.crypto.subtle.encrypt(
+                {
+                    name: "RSA-OAEP",
+                },
+                state.keys.publicKey,
+                Buffer.from(message, 'ascii')
+            )
 
-        // Send message
-        dispatch(sendMessage(Buffer.from(ciphertext).toString("base64"), data.other_user))
-        // UX
-        setMessage('')
-        scrollView.current?.scrollToEnd({ animated: true })
+            // Send message
+            dispatch(sendMessage(Buffer.from(ciphertext).toString("base64"), data.other_user))
+            // UX
+            setMessage('')
+            scrollView.current?.scrollToEnd({ animated: true })
+        } catch (err) {
+            console.error("Failed to send message:", err)
+        }
     }, [message, data, scrollView])
 
     return (

@@ -5,15 +5,15 @@ var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 import { KeypairImport } from '~/global/variables';
 
 interface exportedKeypair {
-    privateKey: ArrayBuffer
-    publicKey: ArrayBuffer
+    privateKey: string
+    publicKey: string
 }
 
-export async function importRSAKeypair(keyPair: exportedKeypair): Promise<CryptoKeyPair> {
+export async function importRSAKeypair(keyPair: any): Promise<CryptoKeyPair> {
 
     const privateKey = await window.crypto.subtle.importKey(
         'pkcs8',
-        keyPair.privateKey,
+        Buffer.from(keyPair.privateKey, 'base64'),
         KeypairImport,
         true,
         ['decrypt']
@@ -21,7 +21,7 @@ export async function importRSAKeypair(keyPair: exportedKeypair): Promise<Crypto
 
     const publicKey = await window.crypto.subtle.importKey(
         'spki',
-        keyPair.publicKey,
+        Buffer.from(keyPair.publicKey, 'base64'),
         KeypairImport,
         true,
         ['encrypt']

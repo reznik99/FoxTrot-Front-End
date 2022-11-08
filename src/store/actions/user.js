@@ -29,7 +29,7 @@ export function loadKeys() {
             dispatch({ type: "KEY_LOAD", payload: keys })
             return true
         } catch (err) {
-            console.error(`Error loading keys: ${err}: ${JSON.stringify(await Keychain.getSupportedBiometryType())}`)
+            console.error('Error loading keys:', err, JSON.stringify(await Keychain.getSupportedBiometryType()))
             return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -61,7 +61,7 @@ export function generateAndSyncKeys() {
             })
 
             // Upload public key
-            await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.public }, axiosBearerConfig(state.token))
+            await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.publicKey }, axiosBearerConfig(state.token))
 
             // Store keypair in memory
             dispatch({ type: "KEY_LOAD", payload: keyPair })
