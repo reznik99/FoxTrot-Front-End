@@ -7,6 +7,7 @@ var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons"
 import { sendMessage } from '../../store/actions/user'
+import { decryptAESGCM } from "~/global/crypto";
 
 
 const styles = StyleSheet.create({
@@ -57,6 +58,7 @@ export default function Conversation(props) {
 
     const scrollView = useRef()
     const [message, setMessage] = useState("")
+    const [decryptedMessages, setDecryptedMessages] = useState(new Map())
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
     const [keyboardDidHideListener, setkeyboardDidHideListener] = useState(null)
 
@@ -89,7 +91,7 @@ export default function Conversation(props) {
         scrollView.current?.scrollToEnd({ animated: true })
     }, [scrollView])
 
-    const handle_send = useCallback(async () => {
+    const handleSend = useCallback(async () => {
         if (message.trim() === "") return
 
         // Send message
@@ -99,6 +101,24 @@ export default function Conversation(props) {
         scrollView.current?.scrollToEnd({ animated: true })
     }, [message, data, scrollView])
 
+    const decryptMessage = useCallback(async (index, message) => {
+        if (message.trim() === "") return
+
+        
+        const newDecryptedMessages = decryptedMessages
+        try {
+            const peer = state.contacts.find((contact) => contact.id === data.other_user.id)
+            const decryptedMessage = await decryptAESGCM(peer.sessionKey, message)
+            newDecryptedMessages.set(index, decryptedMessage)
+
+        } catch (err) {
+            console.error("Error decrypting message", err)
+        }
+
+        setDecryptedMessages(newDecryptedMessages)
+        scrollView.current?.scrollToEnd({ animated: true })
+    }, [decryptedMessages, scrollView])
+
     return (
         <ImageBackground source={require('../../res/background.jpg')} style={styles.container}>
 
@@ -107,7 +127,9 @@ export default function Conversation(props) {
                     data && data.messages ? data.messages.map((packet, index) => {
                         return packet.sender === state.user_data.phone_no
                             ? <Text key={index} style={[styles.message, styles.sent]}>{packet.message}</Text>
-                            : <Text key={index} style={[styles.message, styles.received]}>{packet.message}</Text>
+                            : <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index+"", packet.message)}>
+                                <Text style={[styles.message, styles.received]}>{decryptedMessages.get(index + "") || packet.message}</Text>
+                            </TouchableOpacity>
                     }) : <Text style={[styles.message, styles.system]} >No messages</Text>
                 }
             </ScrollView>
@@ -122,7 +144,7 @@ export default function Conversation(props) {
                     underlineColorAndroid='transparent'
                     style={styles.input}
                 />
-                <TouchableOpacity style={styles.button} onPress={handle_send}>
+                <TouchableOpacity style={styles.button} onPress={handleSend}>
                     <FontAwesomeIcon icon={faPaperPlane} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
             </View>

@@ -4,9 +4,10 @@ import * as Keychain from 'react-native-keychain';
 import messaging from '@react-native-firebase/messaging'; // Push Notifications
 import { Buffer } from '@craftzdog/react-native-buffer';
 
-import { API_URL, KeypairGen, KeychainOpts } from '~/global/variables';
-import { importRSAKeypair, exportRSAKeypair } from '~/global/crypto';
+import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
+import { importKeypair, exportKeypair, generateSessionKeyECDH, encryptAESGCM } from '~/global/crypto';
 import { AppDispatch, GetState } from '~/store/store';
+import { UserData } from '../reducers/user';
 
 export function loadKeys() {
     return async (dispatch: AppDispatch, getState: GetState) => {
@@ -15,7 +16,7 @@ export function loadKeys() {
 
             let state = getState().userReducer
 
-            console.debug(`Loading '${KeypairGen.name} ${KeypairGen.modulusLength}' keys from secure storage`)
+            console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`)
 
             const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`, KeychainOpts)
             if (!credentials || credentials.service !== `${state.user_data.phone_no}-keys`) {
@@ -23,7 +24,7 @@ export function loadKeys() {
                 return false
             }
 
-            const keys = await importRSAKeypair(JSON.parse(credentials.password))
+            const keys = await importKeypair(JSON.parse(credentials.password))
 
             // Store keypair in memory
             dispatch({ type: "KEY_LOAD", payload: keys })
@@ -44,14 +45,14 @@ export function generateAndSyncKeys() {
 
             let state = getState().userReducer
 
-            // Generate RSA Keypair
+            // Generate User's Keypair
             const keyPair = await window.crypto.subtle.generateKey(
-                KeypairGen,
+                KeypairAlgorithm,
                 true,
-                ['encrypt', 'decrypt']
+                ["deriveKey"]
             )
-            const keys = await exportRSAKeypair(keyPair)
-            console.debug(`Saving '${KeypairGen.name} ${KeypairGen.modulusLength}' keys to secure storage`)
+            const keys = await exportKeypair(keyPair)
+            console.debug(`Saving '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys to secure storage`)
 
             // Store on device
             await Keychain.setInternetCredentials(`${state.user_data.phone_no}-keys`, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
@@ -130,15 +131,25 @@ export function loadContacts(atomic = true) {
         try {
             dispatch({ type: "SET_REFRESHING", payload: true })
             let state = getState().userReducer
+
             // Load contacts
             const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
+            console.log("Contacts recieved:", response.data?.map((contact: any) => contact.phone_no))
 
-            const contacts = response.data.map((contact: any) => ({ ...contact, pic: `https://robohash.org/${contact.id}` }));
+            const contacts = await Promise.all( response.data.map(async (contact: any) => {
+                try {
+                    const cryptoKey = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey)
+                    return { ...contact, pic: `https://robohash.org/${contact.id}`, sessionKey: cryptoKey }
+                } catch (err) {
+                    console.error("Failed to generate session key with:", contact.phone_no, err)
+                    return { ...contact, pic: `https://robohash.org/${contact.id}` }
+                }
+            }))
 
             dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 
         } catch (err) {
-            console.error(`Error loading contacts: ${err}`)
+            console.error('Error loading contacts:', err)
         } finally {
             if(atomic) dispatch({ type: "SET_REFRESHING", payload: false })
         }
@@ -191,22 +202,17 @@ export function searchUsers(prefix: string) {
     }
 }
 
-export function sendMessage(message: string, to_user: any) {
+export function sendMessage(message: string, to_user: UserData) {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
 
+            const peer = state.contacts.find((contact) => contact.id === to_user.id)
+            if(!peer || !peer.sessionKey) throw new Error("Cannot message a User who isn't a contact")
+
             // Encrypt message
-            const ciphertext = await window.crypto.subtle.encrypt(
-                {
-                    name: "RSA-OAEP",
-                },
-                state.keys.publicKey,
-                Buffer.from(message, 'ascii')
-            )
-            
-            const encryptedMessage = Buffer.from(ciphertext).toString("base64")
+            const encryptedMessage = await encryptAESGCM(peer.sessionKey, message)
 
             // Save message locally
             let msg = {
@@ -216,13 +222,13 @@ export function sendMessage(message: string, to_user: any) {
                 sent_at: Date.now(),
                 seen: false
             }
-            console.log(to_user)
+
             dispatch({ type: "SEND_MESSAGE", payload: msg })
 
             await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
         } catch (err) {
-            console.error(`Error sending message: ${err}`)
+            console.error('Error sending message:', err)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }

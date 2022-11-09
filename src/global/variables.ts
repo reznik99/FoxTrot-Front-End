@@ -4,21 +4,10 @@ export const API_URL = 'https://francescogorini.com/foxtrot-api';
 export const WEBSOCKET_URL = 'wss://francescogorini.com/foxtrot-api/ws';
 
 // Crypto
-export const KeypairGen = {
+export const KeypairAlgorithm = {
   name: 'ECDH',
   namedCurve: 'P-384'
-  // name: "RSA-OAEP",
-  // modulusLength: 2048,
-  // publicExponent: new Uint8Array([1, 0, 1]),
-  // hash: "SHA-256"
 }
-export const KeypairImport = {
-  name: 'ECDH',
-  namedCurve: 'P-384'
-  // name: "RSA-OAEP",
-  // hash: "SHA-256"
-}
-
 
 export const KeychainOpts = {
     authenticationPrompt: {
