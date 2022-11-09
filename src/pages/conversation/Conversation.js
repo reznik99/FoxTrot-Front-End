@@ -126,7 +126,9 @@ export default function Conversation(props) {
                 {
                     data && data.messages ? data.messages.map((packet, index) => {
                         return packet.sender === state.user_data.phone_no
-                            ? <Text key={index} style={[styles.message, styles.sent]}>{packet.message}</Text>
+                            ? <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index+"", packet.message)}>
+                                <Text key={index} style={[styles.message, styles.sent]}>{packet.message}</Text>
+                            </TouchableOpacity>
                             : <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index+"", packet.message)}>
                                 <Text style={[styles.message, styles.received]}>{decryptedMessages.get(index + "") || packet.message}</Text>
                             </TouchableOpacity>

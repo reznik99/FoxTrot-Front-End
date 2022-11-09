@@ -80,7 +80,9 @@ export async function decryptAESGCM(sessionKey: CryptoKey, encryptedMessage: str
     const decrypted = await window.crypto.subtle.decrypt(
         {
             name: "AES-GCM",
-            iv: Buffer.from(IV, 'base64')
+            iv: Buffer.from(IV, 'base64'),
+            additionalData: new Uint8Array(),
+            tagLength: 128
         },
         sessionKey,
         Buffer.from(cipherText, 'base64')
@@ -92,11 +94,13 @@ export async function decryptAESGCM(sessionKey: CryptoKey, encryptedMessage: str
 export async function encryptAESGCM(sessionKey: CryptoKey, message: string): Promise<string> {
 
 
-    const IV =  window.crypto.getRandomValues(new Uint8Array(12));
+    const IV = window.crypto.getRandomValues(new Uint8Array(12));
     const cipherText = await window.crypto.subtle.encrypt(
         {
             name: "AES-GCM",
-            iv: IV
+            iv: IV,
+            additionalData: new Uint8Array(),
+            tagLength: 128
         },
         sessionKey,
         Buffer.from(message, 'ascii')
