@@ -92,24 +92,11 @@ export default function Conversation(props) {
     const handle_send = useCallback(async () => {
         if (message.trim() === "") return
 
-        try{
-            // Encrypt message
-            const ciphertext = await window.crypto.subtle.encrypt(
-                {
-                    name: "RSA-OAEP",
-                },
-                state.keys.publicKey,
-                Buffer.from(message, 'ascii')
-            )
-
-            // Send message
-            dispatch(sendMessage(Buffer.from(ciphertext).toString("base64"), data.other_user))
-            // UX
-            setMessage('')
-            scrollView.current?.scrollToEnd({ animated: true })
-        } catch (err) {
-            console.error("Failed to send message:", err)
-        }
+        // Send message
+        dispatch(sendMessage(message, data.other_user))
+        // UX
+        setMessage('')
+        scrollView.current?.scrollToEnd({ animated: true })
     }, [message, data, scrollView])
 
     return (

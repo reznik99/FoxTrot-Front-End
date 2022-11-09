@@ -1,15 +1,15 @@
 import axios from 'axios';
-// Storage
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Storage
 import * as Keychain from 'react-native-keychain';
-// Push Notifications
-import messaging from '@react-native-firebase/messaging'
+import messaging from '@react-native-firebase/messaging'; // Push Notifications
+import { Buffer } from '@craftzdog/react-native-buffer';
 
 import { API_URL, KeypairGen, KeychainOpts } from '~/global/variables';
 import { importRSAKeypair, exportRSAKeypair } from '~/global/crypto';
+import { AppDispatch, GetState } from '~/store/store';
 
 export function loadKeys() {
-    return async (dispatch, getState) => {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
@@ -38,7 +38,7 @@ export function loadKeys() {
 }
 
 export function generateAndSyncKeys() {
-    return async (dispatch, getState) => {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
@@ -77,7 +77,7 @@ export function generateAndSyncKeys() {
 }
 
 export function loadMessages() {
-    return async (dispatch, getState) => {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_REFRESHING", payload: true })
 
@@ -86,14 +86,14 @@ export function loadMessages() {
             const conversations = new Map()
 
             const response = await axios.get(`${API_URL}/getConversations`, axiosBearerConfig(state.token))
-            response.data = response.data.sort((msg1, msg2) => {
-                let date1 = new Date(msg1.sent_at);
-                let date2 = new Date(msg2.sent_at);
+            response.data = response.data.sort((msg1: any, msg2: any): any => {
+                let date1 = new Date(msg1.sent_at).getTime();
+                let date2 = new Date(msg2.sent_at).getTime();
                 return date1 - date2
             })
 
             // TODO: Fix this mess up
-            response.data.forEach(message => {
+            response.data.forEach((message: any) => {
                 let other = message.sender === state.user_data.phone_no
                     ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever_id}` }
                     : { phone_no: message.sender, id: message.sender_id, pic: `https://robohash.org/${message.sender_id}` }
@@ -126,14 +126,14 @@ export function loadMessages() {
 }
 
 export function loadContacts(atomic = true) {
-    return async (dispatch, getState) => {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_REFRESHING", payload: true })
             let state = getState().userReducer
             // Load contacts
             const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
 
-            const contacts = response.data.map(contact => ({ ...contact, pic: `https://robohash.org/${contact.id}` }));
+            const contacts = response.data.map((contact: any) => ({ ...contact, pic: `https://robohash.org/${contact.id}` }));
 
             dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 
@@ -145,8 +145,8 @@ export function loadContacts(atomic = true) {
     }
 }
 
-export function addContact(user) {
-    return async (dispatch, getState) => {
+export function addContact(user: any) {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "ADDING_CONTACT", payload: user })
             let state = getState().userReducer
@@ -163,22 +163,22 @@ export function addContact(user) {
 }
 
 export function clearAddingContact() {
-    return (dispatch) => {
+    return (dispatch: AppDispatch) => {
         dispatch({ type: "ADDING_CONTACT", payload: null })
         dispatch({ type: "ADD_CONTACT_FAILURE", payload: null })
     }
 }
 
-export function searchUsers(prefix) {
-    return async (dispatch, getState) => {
+export function searchUsers(prefix: string) {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
-            let state = getState().userReducer
+            const state = getState().userReducer
 
             const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token))
 
             // Append fake picture to users
-            const results = response.data.map(user => ({ ...user, pic: `https://robohash.org/${user.id}`, isContact: state.contacts.some(contact => contact.id === user.id) }))
+            const results = response.data.map((user: any) => ({ ...user, pic: `https://robohash.org/${user.id}`, isContact: state.contacts.some(contact => contact.id === user.id) }))
 
             return results
 
@@ -191,12 +191,24 @@ export function searchUsers(prefix) {
     }
 }
 
-export function sendMessage(message, to_user) {
-    return async (dispatch, getState) => {
+export function sendMessage(message: string, to_user: any) {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
 
+            // Encrypt message
+            const ciphertext = await window.crypto.subtle.encrypt(
+                {
+                    name: "RSA-OAEP",
+                },
+                state.keys.publicKey,
+                Buffer.from(message, 'ascii')
+            )
+            
+            const encryptedMessage = Buffer.from(ciphertext).toString("base64")
+
+            // Save message locally
             let msg = {
                 message: message,
                 sender: state.user_data.phone_no,
@@ -204,10 +216,10 @@ export function sendMessage(message, to_user) {
                 sent_at: Date.now(),
                 seen: false
             }
-
+            console.log(to_user)
             dispatch({ type: "SEND_MESSAGE", payload: msg })
 
-            await axios.post(`${API_URL}/sendMessage`, { message: message, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
+            await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
         } catch (err) {
             console.error(`Error sending message: ${err}`)
@@ -218,7 +230,7 @@ export function sendMessage(message, to_user) {
 }
 
 export function validateToken() {
-    return async (dispatch, getState) => {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
@@ -239,7 +251,7 @@ export function validateToken() {
 }
 
 export function syncFromStorage() {
-    return async (dispatch) => {
+    return async (dispatch: AppDispatch) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
@@ -249,7 +261,7 @@ export function syncFromStorage() {
 
             // TODO: Load existing messages/contacts and stuff
 
-            if(!user_data && !token) return false
+            if(!user_data || !token) return false
 
             const payload = {
                 token: token,
@@ -270,7 +282,7 @@ export function syncFromStorage() {
 }
 
 export function registerPushNotifications() {
-    return async (dispatch, getState) => {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             let state = getState().userReducer
             
@@ -297,6 +309,6 @@ export function registerPushNotifications() {
     }
 }
 
-function axiosBearerConfig(token) {
+function axiosBearerConfig(token: string) {
     return { headers: { "Authorization": `JWT ${token}` } }
 }

@@ -1,14 +1,34 @@
 
-const initialState = {
+export interface State {
+    tokenValid: boolean,
+    token: string,
+    keys?: CryptoKeyPair,
+    user_data?: UserData,
+    contacts: UserData[],
+    conversations: Array<any>
+}
+
+export interface UserData {
+    id: string,
+    phone_no: string
+}
+
+export interface Action {
+    type: string,
+    payload: any
+}
+
+const initialState: State = {
     tokenValid: false,
     token: '',
-    keys: {},
-    phone_no: '',
+    keys: undefined,
+    user_data: undefined,
     contacts: [],
     conversations: []
 }
 
-function userReducer(state = initialState, action) {
+function userReducer(state = initialState, action: Action) {
+    let newState = {...state}
     switch (action.type) {
         case "ADDING_CONTACT":
             return { ...state, adding_contact: action.payload }
@@ -17,7 +37,7 @@ function userReducer(state = initialState, action) {
         case "ADD_CONTACT_SUCCESS":
             return { ...state, contacts: [...state.contacts, action.payload], new_contact: action.payload }
         case "LOAD_CONTACTS":
-            return { ...state, contacts: action.payload }
+            return { ...state, contacts: action.payload as UserData[] }
         case "LOAD_CONVERSATIONS":
             return { ...state, conversations: action.payload }
         case "SYNC_FROM_STORAGE":
@@ -37,20 +57,16 @@ function userReducer(state = initialState, action) {
         case "SET_REFRESHING":
             return { ...state, refreshing: action.payload }
         case "SEND_MESSAGE":
-            newState = { ...state }
-            message = action.payload
             newState.conversations.forEach(convo => {
-                if (convo.other_user.phone_no === message.reciever) {
-                    convo.messages.push(message)
+                if (convo.other_user.phone_no === action.payload.reciever) {
+                    convo.messages.push(action.payload)
                 }
             });
             return newState
         case "RECV_MESSAGE":
-            newState = { ...state }
-            message = action.payload
             newState.conversations.forEach(convo => {
-                if (convo.other_user.phone_no === message.sender) {
-                    convo.messages.push(message)
+                if (convo.other_user.phone_no === action.payload.sender) {
+                    convo.messages.push(action.payload)
                 }
             });
             return newState
