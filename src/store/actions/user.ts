@@ -210,9 +210,6 @@ export function sendMessage(message: string, to_user: UserData) {
             const peer = state.contacts.find((contact) => contact.id === to_user.id)
             if(!peer || !peer.sessionKey) throw new Error("Cannot message a User who isn't a contact")
 
-            // Encrypt message
-            const encryptedMessage = await encryptAESGCM(peer.sessionKey, message)
-
             // Save message locally
             let msg = {
                 message: message,
@@ -223,6 +220,9 @@ export function sendMessage(message: string, to_user: UserData) {
             }
 
             dispatch({ type: "SEND_MESSAGE", payload: msg })
+
+            // Encrypt message
+            const encryptedMessage = await encryptAESGCM(peer.sessionKey, message)
 
             await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 

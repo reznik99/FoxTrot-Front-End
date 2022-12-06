@@ -51,15 +51,16 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
 
     console.debug("Imported Contact's public ECDH Key")
 
-    const sessionKey = await window.crypto.subtle.deriveKey(
+    const sessionKey = await crypto.subtle.deriveKey(
         {
             name: "ECDH",
-            public: publicKey
-        },
+            public: publicKey,
+            namedCurve: "P-384"
+        } as any,
         userPrivate,
         {
-        name: "AES-GCM",
-        length: 256
+            name: "AES-CBC",
+            length: 256
         },
         true,
         ["encrypt", "decrypt"]

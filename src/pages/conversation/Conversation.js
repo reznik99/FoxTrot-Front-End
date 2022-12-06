@@ -92,13 +92,14 @@ export default function Conversation(props) {
         scrollView.current?.scrollToEnd({ animated: true })
     }
 
-    const handleSend = async () => {
+    const handleSend = () => {
         if (message.trim() === "") return
 
         decryptedMessages.set(data.messages.length, message)
 
         // Send message
-        await dispatch(sendMessage(message, data.other_user))
+        dispatch(sendMessage(message, data.other_user))
+
         // UX
         setMessage('')
         scrollView.current?.scrollToEnd({ animated: false })
@@ -131,13 +132,13 @@ export default function Conversation(props) {
                         return packet.sender === state.user_data.phone_no
                             ? <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index, packet.message)}>
                                 <Text key={index} style={[styles.message, styles.sent]}>
-                                    { decryptedMessages.get(index + "") || packet.message }
+                                    { decryptedMessages.get(index) || packet.message }
                                     { decryptingIndex == index && <ActivityIndicator /> }
                                 </Text>
                             </TouchableOpacity>
                             : <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index, packet.message)}>
                                 <Text style={[styles.message, styles.received]}>
-                                    { decryptedMessages.get(index + "") || packet.message }
+                                    { decryptedMessages.get(index) || packet.message }
                                     { decryptingIndex == index && <ActivityIndicator /> }
                                 </Text>
                             </TouchableOpacity>
