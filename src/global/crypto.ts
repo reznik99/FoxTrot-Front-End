@@ -1,7 +1,6 @@
 
 // Crypto
-var Buffer = require("@craftzdog/react-native-buffer").Buffer;
-
+import { Buffer } from 'buffer'
 import { KeypairAlgorithm } from '~/global/variables';
 
 interface exportedKeypair {
@@ -11,15 +10,15 @@ interface exportedKeypair {
 
 export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKeyPair> {
 
-    const privateKey = await window.crypto.subtle.importKey(
+    const privateKey = await crypto.subtle.importKey(
         'pkcs8',
         Buffer.from(keyPair.privateKey, 'base64'),
         KeypairAlgorithm,
         true,
-        ['deriveKey']
+        ['deriveKey', 'deriveBits']
     )
 
-    const publicKey = await window.crypto.subtle.importKey(
+    const publicKey = await crypto.subtle.importKey(
         'spki',
         Buffer.from(keyPair.publicKey, 'base64'),
         KeypairAlgorithm,
@@ -32,8 +31,8 @@ export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKey
 
 export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKeypair> {
     return {
-        publicKey: Buffer.from(await window.crypto.subtle.exportKey('spki', keyPair.publicKey)).toString('base64'),
-        privateKey: Buffer.from(await window.crypto.subtle.exportKey('pkcs8', keyPair.privateKey)).toString('base64')
+        publicKey: Buffer.from(await crypto.subtle.exportKey('spki', keyPair.publicKey)).toString('base64'),
+        privateKey: Buffer.from(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)).toString('base64')
     }
 }
 
@@ -42,7 +41,7 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
     if (!peerPublic) throw new Error("Contacts's peerPublic not present. Cannot generate ECDH Session key")
     if (!userPrivate) throw new Error("User private key not loaded. Cannot generate ECDH Session key")
 
-    const publicKey = await window.crypto.subtle.importKey(
+    const publicKey = await crypto.subtle.importKey(
         'spki',
         Buffer.from(peerPublic, 'base64'),
         KeypairAlgorithm,
@@ -72,43 +71,29 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
 export async function decryptAESGCM(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
 
     const [IV, cipherText] = encryptedMessage.split(":")
-    
-    console.log("IV:", IV)
-    console.log("cipherText:", cipherText)
-    console.log("sessionKey:", sessionKey)
-
-    const decrypted = await window.crypto.subtle.decrypt(
+    const decrypted = await crypto.subtle.decrypt(
         {
-            name: "AES-GCM",
-            iv: Buffer.from(IV, 'base64'),
-            additionalData: new Uint8Array(),
-            tagLength: 128
+            name: "AES-CBC",
+            iv: Buffer.from(IV, 'base64')
         },
         sessionKey,
         Buffer.from(cipherText, 'base64')
     )
-    console.log("decrypted:", decrypted)
+
     return Buffer.from(decrypted).toString()
 }
 
 export async function encryptAESGCM(sessionKey: CryptoKey, message: string): Promise<string> {
 
-
-    const IV = window.crypto.getRandomValues(new Uint8Array(12));
-    const cipherText = await window.crypto.subtle.encrypt(
+    const IV = crypto.getRandomValues(new Uint8Array(16));
+    const cipherText = await crypto.subtle.encrypt(
         {
-            name: "AES-GCM",
+            name: "AES-CBC",
             iv: IV,
-            additionalData: new Uint8Array(),
-            tagLength: 128
         },
         sessionKey,
-        Buffer.from(message, 'ascii')
+        Buffer.from(message)
     )
-    
-    console.log("IV:", Buffer.from(IV).toString("base64"))
-    console.log("cipherText:", Buffer.from(cipherText).toString("base64"))
-    console.log("sessionKey:", sessionKey)
 
     return Buffer.from(IV).toString("base64") + ":" + Buffer.from(cipherText).toString("base64")
 }

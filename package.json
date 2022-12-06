@@ -12,7 +12,6 @@
         "build-android": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res"
     },
     "dependencies": {
-        "@craftzdog/react-native-buffer": "^6.0.5",
         "@fortawesome/fontawesome-svg-core": "^1.2.34",
         "@fortawesome/free-solid-svg-icons": "^5.15.2",
         "@fortawesome/react-native-fontawesome": "^0.3.0",
@@ -25,6 +24,7 @@
         "@react-navigation/stack": "^6.2.3",
         "@types/react-redux": "^7.1.24",
         "axios": "^0.21.2",
+        "buffer": "^6.0.3",
         "expo": "^46.0.17",
         "expo-local-authentication": "~12.3.0",
         "react": "^18.0.0",

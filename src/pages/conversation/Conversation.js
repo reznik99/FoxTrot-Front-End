@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground, Keyboard } from "react-native";
+import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux'
-var Buffer = require("@craftzdog/react-native-buffer").Buffer;
 
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons"
@@ -59,9 +59,10 @@ export default function Conversation(props) {
     const scrollView = useRef()
     const [message, setMessage] = useState("")
     const [decryptedMessages, setDecryptedMessages] = useState(new Map())
+    const [decryptingIndex, setDecryptingIndex] = useState(-1)
+
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
     const [keyboardDidHideListener, setkeyboardDidHideListener] = useState(null)
-
 
     useEffect(() => {
         setkeyboardDidShowListener(Keyboard.addListener(
@@ -83,54 +84,62 @@ export default function Conversation(props) {
         scrollView.current?.scrollToEnd({ animated: false })
     }, [scrollView])
 
-    const _keyboardDidShow = useCallback(() => {
+    const _keyboardDidShow = () => {
         scrollView.current?.scrollToEnd({ animated: true })
-    }, [scrollView])
+    }
 
-    const _keyboardDidHide = useCallback(() => {
+    const _keyboardDidHide = () => {
         scrollView.current?.scrollToEnd({ animated: true })
-    }, [scrollView])
+    }
 
-    const handleSend = useCallback(async () => {
+    const handleSend = async () => {
         if (message.trim() === "") return
+
+        decryptedMessages.set(data.messages.length, message)
 
         // Send message
-        dispatch(sendMessage(message, data.other_user))
+        await dispatch(sendMessage(message, data.other_user))
         // UX
         setMessage('')
-        scrollView.current?.scrollToEnd({ animated: true })
-    }, [message, data, scrollView])
+        scrollView.current?.scrollToEnd({ animated: false })
+    }
 
-    const decryptMessage = useCallback(async (index, message) => {
-        if (message.trim() === "") return
-
-        
-        const newDecryptedMessages = decryptedMessages
+    const decryptMessage = async (index, message) => {
         try {
+            setDecryptingIndex(index)
+
+            if (message.trim() === "") return
+            if (decryptedMessages.has(index)) return
+            
             const peer = state.contacts.find((contact) => contact.id === data.other_user.id)
             const decryptedMessage = await decryptAESGCM(peer.sessionKey, message)
-            newDecryptedMessages.set(index, decryptedMessage)
+            decryptedMessages.set(index, decryptedMessage)
 
         } catch (err) {
             console.error("Error decrypting message", err)
+        } finally {
+            setDecryptingIndex(-1)
         }
-
-        setDecryptedMessages(newDecryptedMessages)
-        scrollView.current?.scrollToEnd({ animated: true })
-    }, [decryptedMessages, scrollView])
+    }
 
     return (
         <ImageBackground source={require('../../res/background.jpg')} style={styles.container}>
 
             <ScrollView style={styles.messageContainer} ref={scrollView} >
                 {
-                    data && data.messages ? data.messages.map((packet, index) => {
+                    data.messages ? data.messages.map((packet, index) => {
                         return packet.sender === state.user_data.phone_no
-                            ? <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index+"", packet.message)}>
-                                <Text key={index} style={[styles.message, styles.sent]}>{packet.message}</Text>
+                            ? <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index, packet.message)}>
+                                <Text key={index} style={[styles.message, styles.sent]}>
+                                    { decryptedMessages.get(index + "") || packet.message }
+                                    { decryptingIndex == index && <ActivityIndicator /> }
+                                </Text>
                             </TouchableOpacity>
-                            : <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index+"", packet.message)}>
-                                <Text style={[styles.message, styles.received]}>{decryptedMessages.get(index + "") || packet.message}</Text>
+                            : <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index, packet.message)}>
+                                <Text style={[styles.message, styles.received]}>
+                                    { decryptedMessages.get(index + "") || packet.message }
+                                    { decryptingIndex == index && <ActivityIndicator /> }
+                                </Text>
                             </TouchableOpacity>
                     }) : <Text style={[styles.message, styles.system]} >No messages</Text>
                 }

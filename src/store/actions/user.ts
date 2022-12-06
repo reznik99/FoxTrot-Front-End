@@ -2,7 +2,6 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Storage
 import * as Keychain from 'react-native-keychain';
 import messaging from '@react-native-firebase/messaging'; // Push Notifications
-import { Buffer } from '@craftzdog/react-native-buffer';
 
 import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encryptAESGCM } from '~/global/crypto';
