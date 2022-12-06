@@ -67,11 +67,11 @@ export default function Conversation(props) {
     useEffect(() => {
         setkeyboardDidShowListener(Keyboard.addListener(
             'keyboardDidShow',
-            _keyboardDidShow,
+            () => scrollView.current?.scrollToEnd({ animated: true }),
         ))
         setkeyboardDidHideListener(Keyboard.addListener(
             'keyboardDidHide',
-            _keyboardDidHide,
+            () => scrollView.current?.scrollToEnd({ animated: true }),
         ))
         scrollView.current?.scrollToEnd({ animated: false })
         return () => {
@@ -84,34 +84,20 @@ export default function Conversation(props) {
         scrollView.current?.scrollToEnd({ animated: false })
     }, [scrollView])
 
-    const _keyboardDidShow = () => {
-        scrollView.current?.scrollToEnd({ animated: true })
-    }
-
-    const _keyboardDidHide = () => {
-        scrollView.current?.scrollToEnd({ animated: true })
-    }
-
     const handleSend = () => {
         if (message.trim() === "") return
 
         decryptedMessages.set(data.messages.length, message)
-
-        // Send message
-        dispatch(sendMessage(message, data.other_user))
-
-        // UX
+        dispatch(sendMessage(message, data.other_user)).finally(() => scrollView.current?.scrollToEnd({ animated: false }))
         setMessage('')
-        scrollView.current?.scrollToEnd({ animated: false })
     }
 
     const decryptMessage = async (index, message) => {
+        if (message.trim() === "") return
+        if (decryptedMessages.has(index)) return
+        
         try {
             setDecryptingIndex(index)
-
-            if (message.trim() === "") return
-            if (decryptedMessages.has(index)) return
-            
             const peer = state.contacts.find((contact) => contact.id === data.other_user.id)
             const decryptedMessage = await decryptAESGCM(peer.sessionKey, message)
             decryptedMessages.set(index, decryptedMessage)

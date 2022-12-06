@@ -37,8 +37,8 @@ export default function Drawer(props) {
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: "#222" }} {...props}>
             <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
 
-                <View style={styles.profileContainer}>
-                    <Avatar.Image size={150}
+                <View style={[styles.profileContainer, {marginBottom: 25}]}>
+                    <Avatar.Image size={150} style={{marginBottom: 25}}
                         source={{ uri: `https://robohash.org/${state.user_data?.id}` }}
                         PlaceholderContent={<ActivityIndicator />} />
                     <View>
@@ -49,7 +49,7 @@ export default function Drawer(props) {
                             <Chip icon="account">Contacts: {state.contacts?.length}</Chip>
                         </View>
                         <View style={styles.profileInfoContainer}>
-                            <Chip icon="account-key">Keys: RSA {KeypairAlgorithm.modulusLength}bit</Chip>
+                            <Chip icon="account-key">Keys: {KeypairAlgorithm.name + " " + KeypairAlgorithm.namedCurve}</Chip>
                         </View>
                     </View>
                 </View>
@@ -65,7 +65,7 @@ export default function Drawer(props) {
                 <DrawerItem
                     inactiveTintColor="#e60e59"
                     label="Logout"
-                    style={{ borderBottomWidth: 1, borderBottomColor: "#e60e59" }}
+                    style={{ borderTopWidth: 1, borderTopColor: "#e60e59" }}
                     onPress={() => props.navigation.navigate('Login', { data: { loggedOut: true } })}
                     icon={({ focused, size, color }) => (
                         <FontAwesomeIcon size={size} icon={faDoorOpen} style={{ color: color }} />
