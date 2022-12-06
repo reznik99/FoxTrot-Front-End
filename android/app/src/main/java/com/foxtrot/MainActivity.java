@@ -1,4 +1,4 @@
-package com.foxtrot;
+package com.francescogorini.foxtrot;
 import expo.modules.ReactActivityDelegateWrapper;
 import com.facebook.react.ReactActivityDelegate;
 

@@ -10,7 +10,9 @@ import { createDrawerNavigator } from '@react-navigation/drawer'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faHome } from '@fortawesome/free-solid-svg-icons'
 // Crypto
+import 'react-native-get-random-values'
 import WebviewCrypto from 'react-native-webview-crypto'
+window.crypto.getRandomValues = global.crypto.getRandomValues
 
 import { store } from './src/store/store'
 import { Login, Signup, Home, Conversation, NewConversation, AddContact, Settings } from './src'
