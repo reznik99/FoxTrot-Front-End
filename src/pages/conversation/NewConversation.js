@@ -60,7 +60,7 @@ export default function NewConversation(props) {
 
             <FAB
                 style={globalStyle.fab} color="#fff"
-                onPress={() => navigation.navigate('AddContact')}
+                onPress={() => navigation.replace('AddContact')}
                 icon={({ size, color }) => (
                     <FontAwesomeIcon size={size} icon={faUserPlus} style={{ color: color }} />
                 )}

@@ -6,9 +6,9 @@ import * as Keychain from 'react-native-keychain';
 import * as LocalAuthentication from 'expo-local-authentication';
 
 import styles from './style';
-import {  KeychainOpts } from '~/global/variables';
+import { KeychainOpts } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
-import { logIn } from '~/store/actions/auth';
+import { logIn, setupInterceptors } from '~/store/actions/auth';
 
 
 class Login extends Component {
@@ -27,6 +27,9 @@ class Login extends Component {
         if (this.props.route.params?.data?.loggedOut) {
             return console.debug("User logged out")
         }
+
+        // Setup axios interceptors
+        setupInterceptors(this.props.navigation)
 
         try {
             this.setState({gloablLoading: true})

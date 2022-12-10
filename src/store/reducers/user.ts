@@ -38,13 +38,12 @@ const initialState: State = {
 
 function userReducer(state = initialState, action: Action) {
     let newState = {...state}
+    let message
     switch (action.type) {
         case "ADDING_CONTACT":
             return { ...state, adding_contact: action.payload }
-        case "ADD_CONTACT_FAILURE":
-            return { ...state, failed_contact: action.payload }
         case "ADD_CONTACT_SUCCESS":
-            return { ...state, contacts: [...state.contacts, action.payload] as UserData[], new_contact: action.payload as UserData }
+            return { ...state, contacts: [...state.contacts, action.payload] as UserData[] }
         case "LOAD_CONTACTS":
             return { ...state, contacts: action.payload as UserData[] }
         case "LOAD_CONVERSATIONS":
@@ -66,24 +65,27 @@ function userReducer(state = initialState, action: Action) {
         case "SET_REFRESHING":
             return { ...state, refreshing: action.payload }
         case "SEND_MESSAGE":
-            const {reciever, messageSent} = action.payload
+            const reciever = action.payload.reciever
+            message = action.payload.rawMessage
             const converastionS = newState.conversations.get(reciever.phone_no)
-            if ( converastionS ) converastionS.messages.push(messageSent) 
+            if ( converastionS ) converastionS.messages.push(message) 
             else {
                 newState.conversations.set(reciever.phone_no, {
                     other_user: reciever,
-                    messages: [messageSent]
+                    messages: [message]
                 })
             }
             return newState
         case "RECV_MESSAGE":
-            const {sender, messageRecieved} = action.payload
-            const conversationR = newState.conversations.get(sender.phone_no)
-            if ( conversationR ) conversationR.messages.push(messageRecieved) 
+            const data = action.payload
+            const conversationR = newState.conversations.get(data.sender)
+            console.log(conversationR)
+
+            if ( conversationR ) conversationR.messages.push(data) 
             else {
-                newState.conversations.set(sender.phone_no, {
-                    other_user: sender,
-                    messages: [messageRecieved]
+                newState.conversations.set(data.sender, {
+                    other_user: {id: data.sender_id, phone_no: data.sender, ...newState.contacts.find(con => con.phone_no === data.sender)},
+                    messages: [data]
                 })
             }
             return newState
@@ -91,6 +93,8 @@ function userReducer(state = initialState, action: Action) {
             return { ...state, socketConn: action.payload, socketErr: '' }
         case "WEBSOCKET_ERROR":
             return { ...state, socketErr: action.payload }
+        case "LOGOUT":
+            return {...initialState, user_data: state.user_data}
         default:
             return state
     }

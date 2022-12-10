@@ -10,7 +10,7 @@ export function initializeWebsocket() {
             if (!state.token) throw new Error("Token is not present. Re-auth required")
 
             // Already opened so return early
-            if (state.socketConn) return
+            if (state.socketConn) state.socketConn.close()
             
             // Enstablish websocket
             const socketConn = new WebSocket(`${WEBSOCKET_URL}?token=${state.token}`)

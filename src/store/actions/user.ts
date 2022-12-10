@@ -126,14 +126,13 @@ export function loadContacts(atomic = true) {
 
             // Load contacts
             const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
-            console.log("Contacts recieved:", response.data?.map((contact: any) => contact.phone_no))
 
             const contacts = await Promise.all( response.data.map(async (contact: any) => {
                 try {
                     const cryptoKey = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey)
                     return { ...contact, pic: `https://robohash.org/${contact.id}`, sessionKey: cryptoKey }
                 } catch (err) {
-                    console.error("Failed to generate session key with:", contact.phone_no, err)
+                    console.warn("Failed to generate session key:", contact.phone_no, err)
                     return { ...contact, pic: `https://robohash.org/${contact.id}` }
                 }
             }))
@@ -151,24 +150,16 @@ export function loadContacts(atomic = true) {
 export function addContact(user: any) {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
-            dispatch({ type: "ADDING_CONTACT", payload: user })
             let state = getState().userReducer
-            // Load contacts
             await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
+            const sessionKey = await generateSessionKeyECDH(user.public_key || '', state.keys?.privateKey)
 
-            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: user })
+            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: {...user, sessionKey} })
+            return true
         } catch (err) {
             console.error(`Error adding contact: ${err}`)
-        } finally {
-            dispatch({ type: "ADD_CONTACT_FAILURE", payload: user })
+            return false
         }
-    }
-}
-
-export function clearAddingContact() {
-    return (dispatch: AppDispatch) => {
-        dispatch({ type: "ADDING_CONTACT", payload: null })
-        dispatch({ type: "ADD_CONTACT_FAILURE", payload: null })
     }
 }
 
@@ -205,11 +196,15 @@ export function sendMessage(message: string, to_user: UserData) {
 
             // Save message locally
             let msg = {
-                message: message,
-                sender: state.user_data.phone_no,
+                sender: state.user_data,
                 reciever: to_user,
-                sent_at: Date.now(),
-                seen: false
+                rawMessage: {
+                    message: message,
+                    sender: state.user_data.phone_no,
+                    reciever: to_user.phone_no,
+                    sent_at: Date.now(),
+                    seen: false
+                }
             }
 
             dispatch({ type: "SEND_MESSAGE", payload: msg })
@@ -291,7 +286,6 @@ export function registerPushNotifications() {
                 authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
             if (enabled) {
-                console.log('Authorization status:', authStatus);
                 await messaging().registerDeviceForRemoteMessages();
                 const token = await messaging().getToken();
                 await axios.post(`${API_URL}/registerPushNotifications`, {token}, axiosBearerConfig(state.token))

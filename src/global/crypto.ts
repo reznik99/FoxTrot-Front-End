@@ -38,8 +38,8 @@ export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKey
 
 export async function generateSessionKeyECDH(peerPublic: string, userPrivate: CryptoKey | undefined): Promise<CryptoKey> {
 
-    if (!peerPublic) throw new Error("Contacts's peerPublic not present. Cannot generate ECDH Session key")
-    if (!userPrivate) throw new Error("User private key not loaded. Cannot generate ECDH Session key")
+    if (!peerPublic) throw new Error("Contacts's public key not present. ECDHE failed")
+    if (!userPrivate) throw new Error("User private key not loaded. ECDHE failed")
 
     const publicKey = await crypto.subtle.importKey(
         'spki',

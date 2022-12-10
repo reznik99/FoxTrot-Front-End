@@ -80,7 +80,7 @@ export default function Conversation(props) {
 
             <ScrollView style={styles.messageContainer} ref={scrollView} >
                 {
-                    conversation.messages?.map((packet, index) => {
+                    conversation?.messages?.map((packet, index) => {
                         const sent = packet.sender === state.user_data.phone_no
                         const loading = decryptingIndex == index
                         const sent_at = new Date(packet.sent_at)

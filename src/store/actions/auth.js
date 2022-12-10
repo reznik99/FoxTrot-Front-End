@@ -82,3 +82,25 @@ export function signUp(phone_no, password, re_password) {
         }
     }
 }
+
+export function logOut(navigation) {
+    return async (dispatch) => {
+        console.debug("Logging out")
+        // Clear redux state
+        dispatch({ type: "LOGOUT" })
+        navigation.replace('Login', { data: { loggedOut: true } })
+    }
+}
+
+export function setupInterceptors(navigation) {
+    return (dispatch) => {
+        axios.defaults.interceptors.response.use(
+            (response) => response, 
+            (error) => {
+                if ( error.response.status == 403) logOut(navigation)
+                return Promise.reject(error);
+            }
+        );
+    }
+}
+
