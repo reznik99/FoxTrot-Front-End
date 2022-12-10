@@ -5,7 +5,7 @@ export interface State {
     keys?: CryptoKeyPair,
     user_data: UserData,
     contacts: UserData[],
-    conversations: Array<any>
+    conversations: Map<string, Conversation>
 }
 
 export interface UserData {
@@ -16,6 +16,10 @@ export interface UserData {
     sessionKey?: CryptoKey,
 }
 
+export interface Conversation {
+    other_user: UserData,
+    messages: string[]
+}
 export interface Action {
     type: string,
     payload: any
@@ -29,7 +33,7 @@ const initialState: State = {
         id: '', phone_no: ''
     },
     contacts: [],
-    conversations: []
+    conversations: new Map()
 }
 
 function userReducer(state = initialState, action: Action) {
@@ -44,7 +48,7 @@ function userReducer(state = initialState, action: Action) {
         case "LOAD_CONTACTS":
             return { ...state, contacts: action.payload as UserData[] }
         case "LOAD_CONVERSATIONS":
-            return { ...state, conversations: action.payload }
+            return { ...state, conversations: action.payload as Map<string, Conversation> }
         case "SYNC_FROM_STORAGE":
             return { ...state, token: action.payload.token, user_data: action.payload.user_data as UserData }
         case "KEY_LOAD":
@@ -62,18 +66,26 @@ function userReducer(state = initialState, action: Action) {
         case "SET_REFRESHING":
             return { ...state, refreshing: action.payload }
         case "SEND_MESSAGE":
-            newState.conversations.forEach(convo => {
-                if (convo.other_user.phone_no === action.payload.reciever) {
-                    convo.messages.push(action.payload)
-                }
-            });
+            const {reciever, messageSent} = action.payload
+            const converastionS = newState.conversations.get(reciever.phone_no)
+            if ( converastionS ) converastionS.messages.push(messageSent) 
+            else {
+                newState.conversations.set(reciever.phone_no, {
+                    other_user: reciever,
+                    messages: [messageSent]
+                })
+            }
             return newState
         case "RECV_MESSAGE":
-            newState.conversations.forEach(convo => {
-                if (convo.other_user.phone_no === action.payload.sender) {
-                    convo.messages.push(action.payload)
-                }
-            });
+            const {sender, messageRecieved} = action.payload
+            const conversationR = newState.conversations.get(sender.phone_no)
+            if ( conversationR ) conversationR.messages.push(messageRecieved) 
+            else {
+                newState.conversations.set(sender.phone_no, {
+                    other_user: sender,
+                    messages: [messageRecieved]
+                })
+            }
             return newState
         case "WEBSOCKET_CONNECT":
             return { ...state, socketConn: action.payload, socketErr: '' }

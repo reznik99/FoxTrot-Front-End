@@ -1,5 +1,4 @@
-
-import 'react-native-gesture-handler';
+import 'react-native-gesture-handler'
 import React from 'react'
 import { StatusBar } from 'react-native'
 import { Provider } from 'react-redux'
@@ -9,12 +8,14 @@ import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faHome } from '@fortawesome/free-solid-svg-icons'
-import Toast from 'react-native-toast-message';
+import Toast from 'react-native-toast-message'
+
 // Crypto
 import 'react-native-get-random-values'
 import WebviewCrypto from 'react-native-webview-crypto'
 window.crypto.getRandomValues = global.crypto.getRandomValues
 
+// App
 import { store } from './src/store/store'
 import { Login, Signup, Home, Conversation, NewConversation, AddContact, Settings } from './src'
 import { Drawer, HeaderConversation } from "./src/components"

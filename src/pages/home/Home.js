@@ -17,6 +17,12 @@ export default function Home(props) {
     const dispatch = useDispatch()
     const [loadingMsg, setLoadingMsg] = useState('')
 
+    const conversations = [...state.conversations.values()].sort((c1, c2) => {
+        if (!c1.messages?.length) return -1
+        if (!c2.messages?.length) return 1
+        return c1.messages[c1.messages.length - 1].sent_at < c2.messages[c2.messages.length - 1].sent_at ? 1 : -1
+    })
+
     useEffect(() => {
         const initLoad = async () => {
             setLoadingMsg("Loading keys...")
@@ -74,20 +80,19 @@ export default function Home(props) {
                         <ActivityIndicator size="large" />
                     </View>
                     : <>
-                        { !state.conversations?.length && !loadingMsg
-                            ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center"}}>
-                                <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No Conversations.</Text>
-                            </View>
-                            : <ScrollView refreshControl={<RefreshControl refreshing={state.refreshing} onRefresh={loadAllMessages} />}>
-                                { state.conversations.map((convo, index) =>
+                        <ScrollView refreshControl={<RefreshControl refreshing={state.refreshing} onRefresh={loadAllMessages} />}>
+                            { conversations?.length
+                                ? conversations.map((convo, index) =>
                                     (<View key={index} >
                                         <ConversationPeek data={convo} navigation={props.navigation} />
                                         <Divider />
                                     </View>)
-                                    )
-                                }  
-                            </ScrollView>
-                        }
+                                )
+                                : <View style={{ flex: 1, justifyContent: "center", alignItems: "center"}}>
+                                    <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No Conversations.</Text>
+                                </View>
+                            }
+                        </ScrollView>
                         
                         <FAB
                             style={globalStyle.fab} color='#fff'

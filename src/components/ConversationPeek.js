@@ -38,7 +38,7 @@ export default function ConversationPeek(props) {
     const isNew = shouldNotify(lastMessage)
     const boldIfUnseen = isNew ? styles.unseenMessage : null
     return (
-        <TouchableOpacity style={[styles.conversationPeek]} onPress={() => { navigation.navigate('Conversation', { data }) }}>
+        <TouchableOpacity style={[styles.conversationPeek]} onPress={() => { navigation.navigate('Conversation', { data: {peer_user: data.other_user} }) }}>
             <Avatar.Image size={55} style={styles.profilePicContainer}
                 source={{ uri: data.other_user.pic }}
                 PlaceholderContent={<ActivityIndicator />} />

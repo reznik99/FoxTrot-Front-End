@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground, Keyboard } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
@@ -12,17 +11,16 @@ import { decrypt } from "~/global/crypto";
 
 
 export default function Conversation(props) {
-
-    const data = props.route.params.data;
-
     const state = useSelector(state => state.userReducer)
     const dispatch = useDispatch()
+    const { peer_user } = props.route.params.data
 
     const scrollView = useRef()
     const [message, setMessage] = useState("")
-    const [decryptedMessages, setDecryptedMessages] = useState(new Map())
+    const [decryptedMessages, _] = useState(new Map())
     const [decryptingIndex, setDecryptingIndex] = useState(-1)
-
+    const conversation = state.conversations.get(peer_user.phone_no)
+    
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
     const [keyboardDidHideListener, setkeyboardDidHideListener] = useState(null)
 
@@ -49,8 +47,8 @@ export default function Conversation(props) {
     const handleSend = () => {
         if (message.trim() === "") return
 
-        decryptedMessages.set(data.messages.length, message)
-        dispatch(sendMessage(message, data.other_user)).finally(() => scrollView.current?.scrollToEnd({ animated: false }))
+        decryptedMessages.set(conversation?.messages?.length || 0, message)
+        dispatch(sendMessage(message, peer_user)).finally(() => scrollView.current?.scrollToEnd({ animated: false }))
         setMessage('')
     }
 
@@ -60,7 +58,7 @@ export default function Conversation(props) {
 
         try {
             setDecryptingIndex(index)
-            const peer = state.contacts.find((contact) => contact.id === data.other_user.id)
+            const peer = state.contacts.find((contact) => contact.id === peer_user.id)
             const decryptedMessage = await decrypt(peer.sessionKey, message)
             decryptedMessages.set(index, decryptedMessage)
 
@@ -82,7 +80,7 @@ export default function Conversation(props) {
 
             <ScrollView style={styles.messageContainer} ref={scrollView} >
                 {
-                    data.messages?.map((packet, index) => {
+                    conversation.messages?.map((packet, index) => {
                         const sent = packet.sender === state.user_data.phone_no
                         const loading = decryptingIndex == index
                         const sent_at = new Date(packet.sent_at)

@@ -108,15 +108,7 @@ export function loadMessages() {
                 conversations.get(other.phone_no).messages.push(message)
             })
 
-            const convos = [...conversations.values()].sort((c1, c2) => {
-                if (!c1.messages || c1.messages.length <= 0)
-                    return -1;
-                if (!c2.messages || c2.messages.length <= 0)
-                    return 1;
-                return c1.messages[c1.messages.length - 1].sent_at < c2.messages[c2.messages.length - 1].sent_at ? 1 : -1
-            })
-
-            dispatch({ type: "LOAD_CONVERSATIONS", payload: convos })
+            dispatch({ type: "LOAD_CONVERSATIONS", payload: conversations })
 
         } catch (err) {
             console.error(`Error loading messages: ${err}`)
@@ -215,7 +207,7 @@ export function sendMessage(message: string, to_user: UserData) {
             let msg = {
                 message: message,
                 sender: state.user_data.phone_no,
-                reciever: to_user.phone_no,
+                reciever: to_user,
                 sent_at: Date.now(),
                 seen: false
             }
