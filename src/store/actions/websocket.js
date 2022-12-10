@@ -16,6 +16,14 @@ export function initializeWebsocket() {
             const socketConn = new WebSocket(`${WEBSOCKET_URL}?token=${state.token}`)
             socketConn.onopen = () => {
                 console.debug("Socket to server opened succesfully")
+                PushNotification.createChannel(
+                    {
+                        channelId: 'Messages',
+                        channelName: 'Notifications for incoming messages',
+                        channelDescription: 'Notifications for incoming messages',
+                    },
+                    () => { },
+                )
             }
             socketConn.onclose = () => {
                 console.debug("Websocket connection has been closed gracefully")
@@ -25,18 +33,10 @@ export function initializeWebsocket() {
                 dispatch({ type: "WEBSOCKET_ERROR", payload: err })
             }
             socketConn.onmessage = (event) => {
-                console.debug(`Data from server: ${event.data}`)
+                console.debug("Websocket RECV:")
                 try {
                     const message = JSON.parse(event.data)
                     dispatch({ type: "RECV_MESSAGE", payload: message })
-                    PushNotification.createChannel(
-                        {
-                            channelId: 'Messages',
-                            channelName: 'Notifications for incoming messages',
-                            channelDescription: 'Notifications for incoming messages',
-                        },
-                        () => { },
-                    )
                     PushNotification.localNotification({
                         channelId: 'Messages',
                         title: `Message from ${message.sender}`,

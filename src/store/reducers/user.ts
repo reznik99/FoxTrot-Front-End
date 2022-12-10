@@ -79,8 +79,6 @@ function userReducer(state = initialState, action: Action) {
         case "RECV_MESSAGE":
             const data = action.payload
             const conversationR = newState.conversations.get(data.sender)
-            console.log(conversationR)
-
             if ( conversationR ) conversationR.messages.push(data) 
             else {
                 newState.conversations.set(data.sender, {
