@@ -69,7 +69,7 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
     return sessionKey
 }
 
-export async function decryptAESGCM(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
+export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
 
     const [IV, cipherText] = encryptedMessage.split(":")
     const decrypted = await crypto.subtle.decrypt(
@@ -84,7 +84,7 @@ export async function decryptAESGCM(sessionKey: CryptoKey, encryptedMessage: str
     return Buffer.from(decrypted).toString()
 }
 
-export async function encryptAESGCM(sessionKey: CryptoKey, message: string): Promise<string> {
+export async function encrypt(sessionKey: CryptoKey, message: string): Promise<string> {
 
     const IV = crypto.getRandomValues(new Uint8Array(16));
     const cipherText = await crypto.subtle.encrypt(

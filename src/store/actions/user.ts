@@ -4,7 +4,7 @@ import * as Keychain from 'react-native-keychain';
 import messaging from '@react-native-firebase/messaging'; // Push Notifications
 
 import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
-import { importKeypair, exportKeypair, generateSessionKeyECDH, encryptAESGCM } from '~/global/crypto';
+import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt } from '~/global/crypto';
 import { AppDispatch, GetState } from '~/store/store';
 import { UserData } from '../reducers/user';
 
@@ -14,6 +14,7 @@ export function loadKeys() {
             dispatch({ type: "SET_LOADING", payload: true })
 
             let state = getState().userReducer
+            if(state.keys) return true
 
             console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`)
 
@@ -222,7 +223,7 @@ export function sendMessage(message: string, to_user: UserData) {
             dispatch({ type: "SEND_MESSAGE", payload: msg })
 
             // Encrypt message
-            const encryptedMessage = await encryptAESGCM(peer.sessionKey, message)
+            const encryptedMessage = await encrypt(peer.sessionKey, message)
 
             await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
@@ -303,9 +304,9 @@ export function registerPushNotifications() {
                 const token = await messaging().getToken();
                 await axios.post(`${API_URL}/registerPushNotifications`, {token}, axiosBearerConfig(state.token))
                 // Register background handler
-                messaging().setBackgroundMessageHandler(async remoteMessage => {
-                    console.log('Message handled in the background!', remoteMessage);
-                });
+                // messaging().setBackgroundMessageHandler(async remoteMessage => {
+                //     console.log('Message handled in the background!', remoteMessage);
+                // });
             }
 
         } catch (err) {

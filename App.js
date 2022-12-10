@@ -9,6 +9,7 @@ import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faHome } from '@fortawesome/free-solid-svg-icons'
+import Toast from 'react-native-toast-message';
 // Crypto
 import 'react-native-get-random-values'
 import WebviewCrypto from 'react-native-webview-crypto'
@@ -106,6 +107,7 @@ export default function App() {
                 <WebviewCrypto />
                 <StatusBar backgroundColor={PRIMARY} barStyle="light-content" />
                 <AuthNavigator />
+                <Toast />
             </PaperProvider>
         </Provider>
     )

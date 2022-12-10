@@ -1,53 +1,15 @@
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground, Keyboard } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
-import { useSelector, useDispatch } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux';
+import Toast from 'react-native-toast-message';
 
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons"
-import { sendMessage } from '../../store/actions/user'
-import { decryptAESGCM } from "~/global/crypto";
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons";
+import { sendMessage } from '../../store/actions/user';
+import { decrypt } from "~/global/crypto";
 
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        width: "100%",
-    }, messageContainer: {
-        height: "90%",
-        width: "90%",
-        alignSelf: 'center'
-    }, message: {
-        padding: 15,
-        marginVertical: 5,
-        borderRadius: 10
-    }, received: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#faf1e6'
-    }, sent: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#abed87'
-    }, system: {
-        alignSelf: 'center',
-        backgroundColor: 'gray'
-    }, inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-evenly',
-        borderRadius: 20,
-        paddingHorizontal: 10,
-        paddingVertical: 10
-    }, input: {
-        width: '75%',
-        borderRadius: 20,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        backgroundColor: '#faf1e6'
-    }, buttonIcon: {
-        color: '#fff'
-    }
-});
 
 export default function Conversation(props) {
 
@@ -95,15 +57,21 @@ export default function Conversation(props) {
     const decryptMessage = async (index, message) => {
         if (message.trim() === "") return
         if (decryptedMessages.has(index)) return
-        
+
         try {
             setDecryptingIndex(index)
             const peer = state.contacts.find((contact) => contact.id === data.other_user.id)
-            const decryptedMessage = await decryptAESGCM(peer.sessionKey, message)
+            const decryptedMessage = await decrypt(peer.sessionKey, message)
             decryptedMessages.set(index, decryptedMessage)
 
         } catch (err) {
             console.error("Error decrypting message", err)
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to decrypt message',
+                text2: 'Session Key might have been rotated since this message was sent',
+                visibilityTime: 6000
+              });
         } finally {
             setDecryptingIndex(-1)
         }
@@ -114,21 +82,21 @@ export default function Conversation(props) {
 
             <ScrollView style={styles.messageContainer} ref={scrollView} >
                 {
-                    data.messages ? data.messages.map((packet, index) => {
-                        return packet.sender === state.user_data.phone_no
-                            ? <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index, packet.message)}>
-                                <Text key={index} style={[styles.message, styles.sent]}>
-                                    { decryptedMessages.get(index) || packet.message }
-                                    { decryptingIndex == index && <ActivityIndicator /> }
-                                </Text>
-                            </TouchableOpacity>
-                            : <TouchableOpacity key={index} style={styles.button} onPress={() => decryptMessage(index, packet.message)}>
-                                <Text style={[styles.message, styles.received]}>
-                                    { decryptedMessages.get(index) || packet.message }
-                                    { decryptingIndex == index && <ActivityIndicator /> }
-                                </Text>
-                            </TouchableOpacity>
-                    }) : <Text style={[styles.message, styles.system]} >No messages</Text>
+                    data.messages?.map((packet, index) => {
+                        const sent = packet.sender === state.user_data.phone_no
+                        const loading = decryptingIndex == index
+                        const sent_at = new Date(packet.sent_at)
+                        return <TouchableOpacity key={index} style={[styles.message, sent ? styles.sent : styles.received, loading ? {backgroundColor: '#333333f0'} : null]} onPress={() => decryptMessage(index, packet.message)}>
+                            <ActivityIndicator style={{position: 'absolute', zIndex: 10}} animating={loading}/>
+                            <Text> { decryptedMessages.get(index) || packet.message } </Text>
+                            <Text style={styles.messageTime}> 
+                                { sent_at.toLocaleDateString() === new Date().toLocaleDateString()
+                                    ? sent_at.toLocaleTimeString()
+                                    : sent_at.toLocaleDateString()
+                                } 
+                            </Text>
+                        </TouchableOpacity>
+                    }) || <Text style={[styles.message, styles.system]} >No messages</Text>
                 }
             </ScrollView>
 
@@ -149,5 +117,49 @@ export default function Conversation(props) {
 
         </ImageBackground >
     )
-
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        width: "100%",
+    }, messageContainer: {
+        height: "90%",
+        width: "90%",
+        alignSelf: 'center'
+    }, message: {
+        padding: 15,
+        marginVertical: 5,
+        borderRadius: 10,
+        justifyContent: 'center', 
+        alignItems: 'center'
+    }, received: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#faf1e6'
+    }, sent: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#abed87'
+    }, system: {
+        alignSelf: 'center',
+        backgroundColor: 'gray'
+    }, inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-evenly',
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 10
+    }, input: {
+        width: '75%',
+        borderRadius: 20,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        backgroundColor: '#faf1e6'
+    }, buttonIcon: {
+        color: '#fff'
+    }, messageTime: {
+        color: 'gray',
+        alignSelf: 'flex-end',
+        fontSize: 12
+    }
+});
