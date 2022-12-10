@@ -56,8 +56,8 @@ const HomeNavigator = () => {
         <HomeStack.Navigator initialRouteName='Home' screenOptions={{ ...defaultHeaderOptions, ...animationDefaults }}>
             <HomeStack.Screen name="Home" component={AppDrawer} options={{ headerShown: false }} />
             <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
-            <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: "Contacts" })} />
-            <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: "Search Users" })} />
+            <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: "My Contacts" })} />
+            <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: "Search New Users" })} />
             <HomeStack.Screen name="Settings" component={Settings} />
         </HomeStack.Navigator>
     )

@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useEffect } from "react"
+import React, { useState } from "react"
 import { Text, View, ScrollView } from "react-native"
-import { Divider, Searchbar, Snackbar, ActivityIndicator } from 'react-native-paper'
+import { Divider, Searchbar, ActivityIndicator } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
+import Toast from 'react-native-toast-message'
 
-import { searchUsers, addContact, clearAddingContact } from '../../store/actions/user'
+import { searchUsers, addContact } from '../../store/actions/user'
 import { ContactPeek } from './../../components/'
 import globalStyle from "~/global/globalStyle"
 
@@ -13,26 +14,12 @@ import globalStyle from "~/global/globalStyle"
 export default function AddContact(props) {
 
     const { navigation } = props
-    const [snackMsg, setSnackMsg] = useState("")
-    const [visibleSnack, setVisibleSnack] = useState(false)
     const [results, setResults] = useState("")
-    const { loading, adding_contact, failed_contact, new_contact } = useSelector(state => state.userReducer)
+    const [addingContact, setAddingContact] = useState(undefined)
+    const { loading } = useSelector(state => state.userReducer)
     const dispatch = useDispatch()
 
-
-    useEffect(() => {
-        if (!new_contact) return
-        showSnack("Contact added successfully")
-        navigation.navigate('Conversation', { data: { other_user: new_contact, messages: [] } })
-    }, [new_contact])
-
-    useEffect(() => {
-        if (!failed_contact) return
-        showSnack("Failed to add contact! Try again later")
-        dispatch(clearAddingContact())
-    }, [failed_contact])
-
-    const handleInput = useCallback(async (newPrefix) => {
+    const handleInput = async (newPrefix) => {
         if (newPrefix.length <= 2) return
 
         // Load data
@@ -40,18 +27,22 @@ export default function AddContact(props) {
 
         // Sort results
         setResults(users.sort((u1, u2) => (u1.identifier > u2.identifier) ? 1 : -1))
-    })
+    }
 
-    const showSnack = useCallback((msg) => {
-        setSnackMsg(msg)
-        setVisibleSnack(true)
-        setTimeout(dismissSnack, 4000);
-    })
-
-    const dismissSnack = useCallback((msg) => {
-        setVisibleSnack(false)
-        setSnackMsg("")
-    })
+    const handleAddContact = async (user) => {
+        setAddingContact(user)
+        const success = await dispatch(addContact(user))
+        if (success) navigation.replace('Conversation', { data: { peer_user: user } })
+        else {
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to add contact',
+                text2: 'Please try again later',
+                visibilityTime: 5000
+              });
+        }
+        setAddingContact(undefined)
+    }
 
 
     return (
@@ -66,38 +57,31 @@ export default function AddContact(props) {
                     onChangeText={val => handleInput(val)}
                 />
             </View>
-
-            { /* Contact List */
-                loading
-                    ? <View style={{ flex: 1, justifyContent: 'center' }}>
-                        <ActivityIndicator size="large" />
-                    </View>
-                    : <ScrollView>
-                        { results?.length
-                            ? results.map((user, index) => {
-                                return (
-                                    <View key={index}>
-                                        <ContactPeek data={user} navigation={navigation} loading={adding_contact?.phone_no === user.phone_no}
-                                            onSelect={() => dispatch(addContact(user))}
-                                        />
-                                        <Divider />
-                                    </View>
-                                )
-                            })
-                            : <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No results</Text>
-                        }
-                    </ScrollView>
+            
+            { loading && 
+                <View style={{ flex: 1, justifyContent: 'center' }}> 
+                    <ActivityIndicator size="large" />
+                </View>
             }
 
-            {/* Snack bar */}
-            <Snackbar visible={visibleSnack}
-                onDismiss={dismissSnack}
-                action={{
-                    label: 'Dismiss',
-                    onPress: () => { },
-                }}> {snackMsg}
-            </Snackbar>
+            { /* Contact List */ }
+            { !loading && 
+                <ScrollView>
+                    { results?.length
+                        ? results.map((user, index) => {
+                            return (
+                                <View key={index}>
+                                    <ContactPeek data={user} navigation={navigation} loading={addingContact?.phone_no === user.phone_no}
+                                        onSelect={() => handleAddContact(user)}
+                                    />
+                                    <Divider />
+                                </View>
+                            )
+                        })
+                        : <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No results</Text>
+                    }
+                </ScrollView>
+            }
         </View>
     )
-
 }

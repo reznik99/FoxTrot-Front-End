@@ -61,17 +61,14 @@ export function initializeWebsocket() {
 export function destroyWebsocket() {
     return async (dispatch, getState) => {
         try {
-
             let state = getState().userReducer
-            if (!state.token) throw new Error("Token is not present. Re-auth required")
 
             // Close existing socket 
-            if (state.socketConn)
-                state.socketConn.close()
+            if (state.socketConn) state.socketConn.close()
 
             dispatch({ type: "WEBSOCKET_CONNECT", payload: null })
         } catch (err) {
-            console.error(`Error establishing websocket: ${err}`)
+            console.warn(`Error destroying websocket: `, err)
         }
     }
 }

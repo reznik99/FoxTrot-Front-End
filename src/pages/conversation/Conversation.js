@@ -69,7 +69,7 @@ export default function Conversation(props) {
                 text1: 'Failed to decrypt message',
                 text2: 'Session Key might have been rotated since this message was sent',
                 visibilityTime: 6000
-              });
+            });
         } finally {
             setDecryptingIndex(-1)
         }

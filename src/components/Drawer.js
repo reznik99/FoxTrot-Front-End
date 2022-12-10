@@ -1,11 +1,12 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faDoorOpen, faCog } from '@fortawesome/free-solid-svg-icons';
 import { ActivityIndicator, Avatar, Chip } from 'react-native-paper';
 import { KeypairAlgorithm } from '~/global/variables';
+import { logOut } from '~/store/actions/auth';
 
 const styles = {
     profileContainer: {
@@ -32,6 +33,7 @@ const styles = {
 
 export default function Drawer(props) {
     const state = useSelector(state => state.userReducer)
+    const dispatch = useDispatch()
 
     return (
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: "#222" }} {...props}>
@@ -66,7 +68,7 @@ export default function Drawer(props) {
                     inactiveTintColor="#e60e59"
                     label="Logout"
                     style={{ borderTopWidth: 1, borderTopColor: "#e60e59" }}
-                    onPress={() => props.navigation.navigate('Login', { data: { loggedOut: true } })}
+                    onPress={() => dispatch(logOut(props.navigation))}
                     icon={({ focused, size, color }) => (
                         <FontAwesomeIcon size={size} icon={faDoorOpen} style={{ color: color }} />
                     )}

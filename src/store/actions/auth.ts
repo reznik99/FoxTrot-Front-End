@@ -1,11 +1,12 @@
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import * as Keychain from 'react-native-keychain';
+import * as Keychain from 'react-native-keychain'
 
-import { API_URL } from '~/global/variables';
+import { API_URL } from '~/global/variables'
+import { AppDispatch } from '../store'
 
-export function logIn(phone_no, password) {
-    return async (dispatch) => {
+export function logIn(phone_no: string, password: string) {
+    return async (dispatch: AppDispatch) => {
         if (phone_no === '' || password === '') {
             dispatch({ type: "LOGIN_ERROR_MSG", payload: "Textfields cannot be blank!" })
             return;
@@ -40,9 +41,9 @@ export function logIn(phone_no, password) {
 
             return true
         }
-        catch (err) {
-            console.error(`Error logging in: ${err}`)
-            dispatch({ type: "LOGIN_ERROR_MSG", payload: err.response?.data })
+        catch (err: any) {
+            console.error("Error logging in: ", err)
+            dispatch({ type: "LOGIN_ERROR_MSG", payload: err?.response?.data || err.message })
             return false
         }
         finally {
@@ -51,9 +52,9 @@ export function logIn(phone_no, password) {
     }
 }
 
-export function signUp(phone_no, password, re_password) {
-    return async (dispatch) => {
-        if (phone_no === '' || password === '' || re_password === '') {
+export function signUp(phone_no: string, password: string, re_password: string) {
+    return async (dispatch: AppDispatch) => {
+        if (!phone_no || !password || !re_password ) {
             dispatch({ type: "SIGNUP_ERROR_MSG", payload: "Textfields cannot be blank!" })
             return false
         } else if (password !== re_password) {
@@ -63,7 +64,7 @@ export function signUp(phone_no, password, re_password) {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
-            const res = await axios.post(`${API_URL}/signup`, {
+             await axios.post(`${API_URL}/signup`, {
                 phone_no: phone_no,
                 password: password
             })
@@ -72,9 +73,9 @@ export function signUp(phone_no, password, re_password) {
             dispatch({ type: "SIGNUP_ERROR_MSG", payload: "" })
             return true
         }
-        catch (err) {
-            console.error(`Error signing up: ${err}`)
-            dispatch({ type: "SIGNUP_ERROR_MSG", payload: err.response?.data })
+        catch (err: any) {
+            console.error("Error signing up: ", err)
+            dispatch({ type: "SIGNUP_ERROR_MSG", payload: err?.response?.data || err.message })
             return false
         }
         finally {
@@ -83,24 +84,23 @@ export function signUp(phone_no, password, re_password) {
     }
 }
 
-export function logOut(navigation) {
-    return async (dispatch) => {
+export function logOut(navigation: any) {
+    return async (dispatch: AppDispatch) => {
         console.debug("Logging out")
         // Clear redux state
-        dispatch({ type: "LOGOUT" })
+        dispatch({ type: "LOGOUT", payload: undefined })
         navigation.replace('Login', { data: { loggedOut: true } })
     }
 }
 
-export function setupInterceptors(navigation) {
-    return (dispatch) => {
-        axios.defaults.interceptors.response.use(
-            (response) => response, 
-            (error) => {
-                if ( error.response.status == 403) logOut(navigation)
-                return Promise.reject(error);
-            }
-        );
-    }
+export function setupInterceptors(navigation: any) {
+    axios.interceptors.response.use(
+        (response) => response, 
+        (error) => {
+            console.warn("Interceptor error: ", error)
+            if ( error.response.status == 403) logOut(navigation)
+            return Promise.reject(error);
+        }
+    );
 }
 
