@@ -5,10 +5,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
 
-import { ConversationPeek } from '../../components'
+import { ConversationPeek } from '~/components'
 import globalStyle from "~/global/globalStyle"
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user'
 import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket'
+import { setupInterceptors } from '~/store/actions/auth'
 
 
 export default function Home(props) {
@@ -33,13 +34,23 @@ export default function Home(props) {
                 setLoadingMsg("Generating cryptographic keys...")
                 const success = await dispatch(generateAndSyncKeys())
                 setLoadingMsg('')
-                if(!success) return props.navigation.navigate('Login', { data: { loggedOut: true } })
+                if(!success) {
+                    return props.navigation.navigate('Login', { 
+                        data: { 
+                            loggedOut: true, 
+                            errorMsg: "This account has already loggin in another device. Public key cannot be overridden for security reasons." 
+                        }
+                    })
+                }
             }
             // Register device for push notifications
             dispatch(registerPushNotifications())
             // Load messages & start websocket connection to server
             await configureWebsocket()
             await loadAllMessages()
+
+            // Setup axios interceptors
+            setupInterceptors(props.navigation)
         }
 
         initLoad()

@@ -61,21 +61,23 @@ export function signUp(phone_no: string, password: string, re_password: string) 
             dispatch({ type: "SIGNUP_ERROR_MSG", payload: "Passwords do not match!" })
             return false
         }
+        dispatch({ type: "SIGNUP_ERROR_MSG", payload: "" })
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
-             await axios.post(`${API_URL}/signup`, {
+            const response = await axios.post(`${API_URL}/signup`, {
                 phone_no: phone_no,
                 password: password
             })
             // Save data in phone storage
-            await AsyncStorage.setItem('user_data', JSON.stringify({ phone_no: phone_no }))
-            dispatch({ type: "SIGNUP_ERROR_MSG", payload: "" })
+            await AsyncStorage.setItem('user_data', JSON.stringify(response.data?.user_data || { phone_no }))
+            dispatch({ type: "SIGNED_UP", payload: response.data?.user_data || { phone_no },
+            })
             return true
         }
         catch (err: any) {
             console.error("Error signing up: ", err)
-            dispatch({ type: "SIGNUP_ERROR_MSG", payload: err?.response?.data || err.message })
+            dispatch({ type: "SIGNUP_ERROR_MSG", payload: err.response?.data || err.message })
             return false
         }
         finally {

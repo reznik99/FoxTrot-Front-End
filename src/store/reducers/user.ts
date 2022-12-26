@@ -56,6 +56,8 @@ function userReducer(state = initialState, action: Action) {
             return { ...state, tokenValid: action.payload }
         case "LOGGED_IN":
             return { ...state, token: action.payload.token, user_data: action.payload.user_data as UserData, loginErr: "" }
+        case "SIGNED_UP":
+            return { ...state, user_data: action.payload as UserData}
         case "LOGIN_ERROR_MSG":
             return { ...state, loginErr: action.payload }
         case "SIGNUP_ERROR_MSG":
@@ -92,7 +94,7 @@ function userReducer(state = initialState, action: Action) {
         case "WEBSOCKET_ERROR":
             return { ...state, socketErr: action.payload }
         case "LOGOUT":
-            return {...initialState, user_data: state.user_data}
+            return {...initialState}
         default:
             return state
     }

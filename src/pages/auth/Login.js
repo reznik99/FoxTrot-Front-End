@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux'
-import { View, ScrollView, Keyboard } from 'react-native';
+import { View, ScrollView, Keyboard, Alert } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -8,7 +8,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import styles from './style';
 import { KeychainOpts } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
-import { logIn, setupInterceptors } from '~/store/actions/auth';
+import { logIn } from '~/store/actions/auth';
 
 
 class Login extends Component {
@@ -25,11 +25,14 @@ class Login extends Component {
     async componentDidMount() {
         // If user manually logged out, don't try autologin
         if (this.props.route.params?.data?.loggedOut) {
+            if(this.props.route.params?.data?.errorMsg) {
+                Alert.alert("Unable to Login",
+                    this.props.route.params?.data?.errorMsg,
+                    [{ text: "OK", onPress: () => {} }]
+                );
+            }
             return console.debug("User logged out")
         }
-
-        // Setup axios interceptors
-        setupInterceptors(this.props.navigation)
 
         try {
             this.setState({gloablLoading: true})
@@ -59,6 +62,12 @@ class Login extends Component {
         }
     }
 
+    componentDidUpdate() {
+        if(!this.state.username && this.props.user_data?.phone_no) {
+            this.setState({username: this.props.user_data?.phone_no})
+        }
+    }
+
     attemptAutoLoginToken = async () => {
         if (!this.props.token) {
             console.debug('Token not present')
@@ -80,7 +89,7 @@ class Login extends Component {
     }
 
     attemptAutoLogin = async (biometricSuccess) => {
-        const serviceKey = `${this.props.user_data?.phone_no}-password`
+        const serviceKey = `${this.state.username}-password`
         const passwordsSaved = await Keychain.getAllGenericPasswordServices()
 
         if(!this.state.username || !passwordsSaved.includes(serviceKey)) {
