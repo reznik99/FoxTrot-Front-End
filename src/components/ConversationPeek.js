@@ -21,7 +21,7 @@ export default function ConversationPeek(props) {
     
     const isNew = lastMessage.sender !== user_phone_no && !lastMessage.seen
     const boldIfUnseen = isNew ? styles.unseenMessage : null 
-    const isMessageRequest = contacts.some(con => con.phone_no === data.other_user.phone_no)
+    const isMessageRequest = !contacts.some(con => con.phone_no === data.other_user.phone_no)
     
     const acceptMessageRequest = async () => {
         setLoading("accept")

@@ -12,8 +12,8 @@ export interface UserData {
     id: string,
     phone_no: string,
     pic?: string
-    publicKey?: string,
-    sessionKey?: CryptoKey,
+    public_key?: string,
+    session_key?: CryptoKey,
 }
 
 export interface Conversation {

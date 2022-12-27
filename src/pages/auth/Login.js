@@ -154,13 +154,13 @@ class Login extends Component {
                     { this.state.gloablLoading ? <ActivityIndicator size="large" />
                         : <View>
                             <TextInput mode="outlined" 
-                                onChangeText={val => this.setState({username: val})}
+                                onChangeText={val => this.setState({username: val.trim()})}
                                 value={this.state.username}
                                 label="Username"
                                 outlineColor={this.props.loginErr ? "red"  : null}
                             />
                             <TextInput mode="outlined" 
-                                onChangeText={val => this.setState({password: val})}
+                                onChangeText={val => this.setState({password: val.trim()})}
                                 value={this.state.password} 
                                 label="Password"
                                 secureTextEntry={true}

@@ -35,20 +35,20 @@ export default function Signup(props) {
                 { signupErr && <Text style={styles.errorMsg}>{signupErr}</Text> }
 
                 <TextInput mode="outlined" 
-                    onChangeText={val => setUsername(val)}
+                    onChangeText={val => setUsername(val.trim())}
                     value={username}
                     label="Username"
                     outlineColor={signupErr && !username ? "red"  : null}
                 />
                 <TextInput mode="outlined"  
-                    onChangeText={val => setPassword(val)}
+                    onChangeText={val => setPassword(val.trim())}
                     value={password}
                     secureTextEntry={true}
                     label="Password"
                     outlineColor={signupErr && !password ? "red"  : null}
                 />
                 <TextInput mode="outlined" 
-                    onChangeText={val => setRePassword(val)}
+                    onChangeText={val => setRePassword(val.trim())}
                     value={rePassword}
                     secureTextEntry={true}
                     label="Repeat Password"

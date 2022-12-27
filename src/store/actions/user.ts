@@ -151,10 +151,10 @@ export function addContact(user: any) {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             let state = getState().userReducer
-            await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
-            const sessionKey = await generateSessionKeyECDH(user.public_key || '', state.keys?.privateKey)
+            const { data } = await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
+            const sessionKey = await generateSessionKeyECDH(data.public_key || '', state.keys?.privateKey)
 
-            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: {...user, sessionKey} })
+            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: {...data, sessionKey} })
             return true
         } catch (err) {
             console.error(`Error adding contact: ${err}`)
@@ -192,7 +192,7 @@ export function sendMessage(message: string, to_user: UserData) {
             let state = getState().userReducer
 
             const peer = state.contacts.find((contact) => contact.id === to_user.id)
-            if(!peer || !peer.sessionKey) throw new Error("Cannot message a User who isn't a contact")
+            if(!peer || !peer.session_key) throw new Error("Cannot message a User who isn't a contact")
 
             // Save message locally
             let msg = {
@@ -210,7 +210,7 @@ export function sendMessage(message: string, to_user: UserData) {
             dispatch({ type: "SEND_MESSAGE", payload: msg })
 
             // Encrypt message
-            const encryptedMessage = await encrypt(peer.sessionKey, message)
+            const encryptedMessage = await encrypt(peer.session_key, message)
 
             await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
