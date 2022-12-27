@@ -39,7 +39,7 @@ export default function AddContact(props) {
                 text1: 'Failed to add contact',
                 text2: 'Please try again later',
                 visibilityTime: 5000
-              });
+            });
         }
         setAddingContact(undefined)
     }

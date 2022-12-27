@@ -59,7 +59,7 @@ export default function Conversation(props) {
         try {
             setDecryptingIndex(index)
             const peer = state.contacts.find((contact) => contact.id === peer_user.id)
-            const decryptedMessage = await decrypt(peer.sessionKey, message)
+            const decryptedMessage = await decrypt(peer.session_key, message)
             decryptedMessages.set(index, decryptedMessage)
 
         } catch (err) {

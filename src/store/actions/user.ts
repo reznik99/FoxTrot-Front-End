@@ -129,8 +129,8 @@ export function loadContacts(atomic = true) {
 
             const contacts = await Promise.all( response.data.map(async (contact: any) => {
                 try {
-                    const cryptoKey = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey)
-                    return { ...contact, pic: `https://robohash.org/${contact.id}`, sessionKey: cryptoKey }
+                    const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey)
+                    return { ...contact, pic: `https://robohash.org/${contact.id}`, session_key }
                 } catch (err) {
                     console.warn("Failed to generate session key:", contact.phone_no, err)
                     return { ...contact, pic: `https://robohash.org/${contact.id}` }
@@ -147,14 +147,14 @@ export function loadContacts(atomic = true) {
     }
 }
 
-export function addContact(user: any) {
+export function addContact(user: UserData) {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             let state = getState().userReducer
             const { data } = await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
-            const sessionKey = await generateSessionKeyECDH(data.public_key || '', state.keys?.privateKey)
+            const session_key = await generateSessionKeyECDH(data.public_key || '', state.keys?.privateKey)
 
-            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: {...data, sessionKey} })
+            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: {...data, session_key} })
             return true
         } catch (err) {
             console.error(`Error adding contact: ${err}`)
