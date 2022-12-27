@@ -82,7 +82,8 @@ export default function Home(props) {
                 action={{
                     label: 'Reconnect',
                     onPress: configureWebsocket,
-                }}> {`Connection to servers lost! Please try again later`}
+                }}>
+                Connection to servers lost! Please try again later
             </Snackbar>
             {
                 state.loading || loadingMsg

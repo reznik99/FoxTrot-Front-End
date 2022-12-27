@@ -5,9 +5,9 @@ import * as Keychain from 'react-native-keychain'
 import { API_URL } from '~/global/variables'
 import { AppDispatch } from '../store'
 
-export function logIn(phone_no: string, password: string) {
+export function logIn(username: string, password: string) {
     return async (dispatch: AppDispatch) => {
-        if (phone_no === '' || password === '') {
+        if (username === '' || password === '') {
             dispatch({ type: "LOGIN_ERROR_MSG", payload: "Textfields cannot be blank!" })
             return;
         }
@@ -15,7 +15,7 @@ export function logIn(phone_no: string, password: string) {
             dispatch({ type: "SET_LOADING", payload: true })
 
             const res = await axios.post(`${API_URL}/login`, {
-                phone_no: phone_no,
+                phone_no: username,
                 password: password
             })
 
@@ -25,9 +25,9 @@ export function logIn(phone_no: string, password: string) {
             await AsyncStorage.setItem('auth_token', res.data.token)
 
             // Save password in secure storage
-            await Keychain.setGenericPassword(`${phone_no}-password`, password, {
+            await Keychain.setGenericPassword(`${username}-password`, password, {
                 storage: Keychain.STORAGE_TYPE.AES,
-                service: `${phone_no}-password`
+                service: `${username}-password`
             })
 
             // Save data in redux store
@@ -52,13 +52,16 @@ export function logIn(phone_no: string, password: string) {
     }
 }
 
-export function signUp(phone_no: string, password: string, re_password: string) {
+export function signUp(username: string, password: string, re_password: string) {
     return async (dispatch: AppDispatch) => {
-        if (!phone_no || !password || !re_password ) {
+        if (!username || !password || !re_password ) {
             dispatch({ type: "SIGNUP_ERROR_MSG", payload: "Textfields cannot be blank!" })
             return false
         } else if (password !== re_password) {
             dispatch({ type: "SIGNUP_ERROR_MSG", payload: "Passwords do not match!" })
+            return false
+        } else if (username.length <= 3) {
+            dispatch({ type: "SIGNUP_ERROR_MSG", payload: "Username too short!" })
             return false
         }
         dispatch({ type: "SIGNUP_ERROR_MSG", payload: "" })
@@ -66,12 +69,12 @@ export function signUp(phone_no: string, password: string, re_password: string) 
             dispatch({ type: "SET_LOADING", payload: true })
 
             const response = await axios.post(`${API_URL}/signup`, {
-                phone_no: phone_no,
+                phone_no: username,
                 password: password
             })
             // Save data in phone storage
-            await AsyncStorage.setItem('user_data', JSON.stringify(response.data?.user_data || { phone_no }))
-            dispatch({ type: "SIGNED_UP", payload: response.data?.user_data || { phone_no },
+            await AsyncStorage.setItem('user_data', JSON.stringify(response.data?.user_data || { phone_no: username }))
+            dispatch({ type: "SIGNED_UP", payload: response.data?.user_data || { phone_no: username },
             })
             return true
         }
@@ -99,7 +102,6 @@ export function setupInterceptors(navigation: any) {
     axios.interceptors.response.use(
         (response) => response, 
         (error) => {
-            console.warn("Interceptor error: ", error)
             if ( error.response.status == 403) logOut(navigation)
             return Promise.reject(error);
         }
