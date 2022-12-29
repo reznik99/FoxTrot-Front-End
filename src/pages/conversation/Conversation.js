@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground, Keyboard } from "react-native";
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Keyboard } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
 
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPaperPlane, faEllipsisH } from "@fortawesome/free-solid-svg-icons";
-import { sendMessage } from '../../store/actions/user';
+import { faArrowRight, faEllipsisH, faLock } from "@fortawesome/free-solid-svg-icons";
+import { sendMessage } from '~/store/actions/user';
 import { decrypt } from "~/global/crypto";
-
 
 export default function Conversation(props) {
     const state = useSelector(state => state.userReducer)
@@ -22,27 +21,20 @@ export default function Conversation(props) {
     const conversation = state.conversations.get(peer_user.phone_no)
     
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
-    const [keyboardDidHideListener, setkeyboardDidHideListener] = useState(null)
 
     useEffect(() => {
         setkeyboardDidShowListener(Keyboard.addListener(
             'keyboardDidShow',
             () => scrollView.current?.scrollToEnd({ animated: true }),
         ))
-        setkeyboardDidHideListener(Keyboard.addListener(
-            'keyboardDidHide',
-            () => scrollView.current?.scrollToEnd({ animated: true }),
-        ))
-        scrollView.current?.scrollToEnd({ animated: false })
         return () => {
-            keyboardDidShowListener?.remove();
-            keyboardDidHideListener?.remove();
+            keyboardDidShowListener?.remove()
         }
     }, [])
 
     useEffect(() => {
-        scrollView.current?.scrollToEnd({ animated: false })
-    }, [scrollView])
+        scrollView.current?.scrollToEnd({ animated: true })
+    }, [scrollView, conversation?.messages])
 
     const handleSend = () => {
         if (message.trim() === "") return
@@ -78,38 +70,54 @@ export default function Conversation(props) {
     return (
         <ImageBackground source={require('../../res/background.jpg')} style={styles.container}>
 
-            <ScrollView style={styles.messageContainer} ref={scrollView} >
-                {
-                    conversation?.messages?.map((packet, index) => {
-                        const sent = packet.sender === state.user_data.phone_no
-                        const loading = decryptingIndex == index
-                        const sent_at = new Date(packet.sent_at)
-                        return <TouchableOpacity key={index} style={[styles.message, sent ? styles.sent : styles.received, loading ? {backgroundColor: '#333333f0'} : null]} onPress={() => decryptMessage(index, packet.message)}>
-                            <ActivityIndicator style={{position: 'absolute', zIndex: 10}} animating={loading}/>
-                            <Text> { decryptedMessages.get(index) || packet.message } </Text>
-                            <Text style={styles.messageTime}> 
-                                { sent_at.toLocaleDateString() === new Date().toLocaleDateString()
-                                    ? sent_at.toLocaleTimeString()
-                                    : sent_at.toLocaleDateString()
-                                } 
-                            </Text>
-                        </TouchableOpacity>
-                    }) || <Text style={[styles.message, styles.system]} >No messages</Text>
-                }
-            </ScrollView>
+            <FlatList style={styles.messageList} 
+                ref={scrollView}
+                data={conversation?.messages || []}
+                renderItem={({item, index}) => {
+                    const sent = item.sender === state.user_data.phone_no
+                    const loading = decryptingIndex == index
+                    const sent_at = new Date(item.sent_at)
+                    const isEncrypted = !decryptedMessages.has(index)
+                    return (
+                        <Pressable key={index} 
+                        style={[styles.messageContainer, sent ? styles.sent : styles.received, loading && {backgroundColor: '#777777f0'}]} 
+                        onPress={() => decryptMessage(index, item.message)}>
+                            <View style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
+                                <ActivityIndicator style={{position: 'absolute', zIndex: 10}} animating={loading}/>
+                                <Text> { decryptedMessages.get(index) || item.message } </Text>
+                                { isEncrypted && <FontAwesomeIcon style={{position: 'absolute', zIndex: 10}} icon={faLock} size={20} />}
+                                <Text style={styles.messageTime}> 
+                                    { sent_at.toLocaleDateString() === new Date().toLocaleDateString()
+                                        ? sent_at.toLocaleTimeString()
+                                        : sent_at.toLocaleDateString()
+                                    } 
+                                </Text>
+                            </View>
+                        </Pressable>
+                    )
+                }}
+                ListEmptyComponent={() => <Text style={[styles.message, styles.system]} >No messages</Text>}
+                ListFooterComponent={() => (
+                    <View style={styles.footer}>
+                        <FontAwesomeIcon color="#77f777" icon={faLock} />
+                        <Text style={{color: 'white'}}> Click a message to decrypt it</Text>
+                    </View>
+                )} 
+            />
 
             <View style={styles.inputContainer}>
                 <TouchableOpacity style={styles.button}>
                     <FontAwesomeIcon icon={faEllipsisH} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
                 <TextInput placeholder="Type a message"
+                    multiline={true}
                     value={message}
                     onChangeText={val => setMessage(val)}
                     underlineColorAndroid='transparent'
                     style={styles.input}
                 />
                 <TouchableOpacity style={styles.button} onPress={handleSend}>
-                    <FontAwesomeIcon icon={faPaperPlane} size={20} style={styles.buttonIcon} />
+                    <FontAwesomeIcon icon={faArrowRight} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
             </View>
 
@@ -121,13 +129,17 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         width: "100%",
-    }, messageContainer: {
+    }, messageList: {
         height: "90%",
-        width: "90%",
-        alignSelf: 'center'
+        width: "100%",
+        paddingHorizontal: 10
+    }, messageContainer: {
+        marginVertical: 5,
+        borderRadius: 10,
+        justifyContent: 'center', 
+        alignItems: 'center'
     }, message: {
         padding: 15,
-        marginVertical: 5,
         borderRadius: 10,
         justifyContent: 'center', 
         alignItems: 'center'
@@ -140,21 +152,30 @@ const styles = StyleSheet.create({
     }, system: {
         alignSelf: 'center',
         backgroundColor: 'gray'
+    }, footer: {
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 8,
+        marginVertical: 5,
+        backgroundColor: '#333333a0',
+        borderRadius: 10
     }, inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-evenly',
-        borderRadius: 20,
-        paddingHorizontal: 10,
         paddingVertical: 10
     }, input: {
-        width: '75%',
+        flex: 1,
         borderRadius: 20,
         paddingVertical: 6,
         paddingHorizontal: 12,
         backgroundColor: '#faf1e6'
     }, buttonIcon: {
         color: '#fff'
+    }, button: {
+        padding: 10
     }, messageTime: {
         color: 'gray',
         alignSelf: 'flex-end',

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { View, ScrollView, RefreshControl, Text } from 'react-native'
 import { Divider, FAB, ActivityIndicator, Snackbar } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
+import { faComment } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
 
 import { ConversationPeek } from '~/components'
@@ -14,15 +14,10 @@ import { setupInterceptors } from '~/store/actions/auth'
 
 export default function Home(props) {
 
-    const state = useSelector(state => state.userReducer)
     const dispatch = useDispatch()
+    const {conversations, loading, refreshing, socketErr} = useSelector(state => state.userReducer)
     const [loadingMsg, setLoadingMsg] = useState('')
-
-    const conversations = [...state.conversations.values()].sort((c1, c2) => {
-        if (!c1.messages?.length) return -1
-        if (!c2.messages?.length) return 1
-        return c1.messages[c1.messages.length - 1]?.sent_at < c2.messages[c2.messages.length - 1]?.sent_at ? 1 : -1
-    })
+    const [convos, setConvos ] = useState([])
 
     useEffect(() => {
         const initLoad = async () => {
@@ -61,6 +56,14 @@ export default function Home(props) {
         }
     }, [])
 
+    useEffect(() => {
+        setConvos([...conversations.values()].sort((c1, c2) => {
+            if (!c1.messages?.length) return -1
+            if (!c2.messages?.length) return 1
+            return c1.messages[c1.messages.length - 1]?.sent_at < c2.messages[c2.messages.length - 1]?.sent_at ? 1 : -1
+        }))
+    }, [conversations])
+
     const loadAllMessages = useCallback(async () => {
         setLoadingMsg("Loading contacts...")
         await dispatch(loadContacts(false))
@@ -77,7 +80,7 @@ export default function Home(props) {
 
     return (
         <View style={globalStyle.wrapper}>
-            <Snackbar visible={state.socketErr} style={{ zIndex: 100 }}
+            <Snackbar visible={socketErr} style={{ zIndex: 100 }}
                 onDismiss={() =>{}}
                 action={{
                     label: 'Reconnect',
@@ -86,15 +89,15 @@ export default function Home(props) {
                 Connection to servers lost! Please try again later
             </Snackbar>
             {
-                state.loading || loadingMsg
+                loading || loadingMsg
                     ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                         <Text style={[globalStyle.errorMsg, {color: 'white', marginBottom: 10}]}>{loadingMsg}</Text>
                         <ActivityIndicator size="large" />
                     </View>
                     : <>
-                        <ScrollView refreshControl={<RefreshControl refreshing={state.refreshing} onRefresh={loadAllMessages} />}>
-                            { conversations?.length
-                                ? conversations.map((convo, index) =>
+                        <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadAllMessages} />}>
+                            { convos?.length
+                                ? convos.map((convo, index) =>
                                     (<View key={index} >
                                         <ConversationPeek data={convo} navigation={props.navigation} />
                                         <Divider />
@@ -110,7 +113,7 @@ export default function Home(props) {
                             style={globalStyle.fab} color='#fff'
                             onPress={() => props.navigation.navigate('NewConversation')}
                             icon={({ size, color }) => (
-                                <FontAwesomeIcon size={size} icon={faEnvelope} style={{ color: color }} />
+                                <FontAwesomeIcon size={size} icon={faComment} style={{ color: color }} />
                             )}
                         />
                     </>
