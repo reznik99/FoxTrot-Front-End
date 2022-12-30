@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useMap, useEffect, useRef, useCallback } from "react";
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Keyboard } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
@@ -10,16 +10,20 @@ import { sendMessage } from '~/store/actions/user';
 import { decrypt } from "~/global/crypto";
 
 export default function Conversation(props) {
-    const state = useSelector(state => state.userReducer)
-    const dispatch = useDispatch()
+
     const { peer_user } = props.route.params.data
 
-    const scrollView = useRef()
+    const dispatch = useDispatch()
+    const conversation = useSelector(state => state.userReducer.conversations.get(peer_user.phone_no))
+    const contacts = useSelector(state => state.userReducer.contacts)
+    const user_data = useSelector(state => state.userReducer.user_data)
+
     const [message, setMessage] = useState("")
-    const [decryptedMessages, _] = useState(new Map())
+    const [decryptedMessages, setDecryptedMessages] = useState(new Map())
     const [decryptingIndex, setDecryptingIndex] = useState(-1)
-    const conversation = state.conversations.get(peer_user.phone_no)
+    const [todaysDate, _] = useState(new Date().toLocaleDateString())
     
+    const scrollView = useRef()
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
 
     useEffect(() => {
@@ -34,7 +38,7 @@ export default function Conversation(props) {
 
     useEffect(() => {
         scrollView.current?.scrollToEnd({ animated: true })
-    }, [scrollView, conversation?.messages])
+    }, [conversation?.messages])
 
     const handleSend = () => {
         if (message.trim() === "") return
@@ -45,15 +49,13 @@ export default function Conversation(props) {
     }
 
     const decryptMessage = async (index, message) => {
-        if (message.trim() === "") return
-        if (decryptedMessages.has(index)) return
+        if (message.trim() === "" || decryptedMessages.has(index)) return
 
         try {
             setDecryptingIndex(index)
-            const peer = state.contacts.find((contact) => contact.id === peer_user.id)
+            const peer = contacts.find((contact) => contact.id === peer_user.id)
             const decryptedMessage = await decrypt(peer.session_key, message)
-            decryptedMessages.set(index, decryptedMessage)
-
+            setDecryptedMessages(new Map(decryptedMessages.set(index, decryptedMessage)))
         } catch (err) {
             console.error("Error decrypting message", err)
             Toast.show({
@@ -62,41 +64,45 @@ export default function Conversation(props) {
                 text2: 'Session Key might have been rotated since this message was sent',
                 visibilityTime: 6000
             });
-        } finally {
-            setDecryptingIndex(-1)
         }
     }
 
+    const renderMessage = useCallback(({item, index}) => {
+        const sentOrRecievedStyle = item.sender === user_data.phone_no ? styles.sent : styles.received
+        const isEncrypted = !decryptedMessages.has(index)
+        const loading = decryptingIndex == index && isEncrypted
+        const sent_at = new Date(item.sent_at)
+        return (
+            <Pressable key={index} 
+            style={[styles.messageContainer, sentOrRecievedStyle, loading && {backgroundColor: '#777777f0'}]} 
+            onPress={() => decryptMessage(index, item.message)}>
+                <View style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
+                    <ActivityIndicator style={{position: 'absolute', zIndex: 10}} animating={loading}/>
+                    <Text> { decryptedMessages.get(index) || item.message } </Text>
+                    { isEncrypted && <FontAwesomeIcon style={{position: 'absolute', zIndex: 10}} color="#333" icon={faLock} size={20} />}
+                    <Text style={styles.messageTime}> 
+                        { sent_at.toLocaleDateString() === todaysDate
+                            ? sent_at.toLocaleTimeString()
+                            : sent_at.toLocaleDateString()
+                        } 
+                    </Text>
+                </View>
+            </Pressable>
+        )
+    }, [decryptedMessages, decryptingIndex])
+
     return (
-        <ImageBackground source={require('../../res/background.jpg')} style={styles.container}>
+        <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
 
             <FlatList style={styles.messageList} 
                 ref={scrollView}
                 data={conversation?.messages || []}
-                renderItem={({item, index}) => {
-                    const sent = item.sender === state.user_data.phone_no
-                    const loading = decryptingIndex == index
-                    const sent_at = new Date(item.sent_at)
-                    const isEncrypted = !decryptedMessages.has(index)
-                    return (
-                        <Pressable key={index} 
-                        style={[styles.messageContainer, sent ? styles.sent : styles.received, loading && {backgroundColor: '#777777f0'}]} 
-                        onPress={() => decryptMessage(index, item.message)}>
-                            <View style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
-                                <ActivityIndicator style={{position: 'absolute', zIndex: 10}} animating={loading}/>
-                                <Text> { decryptedMessages.get(index) || item.message } </Text>
-                                { isEncrypted && <FontAwesomeIcon style={{position: 'absolute', zIndex: 10}} icon={faLock} size={20} />}
-                                <Text style={styles.messageTime}> 
-                                    { sent_at.toLocaleDateString() === new Date().toLocaleDateString()
-                                        ? sent_at.toLocaleTimeString()
-                                        : sent_at.toLocaleDateString()
-                                    } 
-                                </Text>
-                            </View>
-                        </Pressable>
-                    )
-                }}
-                ListEmptyComponent={() => <Text style={[styles.message, styles.system]} >No messages</Text>}
+                getItemLayout={(data, index) => (
+                    {length: 100, offset: 100 * index, index}
+                )}
+                initialScrollIndex={conversation?.messages?.length - 1 || 0}
+                renderItem={renderMessage}
+                ListEmptyComponent={() => <Text style={[styles.message, styles.system]}> No messages </Text>}
                 ListFooterComponent={() => (
                     <View style={styles.footer}>
                         <FontAwesomeIcon color="#77f777" icon={faLock} />
