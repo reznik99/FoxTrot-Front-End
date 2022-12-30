@@ -29,16 +29,12 @@ export default function Conversation(props) {
     useEffect(() => {
         setkeyboardDidShowListener(Keyboard.addListener(
             'keyboardDidShow',
-            () => scrollView.current?.scrollToEnd({ animated: true }),
+            () => scrollView.current?.scrollToOffset({ offset: 0, animated: true }),
         ))
         return () => {
             keyboardDidShowListener?.remove()
         }
     }, [])
-
-    useEffect(() => {
-        scrollView.current?.scrollToEnd({ animated: true })
-    }, [conversation?.messages])
 
     const handleSend = () => {
         if (message.trim() === "") return
@@ -96,14 +92,11 @@ export default function Conversation(props) {
 
             <FlatList style={styles.messageList} 
                 ref={scrollView}
-                data={conversation?.messages || []}
-                getItemLayout={(data, index) => (
-                    {length: 100, offset: 100 * index, index}
-                )}
-                initialScrollIndex={conversation?.messages?.length - 1 || 0}
+                inverted={true}
+                data={[...conversation?.messages].reverse() || []}
                 renderItem={renderMessage}
                 ListEmptyComponent={() => <Text style={[styles.message, styles.system]}> No messages </Text>}
-                ListFooterComponent={() => (
+                ListHeaderComponent={() => (
                     <View style={styles.footer}>
                         <FontAwesomeIcon color="#77f777" icon={faLock} />
                         <Text style={{color: 'white'}}> Click a message to decrypt it</Text>
