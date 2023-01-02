@@ -11,7 +11,7 @@ import RNFS from 'react-native-fs'
 
 import globalStyle from "~/global/globalStyle"
 import { RootState } from '~/store/store'
-import { exportKeypair } from '~/global/crypto'
+import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto'
 
 export default function Settings(props: any) {
 
@@ -28,7 +28,9 @@ export default function Settings(props: any) {
     const [expanded, setExpanded] = useState(true)
 
     useEffect(() => {
-        AsyncStorage.getAllKeys((err, keys) => setKeys(keys ? [...keys] : []))
+        AsyncStorage.getAllKeys()
+            .then(keys => setKeys([...keys]))
+            .catch(err => console.error("Error loading AsyncStorage items", err))
     }, [])
 
     const resetApp = useCallback(() => {
@@ -39,12 +41,38 @@ export default function Settings(props: any) {
         props.navigation.navigate('Login', { data: { loggedOut: true } })
     }, [keys, user_data])
 
-    const importKeys = () => {
-        // TODO
-        Alert.alert("Not Implemented",
-        "This feature has not yet been implemented",
-            [{ text: "OK", onPress: () => {} }]
-        );
+    const importKeys = async () => {
+        if(!encPassword?.trim()) return
+
+        try {
+            // TODO: prompt user for file select
+            const file = await RNFS.readFile(RNFS.DownloadDirectoryPath + `/foxtrot-${user_data.phone_no}-keys.txt`)
+
+            // Read PBKDF2 no. of iterations, salt, IV and Ciphertext
+            const [_, iter, salt, iv, ciphertext] = file.split("\n")
+            const derivedKEK = await deriveKeyFromPassword(encPassword, Buffer.from(salt, 'base64'), parseInt(iter))
+
+            console.debug("Ikeys file:", file)
+
+            // Decrypt Keypair
+            const Ikeys = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: Buffer.from(iv, 'base64') },
+                derivedKEK,
+                Buffer.from(ciphertext, 'base64'),
+            );
+
+            // TODO: Parse keypair as json, store in keychain and load into redux store
+
+        } catch(err: any) {
+            console.error("Error importing user keys:", err)
+            Alert.alert("Failed to import keys",
+                `An error occoured decrypting/importing the keys: ${err.toString()}`,
+                [{ text: "OK", onPress: () => {} }]
+            );
+        } finally {
+            setVisibleDialog('')
+            setEncPassword('')
+        }
     }
 
     const exportKeys = async () => {
@@ -52,45 +80,39 @@ export default function Settings(props: any) {
         if(!keypair) return
 
         try {
-            // Derive Key from password using PBKDF2
-            const keyMaterial = await crypto.subtle.importKey(
-                "raw",
-                Buffer.from(encPassword),
-                "PBKDF2",
-                false,
-                ["deriveBits", "deriveKey"],
-            );
-            
+            const IKeys = await exportKeypair(keypair)
+            const iter = 100000
             const salt = crypto.getRandomValues(new Uint8Array(8));
-            const key = await crypto.subtle.deriveKey(
-                {
-                name: "PBKDF2",
-                salt,
-                iterations: 100000,
-                hash: "SHA-256",
-                },
-                keyMaterial,
-                { name: "AES-GCM", length: 256},
-                true,
-                ["encrypt", "decrypt"],
-            );
+            const derivedKEK = await deriveKeyFromPassword(encPassword, salt, iter)
 
             // Encrypt Keypair
-            const userKeys = await exportKeypair(keypair)
             const iv = crypto.getRandomValues(new Uint8Array(12));
-            const encryptedKeys = await crypto.subtle.encrypt(
-                { name: "AES-GCM", iv },
-                key,
-                Buffer.from(JSON.stringify(userKeys)),
+            const encryptedIKeys = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                derivedKEK,
+                Buffer.from(JSON.stringify(IKeys)),
             );
 
-            console.log("Encrypted keys: ", Buffer.from(encryptedKeys).toString('base64'))
+            // Store PBKDF2 no. of iterations, salt, IV and Ciphertext
+            const file = "Foxtrot encrypted keys" + '\n' 
+                + iter + '\n' 
+                + Buffer.from(salt).toString('base64') + '\n' 
+                + Buffer.from(iv).toString('base64') + '\n' 
+                + Buffer.from(encryptedIKeys).toString('base64')
             
-            const file = "Foxtrot encrypted keys" + '\n' + Buffer.from(iv).toString('base64') + '\n' + Buffer.from(encryptedKeys).toString('base64')
+            console.debug("File:", file)
 
-            RNFS.writeFile(RNFS.DownloadDirectoryPath + `foxtrot-${user_data.phone_no}.keys`, file)
-        } catch(err) {
+            // TODO: prompt user for file select
+            await RNFS.writeFile(RNFS.DownloadDirectoryPath + `/foxtrot-${user_data.phone_no}-keys.txt`, file)
+        } catch(err: any) {
             console.error("Error exporting user keys:", err)
+            Alert.alert("Failed to export keys",
+                `An error occoured encrypting/exporting the keys: ${err.toString()}`,
+                [{ text: "OK", onPress: () => {} }]
+            );
+        } finally {
+            setVisibleDialog('')
+            setEncPassword('')
         }
     }
 
@@ -161,7 +183,8 @@ export default function Settings(props: any) {
                 <Dialog visible={visibleDialog === 'import'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Title><FontAwesomeIcon icon={faUpload} color="white"/> Import User Identity Keys</Dialog.Title>
                     <Dialog.Content>
-                        <TextInput label="Keypair decryption password" value={encPassword} onChangeText={text => setEncPassword(text)} />
+                        <TextInput label="Keypair decryption password" secureTextEntry={true}
+                            value={encPassword} onChangeText={text => setEncPassword(text)} />
                     </Dialog.Content>
                     <Dialog.Actions style={{justifyContent: 'space-between'}}>
                         <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
@@ -172,7 +195,8 @@ export default function Settings(props: any) {
                 <Dialog visible={visibleDialog === 'export'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Title><FontAwesomeIcon icon={faDownload} color="white"/> Export User Identity Keys</Dialog.Title>
                     <Dialog.Content>
-                        <TextInput label="Keypair encryption password" value={encPassword} onChangeText={text => setEncPassword(text)} />
+                        <TextInput label="Keypair encryption password" secureTextEntry={true}
+                            value={encPassword} onChangeText={text => setEncPassword(text)} />
                     </Dialog.Content>
                     <Dialog.Actions style={{justifyContent: 'space-between'}}>
                         <Button onPress={() => setVisibleDialog('')}>Cancel</Button>

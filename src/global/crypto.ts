@@ -69,6 +69,30 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
     return sessionKey
 }
 
+export async function deriveKeyFromPassword(password: string, salt: Uint8Array, iterations: number): Promise<CryptoKey> {
+    // Derive Key from password using PBKDF2
+    const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        Buffer.from(password),
+        "PBKDF2",
+        false,
+        ["deriveBits", "deriveKey"],
+    );
+    
+    return await crypto.subtle.deriveKey(
+        {
+        name: "PBKDF2",
+        salt,
+        iterations: iterations,
+        hash: "SHA-256",
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256},
+        true,
+        ["encrypt", "decrypt"],
+    );
+}
+
 export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
 
     const [IV, cipherText] = encryptedMessage.split(":")
