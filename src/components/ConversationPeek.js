@@ -17,7 +17,7 @@ export default function ConversationPeek(props) {
     const [loading, setLoading] = useState(undefined)
     
     const { data, navigation } = props
-    const lastMessage = data.messages[data.messages.length - 1] ?? {}
+    const lastMessage = data.messages[0] ?? {}
     
     const isNew = lastMessage.sender !== user_phone_no && !lastMessage.seen
     const boldIfUnseen = isNew ? styles.unseenMessage : null 

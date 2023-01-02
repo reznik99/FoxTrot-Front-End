@@ -87,11 +87,7 @@ export function loadMessages() {
             const conversations = new Map()
 
             const response = await axios.get(`${API_URL}/getConversations`, axiosBearerConfig(state.token))
-            response.data = response.data.sort((msg1: any, msg2: any): any => {
-                let date1 = new Date(msg1.sent_at).getTime();
-                let date2 = new Date(msg2.sent_at).getTime();
-                return date1 - date2
-            })
+            response.data = response.data.sort((msg1: any, msg2: any): any => msg1.sent_at < msg2.sent_at ? 1 : -1)
 
             // TODO: Fix this mess up
             response.data.forEach((message: any) => {

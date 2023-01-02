@@ -39,8 +39,9 @@ export default function Conversation(props) {
     const handleSend = () => {
         if (message.trim() === "") return
 
-        decryptedMessages.set(conversation?.messages?.length || 0, message)
-        dispatch(sendMessage(message, peer_user)).finally(() => scrollView.current?.scrollToEnd({ animated: false }))
+        setDecryptedMessages(new Map(decryptedMessages.set(0, message)))
+        dispatch(sendMessage(message, peer_user))
+            .finally(() => scrollView.current?.scrollToOffset({ offset: 0, animated: true }))
         setMessage('')
     }
 
@@ -60,6 +61,7 @@ export default function Conversation(props) {
                 text2: 'Session Key might have been rotated since this message was sent',
                 visibilityTime: 6000
             });
+            setDecryptingIndex(-1)
         }
     }
 
@@ -93,7 +95,7 @@ export default function Conversation(props) {
             <FlatList style={styles.messageList} 
                 ref={scrollView}
                 inverted={true}
-                data={[...conversation?.messages].reverse() || []}
+                data={conversation.messages}
                 renderItem={renderMessage}
                 ListEmptyComponent={() => <Text style={[styles.message, styles.system]}> No messages </Text>}
                 ListHeaderComponent={() => (

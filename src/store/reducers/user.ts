@@ -70,7 +70,7 @@ function userReducer(state = initialState, action: Action) {
             const reciever = action.payload.reciever
             message = action.payload.rawMessage
             const converastionS = newState.conversations.get(reciever.phone_no)
-            if ( converastionS ) converastionS.messages.push(message) 
+            if ( converastionS ) converastionS.messages.unshift(message) 
             else {
                 newState.conversations.set(reciever.phone_no, {
                     other_user: reciever,
@@ -81,7 +81,7 @@ function userReducer(state = initialState, action: Action) {
         case "RECV_MESSAGE":
             const data = action.payload
             const conversationR = newState.conversations.get(data.sender)
-            if ( conversationR ) conversationR.messages.push(data) 
+            if ( conversationR ) conversationR.messages.unshift(data) 
             else {
                 newState.conversations.set(data.sender, {
                     other_user: {id: data.sender_id, phone_no: data.sender, ...newState.contacts.find(con => con.phone_no === data.sender)},
