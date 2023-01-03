@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, ScrollView, Alert } from 'react-native'
+import { View, ScrollView, Alert, PermissionsAndroid } from 'react-native'
 import { useSelector } from 'react-redux'
 import { Button, Switch, Checkbox, Title, Paragraph, Dialog, Portal, Chip, List, Text, TextInput, Divider } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
@@ -47,15 +47,16 @@ export default function Settings(props: any) {
         if(!encPassword?.trim()) return
 
         try {
-            const path = await DocumentPicker.pickSingle({mode: 'import'})
-            
-            const file = await RNFS.readFile(decodeURIComponent(path.uri)) // RNFS.DownloadDirectoryPath + `/foxtrot-${user_data.phone_no}-keys.txt`)
+            const path = await DocumentPicker.pickSingle({copyTo: 'documentDirectory'})
+            if (!path.fileCopyUri) return
+
+            const file = await RNFS.readFile(decodeURIComponent(path.fileCopyUri))
 
             // Read PBKDF2 no. of iterations, salt, IV and Ciphertext
             const [_, iter, salt, iv, ciphertext] = file.split("\n")
             const derivedKEK = await deriveKeyFromPassword(encPassword, Buffer.from(salt, 'base64'), parseInt(iter))
 
-            console.debug("Ikeys file:", file)
+            console.debug("Ikeys file: \n", file)
 
             // Decrypt Keypair
             const Ikeys = await crypto.subtle.decrypt(
@@ -65,6 +66,7 @@ export default function Settings(props: any) {
             );
 
             // TODO: Parse keypair as json, store in keychain and load into redux store
+            
             Toast.show({
                 type: 'success',
                 text1: 'Succesfully imported Keys',
@@ -74,8 +76,7 @@ export default function Settings(props: any) {
 
         } catch(err: any) {
             console.error("Error importing user keys:", err)
-            Alert.alert("Failed to import keys",
-                `An error occoured decrypting/importing the keys: ${err.toString()}`,
+            Alert.alert("Failed to import keys", err.message || err,
                 [{ text: "OK", onPress: () => {} }]
             );
         } finally {
@@ -85,8 +86,7 @@ export default function Settings(props: any) {
     }
 
     const exportKeys = async () => {
-        if(!encPassword?.trim()) return
-        if(!keypair) return
+        if(!encPassword?.trim() || !keypair) return
 
         try {
             const IKeys = await exportKeypair(keypair)
@@ -109,23 +109,23 @@ export default function Settings(props: any) {
                 + Buffer.from(iv).toString('base64') + '\n' 
                 + Buffer.from(encryptedIKeys).toString('base64')
             
-            console.debug("File:", file)
+            console.debug("File: \n", file)
 
-            const path = await DocumentPicker.pickDirectory()
-            if(!path) return
+            const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
+            if(granted !== PermissionsAndroid.RESULTS.GRANTED) return
 
-            await RNFS.writeFile(decodeURIComponent(path.uri) + `/foxtrot-${user_data.phone_no}-keys.txt`, file)
+            const fullPath = RNFS.DownloadDirectoryPath + `/${user_data.phone_no}-keys.txt`
+            await RNFS.writeFile(fullPath, file)
 
             Toast.show({
                 type: 'success',
                 text1: 'Succesfully exported Keys',
-                text2: 'Back up the encrypted keys file to another device',
+                text2: `Saved the encrypted keys to ${fullPath}`,
                 visibilityTime: 6000
             });
         } catch(err: any) {
             console.error("Error exporting user keys:", err)
-            Alert.alert("Failed to export keys",
-                `An error occoured encrypting/exporting the keys: ${err.toString()}`,
+            Alert.alert("Failed to export keys", err.message || err,
                 [{ text: "OK", onPress: () => {} }]
             );
         } finally {
@@ -136,8 +136,8 @@ export default function Settings(props: any) {
 
     return (
         <View style={globalStyle.wrapper}>
+
             <ScrollView style={{ paddingHorizontal: 40, paddingVertical: 15, marginBottom: 15, flex: 1 }}>
-                
                 <Title>User Data</Title>
                 <View style={{marginVertical: 15}}>
                     <Text>Stored on device:</Text>
@@ -156,33 +156,6 @@ export default function Settings(props: any) {
                     <Button icon="upload" mode='contained' onPress={() => setVisibleDialog('import')} loading={visibleDialog === 'import'}>Import</Button>
                     <Button icon="download" mode='contained' onPress={() => setVisibleDialog('export')} loading={visibleDialog === 'export'}>Export</Button>
                 </View>
-
-                <Divider style={{marginVertical: 15}}/>
-                <Title><FontAwesomeIcon icon={faExclamationTriangle} color="yellow" /> Testing area</Title>
-                <List.Section title="Form Components">
-                    <View style={{marginVertical: 5}}>
-                        <Button icon="camera">Button</Button>
-                        <Button icon="account-plus" mode="outlined">Outlined</Button>
-                        <Button icon="cog" mode="contained">Contained</Button>
-                        <Button icon="toilet" mode="contained" loading={true}>Loading</Button>
-                    </View>
-                    <View style={{marginVertical: 5, alignItems: 'flex-start'}}>
-                        <Switch value={isSwitchOn} onValueChange={() => setIsSwitchOn(!isSwitchOn)} />
-                        <Checkbox status={checked ? 'checked' : 'unchecked'} onPress={() => setChecked(!checked)} />
-                    </View>
-                </List.Section>
-
-                <List.Section title="Accordions">
-                    <List.Accordion
-                        title="Controlled Accordion"
-                        left={props => <List.Icon {...props} icon="folder" />}
-                        expanded={expanded}
-                        onPress={() => setExpanded(!expanded)}>
-                        <List.Item title="First item" />
-                        <List.Item title="Second item" />
-                    </List.Accordion>
-                </List.Section>
-
             </ScrollView>
 
             <Portal>
@@ -202,11 +175,11 @@ export default function Settings(props: any) {
                     <Dialog.Title><FontAwesomeIcon icon={faUpload} color="white"/> Import User Identity Keys</Dialog.Title>
                     <Dialog.Content>
                         <TextInput label="Keypair decryption password" secureTextEntry={true}
-                            value={encPassword} onChangeText={text => setEncPassword(text)} />
+                            value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
                     <Dialog.Actions style={{justifyContent: 'space-between'}}>
                         <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
-                        <Button onPress={importKeys} icon='upload' mode='contained'>Import</Button>
+                        <Button onPress={importKeys} icon='upload' mode='contained' disabled={!encPassword?.trim()}>Import</Button>
                     </Dialog.Actions>
                 </Dialog>
 
@@ -214,14 +187,13 @@ export default function Settings(props: any) {
                     <Dialog.Title><FontAwesomeIcon icon={faDownload} color="white"/> Export User Identity Keys</Dialog.Title>
                     <Dialog.Content>
                         <TextInput label="Keypair encryption password" secureTextEntry={true}
-                            value={encPassword} onChangeText={text => setEncPassword(text)} />
+                            value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
                     <Dialog.Actions style={{justifyContent: 'space-between'}}>
                         <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
-                        <Button onPress={exportKeys} icon='download' mode='contained'>Export</Button>
+                        <Button onPress={exportKeys} icon='download' mode='contained' disabled={!encPassword?.trim() || !keypair}>Export</Button>
                     </Dialog.Actions>
                 </Dialog>
-
             </Portal>
 
         </View>
