@@ -8,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Keychain from 'react-native-keychain'
 import { Buffer } from 'buffer'
 import RNFS from 'react-native-fs'
+import DocumentPicker from 'react-native-document-picker'
+import Toast from 'react-native-toast-message'
 
 import globalStyle from "~/global/globalStyle"
 import { RootState } from '~/store/store'
@@ -45,8 +47,9 @@ export default function Settings(props: any) {
         if(!encPassword?.trim()) return
 
         try {
-            // TODO: prompt user for file select
-            const file = await RNFS.readFile(RNFS.DownloadDirectoryPath + `/foxtrot-${user_data.phone_no}-keys.txt`)
+            const path = await DocumentPicker.pickSingle({mode: 'import'})
+            
+            const file = await RNFS.readFile(decodeURIComponent(path.uri)) // RNFS.DownloadDirectoryPath + `/foxtrot-${user_data.phone_no}-keys.txt`)
 
             // Read PBKDF2 no. of iterations, salt, IV and Ciphertext
             const [_, iter, salt, iv, ciphertext] = file.split("\n")
@@ -62,6 +65,12 @@ export default function Settings(props: any) {
             );
 
             // TODO: Parse keypair as json, store in keychain and load into redux store
+            Toast.show({
+                type: 'success',
+                text1: 'Succesfully imported Keys',
+                text2: 'Messaging and Decryption can now be performed',
+                visibilityTime: 6000
+            });
 
         } catch(err: any) {
             console.error("Error importing user keys:", err)
@@ -102,8 +111,17 @@ export default function Settings(props: any) {
             
             console.debug("File:", file)
 
-            // TODO: prompt user for file select
-            await RNFS.writeFile(RNFS.DownloadDirectoryPath + `/foxtrot-${user_data.phone_no}-keys.txt`, file)
+            const path = await DocumentPicker.pickDirectory()
+            if(!path) return
+
+            await RNFS.writeFile(decodeURIComponent(path.uri) + `/foxtrot-${user_data.phone_no}-keys.txt`, file)
+
+            Toast.show({
+                type: 'success',
+                text1: 'Succesfully exported Keys',
+                text2: 'Back up the encrypted keys file to another device',
+                visibilityTime: 6000
+            });
         } catch(err: any) {
             console.error("Error exporting user keys:", err)
             Alert.alert("Failed to export keys",
