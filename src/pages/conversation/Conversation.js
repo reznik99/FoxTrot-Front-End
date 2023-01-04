@@ -1,5 +1,5 @@
-import React, { useState, useMap, useEffect, useRef, useCallback } from "react";
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Keyboard } from "react-native";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Keyboard, Linking } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
@@ -31,17 +31,16 @@ export default function Conversation(props) {
             'keyboardDidShow',
             () => scrollView.current?.scrollToOffset({ offset: 0, animated: true }),
         ))
-        return () => {
-            keyboardDidShowListener?.remove()
-        }
+        return () => keyboardDidShowListener?.remove()
     }, [])
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (message.trim() === "") return
 
         setDecryptedMessages(new Map(decryptedMessages.set(0, message)))
-        dispatch(sendMessage(message, peer_user))
-            .finally(() => scrollView.current?.scrollToOffset({ offset: 0, animated: true }))
+        await dispatch(sendMessage(message, peer_user))
+        scrollView.current?.scrollToOffset({ offset: 0, animated: true })
+        
         setMessage('')
     }
 
@@ -58,11 +57,38 @@ export default function Conversation(props) {
             Toast.show({
                 type: 'error',
                 text1: 'Failed to decrypt message',
-                text2: 'Session Key might have been rotated since this message was sent',
-                visibilityTime: 6000
+                text2: 'Session Key might have been rotated since this message was sent'
             });
             setDecryptingIndex(-1)
         }
+    }
+
+    const handleClick = async (index, item) => {
+        if (!decryptedMessages.has(index)) {
+            await decryptMessage(index, item.message)
+            return
+        }
+
+        // Check if URL or Image is contained in message
+        const messageChunks = decryptedMessages.get(index).split(" ")
+        const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://') )
+        if (link) Linking.openURL(link)
+    }
+
+    const renderMessageText = (message) => {
+
+        const messageChunks = message.split(" ")
+        const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://') )
+
+        if (linkIndex < 0) return <Text selectable>{message}</Text>
+        
+        return (
+            <Text selectable>
+                <Text>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
+                <Text style={{color: 'blue'}}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
+                <Text>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
+            </Text>
+        )
     }
 
     const renderMessage = useCallback(({item, index}) => {
@@ -72,11 +98,14 @@ export default function Conversation(props) {
         const sent_at = new Date(item.sent_at)
         return (
             <Pressable key={index} 
-            style={[styles.messageContainer, sentOrRecievedStyle, loading && {backgroundColor: '#777777f0'}]} 
-            onPress={() => decryptMessage(index, item.message)}>
+                style={[styles.messageContainer, sentOrRecievedStyle, loading && {backgroundColor: '#777777f0'}]} 
+                onPress={() => handleClick(index, item)}>
                 <View style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
                     <ActivityIndicator style={{position: 'absolute', zIndex: 10}} animating={loading}/>
-                    <Text> { decryptedMessages.get(index) || item.message } </Text>
+                    { isEncrypted 
+                        ? <Text selectable> { item.message } </Text>
+                        : renderMessageText(decryptedMessages.get(index))
+                    }
                     { isEncrypted && <FontAwesomeIcon style={{position: 'absolute', zIndex: 10}} color="#333" icon={faLock} size={20} />}
                     <Text style={styles.messageTime}> 
                         { sent_at.toLocaleDateString() === todaysDate
@@ -113,8 +142,8 @@ export default function Conversation(props) {
                 <TextInput placeholder="Type a message"
                     multiline={true}
                     value={message}
-                    onChangeText={val => setMessage(val)}
-                    underlineColorAndroid='transparent'
+                    onChangeText={setMessage}
+                    // underlineColorAndroid='transparent'
                     style={styles.input}
                 />
                 <TouchableOpacity style={styles.button} onPress={handleSend}>

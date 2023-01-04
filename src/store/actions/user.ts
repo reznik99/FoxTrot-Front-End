@@ -2,6 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Storage
 import * as Keychain from 'react-native-keychain';
 import messaging from '@react-native-firebase/messaging'; // Push Notifications
+import Toast from 'react-native-toast-message';
 
 import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt } from '~/global/crypto';
@@ -210,8 +211,13 @@ export function sendMessage(message: string, to_user: UserData) {
 
             await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error sending message:', err)
+            Toast.show({
+                type: 'error',
+                text1: 'Error sending message',
+                text2: err.message || err
+            });
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }
