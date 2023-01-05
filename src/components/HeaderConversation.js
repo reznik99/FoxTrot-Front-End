@@ -35,7 +35,7 @@ export default class HeaderConversation extends Component {
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.buttonContainer, { width: '50%' }]}>
-                    <TouchableOpacity style={styles.button}>
+                    <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: {peer_user: this.props.data.peer_user} })}>
                         <FontAwesomeIcon icon={faVideo} size={20} style={styles.topBarText} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.button}>

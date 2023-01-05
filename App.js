@@ -17,7 +17,7 @@ window.crypto.getRandomValues = global.crypto.getRandomValues
 
 // App
 import { store } from './src/store/store'
-import { Login, Signup, Home, Conversation, NewConversation, AddContact, Settings } from './src'
+import { Login, Signup, Home, Conversation, NewConversation, AddContact, Call, Settings } from './src'
 import { Drawer, HeaderConversation } from "./src/components"
 import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT } from './src/global/variables'
 
@@ -58,6 +58,7 @@ const HomeNavigator = () => {
             <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
             <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: "My Contacts" })} />
             <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: "Search New Users" })} />
+            <HomeStack.Screen name="Call" component={Call} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
             <HomeStack.Screen name="Settings" component={Settings} />
         </HomeStack.Navigator>
     )
