@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react"
-import { SafeAreaView, StyleSheet, View, Text } from "react-native"
+import { SafeAreaView, StyleSheet, View, Text, TouchableOpacity } from "react-native"
 import { Button } from "react-native-paper"
 import { mediaDevices, MediaStream, RTCView } from 'react-native-webrtc'
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faPhone, faPhoneFlip, faMicrophone, faVideoCamera } from "@fortawesome/free-solid-svg-icons";
+
 import { UserData } from "~/store/reducers/user"
 
 interface Props {
@@ -67,6 +70,7 @@ export default function Call(props: Props) {
         <SafeAreaView style={styles.body}>
             <View style={styles.header}>
                 <Text>{callStatus}</Text>
+                { stream && <Text>{printCallTime()}</Text> }
             </View>
             {stream &&
                 <RTCView style={styles.stream}
@@ -75,12 +79,25 @@ export default function Call(props: Props) {
                     objectFit={'cover'} />
             }
             <View style={styles.footer}>
-                <View>
-                    { stream && <Text>{printCallTime()}</Text> }
-                </View>
                 <View style={{ flexDirection: "row" }}>
-                    <Button icon="phone" mode="contained" onPress={start} color="green">Call</Button>
-                    <Button icon="phone-hangup" mode="contained" onPress={stop} color="red">Hang up</Button>
+                    { !stream && 
+                        <TouchableOpacity  onPress={start} style={[styles.actionButton, {backgroundColor: 'green'}]}>
+                            <FontAwesomeIcon icon={faPhoneFlip} size={20} />
+                        </TouchableOpacity> 
+                    }
+                    { stream && 
+                        <>
+                            <TouchableOpacity onPress={stop} style={[styles.actionButton, {backgroundColor: 'gray'}]}>
+                                <FontAwesomeIcon icon={faMicrophone} size={20} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={stop} style={[styles.actionButton, {backgroundColor: 'gray'}]}>
+                                <FontAwesomeIcon icon={faVideoCamera} size={20} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={stop} style={[styles.actionButton, {backgroundColor: 'red'}]}>
+                                <FontAwesomeIcon icon={faPhone} size={20} />
+                            </TouchableOpacity>
+                        </>
+                    }
                 </View>
             </View>
         </SafeAreaView>
@@ -89,7 +106,7 @@ export default function Call(props: Props) {
 
 const styles = StyleSheet.create({
     header: {
-        flexDirection: "row",
+        flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#777777a0",
@@ -98,17 +115,14 @@ const styles = StyleSheet.create({
         top: 0,
         zIndex: 2,
         paddingVertical: 5
-    },
-    body: {
+    }, body: {
         backgroundColor: "white",
         justifyContent: 'center',
         width: '100%',
         height: '100%',
-    },
-    stream: {
+    }, stream: {
         flex: 1
-    },
-    footer: {
+    }, footer: {
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
@@ -117,5 +131,9 @@ const styles = StyleSheet.create({
         width: "100%",
         bottom: 0,
         zIndex: 2
-    },
+    }, actionButton: {
+        borderRadius: 50,
+        padding: 15,
+        margin: 5,
+    }
 });
