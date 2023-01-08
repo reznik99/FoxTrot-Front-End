@@ -143,7 +143,6 @@ export default function Conversation(props) {
                     multiline={true}
                     value={message}
                     onChangeText={setMessage}
-                    // underlineColorAndroid='transparent'
                     style={styles.input}
                 />
                 <TouchableOpacity style={styles.button} onPress={handleSend}>
