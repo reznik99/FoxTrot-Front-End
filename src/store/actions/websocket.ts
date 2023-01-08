@@ -1,4 +1,4 @@
-import { WEBSOCKET_URL } from '../../global/variables'
+import { WEBSOCKET_URL } from '~/global/variables'
 import PushNotification from 'react-native-push-notification'
 
 export function initializeWebsocket() {
@@ -29,7 +29,7 @@ export function initializeWebsocket() {
                 console.debug("Websocket connection has been closed gracefully")
             }
             socketConn.onerror = (err) => {
-                console.debug(err)
+                console.error("Websocket err:", err)
                 dispatch({ type: "WEBSOCKET_ERROR", payload: err })
             }
             socketConn.onmessage = (event) => {
@@ -51,7 +51,7 @@ export function initializeWebsocket() {
             }
             dispatch({ type: "WEBSOCKET_CONNECT", payload: socketConn })
         } catch (err) {
-            console.error(`Error establishing websocket: ${err}`)
+            console.error('Error establishing websocket: ', err)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }
@@ -68,7 +68,7 @@ export function destroyWebsocket() {
 
             dispatch({ type: "WEBSOCKET_CONNECT", payload: null })
         } catch (err) {
-            console.warn(`Error destroying websocket: `, err)
+            console.warn('Error destroying websocket: ', err)
         }
     }
 }
