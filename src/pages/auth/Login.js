@@ -34,6 +34,10 @@ class Login extends Component {
             return console.debug("User logged out")
         }
 
+        if(!this.state.username && this.props.user_data?.phone_no) {
+            this.setState({username: this.props.user_data?.phone_no})
+        }
+
         try {
             this.setState({gloablLoading: true})
 
@@ -59,12 +63,6 @@ class Login extends Component {
             console.error('Error on auto-login: ', err)
         } finally {
             this.setState({gloablLoading: false})
-        }
-    }
-
-    componentDidUpdate() {
-        if(!this.state.username && this.props.user_data?.phone_no) {
-            this.setState({username: this.props.user_data?.phone_no})
         }
     }
 

@@ -1,8 +1,23 @@
 import { WEBSOCKET_URL } from '~/global/variables'
 import PushNotification from 'react-native-push-notification'
+import { AppDispatch, GetState } from '../store'
+
+
+interface SocketData {
+    cmd: 'MSG' | 'CALL';
+    data: SocketMessage;
+}
+
+interface SocketMessage {
+    sender: string;
+    sender_id: number;
+    message: string;
+    sent_at: number;
+    seen: boolean;
+}
 
 export function initializeWebsocket() {
-    return async (dispatch, getState) => {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
 
@@ -33,21 +48,8 @@ export function initializeWebsocket() {
                 dispatch({ type: "WEBSOCKET_ERROR", payload: err })
             }
             socketConn.onmessage = (event) => {
-                console.debug("Websocket RECV:")
-                try {
-                    const message = JSON.parse(event.data)
-                    dispatch({ type: "RECV_MESSAGE", payload: message })
-                    PushNotification.localNotification({
-                        channelId: 'Messages',
-                        title: `Message from ${message.sender}`,
-                        message: message.message,
-                        when: message.sent_at,
-                        visibility: "public",
-                        picture: `https://robohash.org/${message.sender_id}`
-                    })
-                } catch (err) {
-                    console.debug(err)
-                }
+                console.debug("Websocket RECV: ", event.data)
+                handleSocketMessage(event.data, dispatch)
             }
             dispatch({ type: "WEBSOCKET_CONNECT", payload: socketConn })
         } catch (err) {
@@ -59,7 +61,7 @@ export function initializeWebsocket() {
 }
 
 export function destroyWebsocket() {
-    return async (dispatch, getState) => {
+    return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             let state = getState().userReducer
 
@@ -70,5 +72,29 @@ export function destroyWebsocket() {
         } catch (err) {
             console.warn('Error destroying websocket: ', err)
         }
+    }
+}
+
+function handleSocketMessage(data: any, dispatch: AppDispatch) {
+    try {
+        const parsedData = JSON.parse(data) as SocketData
+        switch(parsedData.cmd) {
+            case "MSG": 
+                dispatch({ type: "RECV_MESSAGE", payload: parsedData.data })
+                PushNotification.localNotification({
+                    channelId: 'Messages',
+                    title: `Message from ${parsedData.data.sender}`,
+                    message: parsedData.data.message,
+                    when: parsedData.data.sent_at,
+                    visibility: "public",
+                    picture: `https://robohash.org/${parsedData.data.sender_id}`
+                })
+                break;
+            case "CALL":
+                // TODO:
+                console.debug("Websocket CALL Recieved: ", parsedData)
+        }
+    } catch (err) {
+        console.error("Websocket RECV error: ", err)
     }
 }

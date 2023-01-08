@@ -13,6 +13,7 @@ export default function Call(props: Props) {
     const { peer_user } = props.route.params.data
     const dispatch = useDispatch()
     const user_data = useSelector((state: RootState) => state.userReducer.user_data)
+    const websocket = useSelector((state: RootState) => state.userReducer.socketConn)
 
     const [stream, setStream] = useState<MediaStream | undefined>(undefined);
     const [peerStream, setPeerStream] = useState<MediaStream | undefined>(undefined);
@@ -39,11 +40,12 @@ export default function Call(props: Props) {
         if (stream) return
 
         try {
+            console.debug('Loading Camera/Microphone Streams')
             const newStream = await mediaDevices.getUserMedia({ video: true, audio: true })
             setStartTime(Date.now())
             setStream(newStream)
-            // TODO: Do webrtc call logic
 
+            console.debug('RTCPeerConnection Init')
             let peerConstraints = { iceServers: [ { urls: 'stun:stun.l.google.com:19302' } ] };
             let peerConnection = new RTCPeerConnection( peerConstraints );
             
@@ -57,6 +59,7 @@ export default function Call(props: Props) {
             peerConnection.addEventListener( 'addstream', event => {} );
             peerConnection.addEventListener( 'removestream', event => {} );
 
+            console.debug('Loading tracks and creating offer')
             newStream.getTracks().forEach(track => peerConnection.addTrack(track, newStream))
             let sessionConstraints = {
                 mandatory: {
@@ -69,7 +72,13 @@ export default function Call(props: Props) {
 	        await peerConnection.setLocalDescription( offerDescription as RTCSessionDescription);
 
             // Send the offerDescription to the other participant. Using websockets
-
+            const message = {
+                cmd: 'CALL_OFFER',
+                from: user_data.id,
+                to: peer_user.id,
+                offer: offerDescription
+            }
+            websocket?.send(JSON.stringify(message))
 
             setCallStatus(`Dialing ${peer_user?.phone_no}...`)
         } catch (e) {

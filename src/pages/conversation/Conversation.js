@@ -14,7 +14,7 @@ export default function Conversation(props) {
     const { peer_user } = props.route.params.data
 
     const dispatch = useDispatch()
-    const conversation = useSelector(state => state.userReducer.conversations.get(peer_user.phone_no))
+    const conversation = useSelector(state => state.userReducer.conversations.get(peer_user.phone_no) || { messages: [] })
     const contacts = useSelector(state => state.userReducer.contacts)
     const user_data = useSelector(state => state.userReducer.user_data)
 
@@ -123,10 +123,10 @@ export default function Conversation(props) {
 
             <FlatList style={styles.messageList} 
                 ref={scrollView}
-                inverted={true}
+                inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
                 data={conversation.messages}
                 renderItem={renderMessage}
-                ListEmptyComponent={() => <Text style={[styles.message, styles.system]}> No messages </Text>}
+                ListEmptyComponent={() => <View><Text style={[styles.message, styles.system]}> No messages </Text></View> }
                 ListHeaderComponent={() => (
                     <View style={styles.footer}>
                         <FontAwesomeIcon color="#77f777" icon={faLock} />
