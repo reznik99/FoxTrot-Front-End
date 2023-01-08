@@ -4,7 +4,7 @@ import { AppDispatch, GetState } from '../store'
 
 
 interface SocketData {
-    cmd: 'MSG' | 'CALL';
+    cmd: 'MSG' | 'CALL_OFFER';
     data: SocketMessage;
 }
 
@@ -90,8 +90,8 @@ function handleSocketMessage(data: any, dispatch: AppDispatch) {
                     picture: `https://robohash.org/${parsedData.data.sender_id}`
                 })
                 break;
-            case "CALL":
-                // TODO:
+            case "CALL_OFFER":
+                // TODO: Store call Offer
                 console.debug("Websocket CALL Recieved: ", parsedData)
         }
     } catch (err) {
