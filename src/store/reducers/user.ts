@@ -71,6 +71,7 @@ function userReducer(state = initialState, action: Action) {
         case "SET_REFRESHING":
             return { ...state, refreshing: action.payload }
         case "SEND_MESSAGE":
+            newState.conversations = new Map(state.conversations)
             const reciever = action.payload.reciever
             message = action.payload.rawMessage
             const converastionS = newState.conversations.get(reciever.phone_no)
@@ -83,6 +84,7 @@ function userReducer(state = initialState, action: Action) {
             }
             return newState
         case "RECV_MESSAGE":
+            newState.conversations = new Map(state.conversations)
             const data = action.payload
             const conversationR = newState.conversations.get(data.sender)
             if (conversationR) conversationR.messages.unshift(data)

@@ -203,7 +203,6 @@ export function sendMessage(message: string, to_user: UserData) {
                     seen: false
                 }
             }
-
             dispatch({ type: "SEND_MESSAGE", payload: msg })
 
             // Encrypt message
