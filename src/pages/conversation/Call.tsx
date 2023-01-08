@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { SafeAreaView, StyleSheet, View, Text, TouchableOpacity, Image } from "react-native";
 import { useSelector, useDispatch } from 'react-redux';
-import { mediaDevices, MediaStream, RTCView } from 'react-native-webrtc';
+import { mediaDevices, MediaStream, RTCPeerConnection, RTCView } from 'react-native-webrtc';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPhone, faPhoneFlip, faMicrophone, faMicrophoneSlash, faVideoCamera, faVideoSlash, faCameraRotate } from "@fortawesome/free-solid-svg-icons";
 
@@ -39,10 +39,38 @@ export default function Call(props: Props) {
         if (stream) return
 
         try {
-            const s = await mediaDevices.getUserMedia({ video: true, audio: true })
+            const newStream = await mediaDevices.getUserMedia({ video: true, audio: true })
             setStartTime(Date.now())
-            setStream(s)
+            setStream(newStream)
             // TODO: Do webrtc call logic
+
+            let peerConstraints = { iceServers: [ { urls: 'stun:stun.l.google.com:19302' } ] };
+            let peerConnection = new RTCPeerConnection( peerConstraints );
+            
+            peerConnection.addEventListener( 'connectionstatechange', event => {} );
+            peerConnection.addEventListener( 'icecandidate', event => {} );
+            peerConnection.addEventListener( 'icecandidateerror', event => {} );
+            peerConnection.addEventListener( 'iceconnectionstatechange', event => {} );
+            peerConnection.addEventListener( 'icegatheringstatechange', event => {} );
+            peerConnection.addEventListener( 'negotiationneeded', event => {} );
+            peerConnection.addEventListener( 'signalingstatechange', event => {} );
+            peerConnection.addEventListener( 'addstream', event => {} );
+            peerConnection.addEventListener( 'removestream', event => {} );
+
+            newStream.getTracks().forEach(track => peerConnection.addTrack(track, newStream))
+            let sessionConstraints = {
+                mandatory: {
+                    OfferToReceiveAudio: true,
+                    OfferToReceiveVideo: true,
+                    VoiceActivityDetection: true
+                }
+            };
+            const offerDescription = await peerConnection.createOffer( sessionConstraints ) ;
+	        await peerConnection.setLocalDescription( offerDescription as RTCSessionDescription);
+
+            // Send the offerDescription to the other participant. Using websockets
+
+
             setCallStatus(`Dialing ${peer_user?.phone_no}...`)
         } catch (e) {
             console.error(e)
@@ -189,6 +217,7 @@ const styles = StyleSheet.create({
         width: 200,
         bottom: 60, 
         right: 0,
-        backgroundColor: '#333333'
+        borderRadius: 5,
+        backgroundColor: '#333333f0'
     }
 });

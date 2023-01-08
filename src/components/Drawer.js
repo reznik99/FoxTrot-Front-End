@@ -41,7 +41,7 @@ export default function Drawer(props) {
 
                 <View style={[styles.profileContainer, {marginBottom: 25}]}>
                     <Avatar.Image size={150} style={{marginBottom: 25}}
-                        source={{ uri: `https://robohash.org/${state.user_data?.id}` }}
+                        source={{ uri: state.user_data?.pic }}
                         PlaceholderContent={<ActivityIndicator />} />
                     <View>
                         <View style={styles.profileInfoContainer}>

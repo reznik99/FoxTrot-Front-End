@@ -19,9 +19,11 @@ export function logIn(username: string, password: string) {
                 password: password
             })
 
+            const user_data = {pic: `https://robohash.org/${res.data.user_data?.id}`, ...res.data.user_data}
+
             console.debug('Saving user in storage')
             // Save data in phone storage
-            await AsyncStorage.setItem('user_data', JSON.stringify(res.data.user_data))
+            await AsyncStorage.setItem('user_data', JSON.stringify(user_data))
             await AsyncStorage.setItem('auth_token', res.data.token)
 
             // Save password in secure storage
@@ -35,7 +37,7 @@ export function logIn(username: string, password: string) {
                 type: "LOGGED_IN",
                 payload: {
                     token: res.data.token,
-                    user_data: res.data.user_data
+                    user_data: user_data
                 },
             })
 
