@@ -96,6 +96,10 @@ export function logOut(navigation: any) {
         console.debug("Logging out")
         // Clear redux state
         dispatch({ type: "LOGOUT", payload: undefined })
+        // Clear storage
+        await AsyncStorage.removeItem('user_data')
+        await AsyncStorage.removeItem('auth_token')
+
         navigation.replace('Login', { data: { loggedOut: true } })
     }
 }

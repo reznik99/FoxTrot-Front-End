@@ -20,7 +20,6 @@ export default function Call(props: Props) {
     const callCandidate = useSelector((state: RootState) => state.userReducer.callCandidate)
 
     const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | undefined>(undefined);
-    const [remoteCandidates, setRemoteCandidates] = useState<any[]>([]);
 
     const [stream, setStream] = useState<MediaStream | undefined>(undefined);
     const [peerStream, setPeerStream] = useState<MediaStream | undefined>(undefined);
@@ -43,43 +42,36 @@ export default function Call(props: Props) {
         }
     }, [])
 
+    // Recieved an answer to call
     useEffect(() => {
-        // Recieved an answer to call
-
         async function connect() {
-            if(!callAnswer) return console.log("callAnswer is undefined")
-            if(!peerConnection) return console.log("peerConnection is undefined")
-
+            if(!callAnswer || !peerConnection) return
+            console.debug('---peerConnection.setRemoteDescription---')
             const offerDescription = new RTCSessionDescription( callAnswer );
             await peerConnection.setRemoteDescription( offerDescription );
-
-            remoteCandidates.map( candidate => peerConnection.addIceCandidate( candidate ) )
-	        setRemoteCandidates([])
         }
         connect()
     }, [callAnswer])
 
+    // Recieved a possible ICE Candidate
     useEffect(() => {
-        // Recieved a possible ICE Candidate
-
         async function onIceCandidate() {
-            if(!callCandidate) return console.log("callCandidate is undefined")
-            if(!peerConnection) return console.log("peerConnection is undefined")
-
-            if ( peerConnection.remoteDescription == null ) {
-                return remoteCandidates.push( callCandidate );
-            };
-        
+            if(!callCandidate || !peerConnection) return
+            console.debug('---peerConnection?.addIceCandidate---')
             await peerConnection?.addIceCandidate(callCandidate)
         }
         onIceCandidate()
     }, [callCandidate])
 
+    // Recieved a call request
     useEffect(() => {
-        // Recieved a call request
-
-        if(!callOffer) return console.log("callOffer is undefined")
-        start()
+        async function handleCall() {
+            if(!callOffer) return
+            console.debug('---callOffer start()---')
+            await startStream()
+            await answerCall()
+        }
+        handleCall()
     }, [callOffer])
 
     const onIceCandidate = (event: any) => {
@@ -100,79 +92,87 @@ export default function Call(props: Props) {
         websocket?.send(JSON.stringify(message))
     }
 
-    const start = async () => {
+    const answerCall = async () => {
+        if(!peerConnection) return console.debug('---peerConnection null after start()---')
+        // Use the received offerDescription
+        let offerDescription = new RTCSessionDescription( callOffer );
+        await peerConnection.setRemoteDescription( offerDescription );
+
+        const answerDescription = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription( answerDescription as RTCSessionDescription);
+
+        // Send the answerDescription back as a response to the offerDescription. Using websockets
+        const message: SocketData = {
+            cmd: 'CALL_ANSWER',
+            data: {
+                sender_id: user_data.id,
+                sender: user_data.phone_no,
+                reciever_id: peer_user.id,
+                reciever: peer_user.phone_no,
+                answer: answerDescription
+            }
+        }
+        websocket?.send(JSON.stringify(message))
+    }
+
+    const call = async () => {
+        if(!peerConnection) return console.debug('---peerConnection null after start()---')
+
+        let sessionConstraints = {
+            mandatory: {
+                OfferToReceiveAudio: true,
+                OfferToReceiveVideo: true,
+                VoiceActivityDetection: true
+            }
+        };
+        let offerDescription = await peerConnection.createOffer( sessionConstraints ) as RTCSessionDescriptionInit;
+        await peerConnection.setLocalDescription( offerDescription as RTCSessionDescription);
+
+        // Send the offerDescription to the other participant. Using websockets
+        const message: SocketData = {
+            cmd: 'CALL_OFFER',
+            data: {
+                sender_id: user_data.id,
+                sender: user_data.phone_no,
+                reciever_id: peer_user.id,
+                reciever: peer_user.phone_no,
+                offer: offerDescription
+            }
+        }
+        websocket?.send(JSON.stringify(message))
+    }
+
+    const startStream = async () => {
         if (stream) return
 
         try {
-            console.debug('Loading Camera/Microphone Streams')
+            console.debug('Start - Loading Camera/Microphone Streams')
             const newStream = await mediaDevices.getUserMedia({ video: true, audio: true })
             setStartTime(Date.now())
             setStream(newStream)
 
-            console.debug('RTCPeerConnection Init')
+            console.debug('Start - RTCPeerConnection Init')
             let peerConstraints = { iceServers: [ { urls: 'stun:stun.l.google.com:19302' } ] };
             let newConnection = new RTCPeerConnection( peerConstraints );
             
-            newConnection.addEventListener( 'connectionstatechange', event => console.log('on connectionstatechange: ', peerConnection?.connectionState) );
-            newConnection.addEventListener( 'icecandidate', event =>  onIceCandidate(event) );
+            newConnection.addEventListener( 'connectionstatechange', event => console.log('on connectionstatechange: ', newConnection?.connectionState) );
+            newConnection.addEventListener( 'icecandidate', onIceCandidate );
             newConnection.addEventListener( 'icecandidateerror', event => console.log('on icecandidateerror') );
-            newConnection.addEventListener( 'iceconnectionstatechange', event => console.log('on iceconnectionstatechange: ', peerConnection?.iceConnectionState) );
+            newConnection.addEventListener( 'iceconnectionstatechange', event => console.log('on iceconnectionstatechange: ', newConnection?.iceConnectionState) );
             newConnection.addEventListener( 'icegatheringstatechange', event => {} );
             newConnection.addEventListener( 'negotiationneeded', event => {} );
             newConnection.addEventListener( 'signalingstatechange', event => {} );
-            newConnection.addEventListener( 'addstream', event => {console.log('on addstream: ', event.stream); setPeerStream(event.stream)} );
-            newConnection.addEventListener( 'track', event => { console.log('on track: ', event); peerConnection?.addTrack(event.track, event.streams); setPeerStream(event.streams[0]) } );
-            newConnection.addEventListener( 'removestream', event => console.log('on removestream') );
-
-            console.debug('Loading tracks and creating offer')
-            newStream.getTracks().forEach(track => newConnection.addTrack(track, newStream))
-            let sessionConstraints = {
-                mandatory: {
-                    OfferToReceiveAudio: true,
-                    OfferToReceiveVideo: true,
-                    VoiceActivityDetection: true
-                }
-            };
-            let offerDescription: RTCSessionDescription | RTCSessionDescriptionInit
-            if (!callOffer) { // Call the other guy
-                offerDescription = await newConnection.createOffer( sessionConstraints ) as RTCSessionDescriptionInit;
-                await newConnection.setLocalDescription( offerDescription as RTCSessionDescription);
-
-                // Send the offerDescription to the other participant. Using websockets
-                const message: SocketData = {
-                    cmd: 'CALL_OFFER',
-                    data: {
-                        sender_id: user_data.id,
-                        sender: user_data.phone_no,
-                        reciever_id: peer_user.id,
-                        reciever: peer_user.phone_no,
-                        offer: offerDescription
-                    }
-                }
-                websocket?.send(JSON.stringify(message))
-            } else {
-                // Use the received offerDescription
-                offerDescription = new RTCSessionDescription( callOffer );
-                await newConnection.setRemoteDescription( offerDescription );
-
-                const answerDescription = await newConnection.createAnswer(sessionConstraints);
-                await newConnection.setLocalDescription( answerDescription as RTCSessionDescription);
-
-                // Send the answerDescription back as a response to the offerDescription. Using websockets
-                const message: SocketData = {
-                    cmd: 'CALL_ANSWER',
-                    data: {
-                        sender_id: user_data.id,
-                        sender: user_data.phone_no,
-                        reciever_id: peer_user.id,
-                        reciever: peer_user.phone_no,
-                        answer: answerDescription
-                    }
-                }
-                websocket?.send(JSON.stringify(message))
-            }
-
+            newConnection.addEventListener( 'track', (event: any) => { 
+                console.log('on track: ', event); 
+                newConnection?.addTrack(event.track);
+                setPeerStream(event.streams[0])
+            });
             setPeerConnection(newConnection)
+
+            console.debug('Start - Loading tracks and creating offer')
+            if (!callOffer) await call() 
+            newStream.getTracks().forEach(track => newConnection.addTrack(track, newStream))
+
             setCallStatus(`Dialing ${peer_user?.phone_no}...`)
         } catch (e) {
             console.error(e)
@@ -183,9 +183,16 @@ export default function Call(props: Props) {
         if (!stream) return
 
         stream.release()
-        peerConnection?.close();
+        peerConnection?.close()
+
         setPeerConnection(undefined)
         setStream(undefined)
+        setPeerStream(undefined)
+
+        dispatch({ type: "RECV_CALL_ICE_CANDIDATE", payload: undefined })
+        dispatch({ type: "RECV_CALL_ANSWER", payload: undefined })
+        dispatch({ type: "RECV_CALL_OFFER", payload: undefined })
+
         setCallStatus('Call ended')
     };
 
@@ -246,7 +253,7 @@ export default function Call(props: Props) {
             <View style={styles.footer}>
                 <View style={{ flexDirection: "row" }}>
                     { !stream && 
-                        <TouchableOpacity  onPress={start} style={[styles.actionButton, {backgroundColor: 'green'}]}>
+                        <TouchableOpacity  onPress={startStream} style={[styles.actionButton, {backgroundColor: 'green'}]}>
                             <FontAwesomeIcon icon={faPhoneFlip} size={20} />
                         </TouchableOpacity> 
                     }
