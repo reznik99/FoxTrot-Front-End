@@ -47,9 +47,12 @@ class Call extends React.Component<Props, State> {
         }
 
         if (this.props.callCandidate !== prevProps.callCandidate) {
-            if (this.state.peerConnection) {
+            if (this.state.peerConnection?.remoteDescription) {
                 console.debug('---peerConnection?.addIceCandidate---')
                 await this.state.peerConnection.addIceCandidate(this.props.callCandidate)
+            } else {
+                // TODO: Fix this hacky crap
+                setTimeout(() => this.state.peerConnection?.addIceCandidate(this.props.callCandidate), 3000)
             }
         }
 
@@ -62,8 +65,8 @@ class Call extends React.Component<Props, State> {
     }
 
     onIceCandidate = (event: any) => {
+        console.debug('on icecandidate: ');
         if (!event.candidate) console.debug("onIceCandidate is undefined")
-        console.debug("onIceCandidate", event.candidate?.toJSON())
 
         // Send the iceCandidate to the other participant. Using websockets
         const message: SocketData = {
@@ -161,7 +164,7 @@ class Call extends React.Component<Props, State> {
                 peerConnection: newConnection
             })
 
-            console.debug('Start - Loading tracks and creating offer')
+            console.debug('Start - Loading tracks')
             if (!this.props.callOffer) await this.call()
 
             this.setState({ callStatus: `Dialing ${this.state.peer_user?.phone_no}...` })

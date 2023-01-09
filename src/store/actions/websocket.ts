@@ -109,13 +109,18 @@ function handleSocketMessage(data: any, dispatch: AppDispatch) {
                 break;
             case "CALL_OFFER":
                 dispatch({ type: "RECV_CALL_OFFER", payload: parsedData.data?.offer })
-                console.debug("Websocket CALL_OFFER Recieved: ", parsedData.data.sender)
+                console.debug("Websocket CALL_OFFER Recieved: ", parsedData.data?.sender)
+                break;
             case "CALL_ANSWER":
                 dispatch({ type: "RECV_CALL_ANSWER", payload: parsedData.data?.answer })
-                console.debug("Websocket CALL_ANSWER Recieved: ", parsedData.data.sender)
+                console.debug("Websocket CALL_ANSWER Recieved: ", parsedData.data?.sender)
+                break;
             case "CALL_ICE_CANDIDATE":
                 dispatch({ type: "RECV_CALL_ICE_CANDIDATE", payload: parsedData.data?.candidate })
-                console.debug("Websocket RECV_CALL_ICE_CANDIDATE Recieved: ", parsedData.data.sender)
+                console.debug("Websocket RECV_CALL_ICE_CANDIDATE Recieved: ", parsedData.data?.sender)
+                break;
+            default:
+                console.debug("Websocket RECV unknown command from: ", parsedData.data?.sender, parsedData.cmd)
         }
     } catch (err) {
         console.error("Websocket RECV error: ", err)
