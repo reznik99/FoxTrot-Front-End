@@ -79,6 +79,19 @@ export function destroyWebsocket() {
     }
 }
 
+export function resetCallState() {
+    return async (dispatch: AppDispatch) => {
+        try {
+
+            dispatch({ type: "RECV_CALL_ICE_CANDIDATE", payload: undefined })
+            dispatch({ type: "RECV_CALL_ANSWER", payload: undefined })
+            dispatch({ type: "RECV_CALL_OFFER", payload: undefined })
+        } catch (err) {
+            console.warn('Error resetCallState: ', err)
+        }
+    }
+}
+
 function handleSocketMessage(data: any, dispatch: AppDispatch) {
     try {
         const parsedData = JSON.parse(data) as SocketData
