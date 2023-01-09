@@ -8,6 +8,9 @@ export interface State {
     conversations: Map<string, Conversation>;
     socketErr: string;
     socketConn?: WebSocket;
+    callOffer?: RTCSessionDescription;
+    callAnswer?: RTCSessionDescription;
+    callCandidate?: unknown;
 }
 
 export interface UserData {
@@ -95,6 +98,12 @@ function userReducer(state = initialState, action: Action) {
                 })
             }
             return newState
+        case "RECV_CALL_OFFER":
+            return { ...state, callOffer: action.payload as RTCSessionDescription }
+        case "RECV_CALL_ICE_CANDIDATE":
+            return { ...state, callCandidate: action.payload }
+        case "RECV_CALL_ANSWER":
+            return { ...state, callAnswer: action.payload as RTCSessionDescription }
         case "WEBSOCKET_CONNECT":
             return { ...state, socketConn: action.payload as WebSocket, socketErr: '' }
         case "WEBSOCKET_ERROR":

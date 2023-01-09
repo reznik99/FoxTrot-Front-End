@@ -74,8 +74,10 @@ export default function Call(props: Props) {
             // Send the offerDescription to the other participant. Using websockets
             const message = {
                 cmd: 'CALL_OFFER',
-                from: user_data.id,
-                to: peer_user.id,
+                sender_id: user_data.id,
+                sender: user_data.phone_no,
+                reciever_id: peer_user.id,
+                reciever: peer_user.phone_no,
                 offer: offerDescription
             }
             websocket?.send(JSON.stringify(message))

@@ -3,17 +3,22 @@ import PushNotification from 'react-native-push-notification'
 import { AppDispatch, GetState } from '../store'
 
 
-interface SocketData {
-    cmd: 'MSG' | 'CALL_OFFER';
+export interface SocketData {
+    cmd: 'MSG' | 'CALL_OFFER' | 'CALL_ICE_CANDIDATE' | 'CALL_ANSWER';
     data: SocketMessage;
 }
 
-interface SocketMessage {
+export interface SocketMessage {
     sender: string;
-    sender_id: number;
-    message: string;
-    sent_at: number;
-    seen: boolean;
+    sender_id: string;
+    reciever: string;
+    reciever_id: string;
+    message?: string;
+    sent_at?: number;
+    seen?: boolean;
+    offer?: any;
+    answer?: any;
+    candidate?: unknown;
 }
 
 export function initializeWebsocket() {
@@ -48,7 +53,6 @@ export function initializeWebsocket() {
                 dispatch({ type: "WEBSOCKET_ERROR", payload: err })
             }
             socketConn.onmessage = (event) => {
-                console.debug("Websocket RECV: ", event.data)
                 handleSocketMessage(event.data, dispatch)
             }
             dispatch({ type: "WEBSOCKET_CONNECT", payload: socketConn })
@@ -84,15 +88,21 @@ function handleSocketMessage(data: any, dispatch: AppDispatch) {
                 PushNotification.localNotification({
                     channelId: 'Messages',
                     title: `Message from ${parsedData.data.sender}`,
-                    message: parsedData.data.message,
+                    message: parsedData.data?.message || '',
                     when: parsedData.data.sent_at,
                     visibility: "public",
                     picture: `https://robohash.org/${parsedData.data.sender_id}`
                 })
                 break;
             case "CALL_OFFER":
-                // TODO: Store call Offer
-                console.debug("Websocket CALL Recieved: ", parsedData)
+                dispatch({ type: "RECV_CALL_OFFER", payload: parsedData.data?.offer })
+                console.debug("Websocket CALL_OFFER Recieved: ", parsedData.data.sender)
+            case "CALL_ANSWER":
+                dispatch({ type: "RECV_CALL_ANSWER", payload: parsedData.data?.answer })
+                console.debug("Websocket CALL_ANSWER Recieved: ", parsedData.data.sender)
+            case "CALL_ICE_CANDIDATE":
+                dispatch({ type: "RECV_CALL_ICE_CANDIDATE", payload: parsedData.data?.candidate })
+                console.debug("Websocket RECV_CALL_ICE_CANDIDATE Recieved: ", parsedData.data.sender)
         }
     } catch (err) {
         console.error("Websocket RECV error: ", err)

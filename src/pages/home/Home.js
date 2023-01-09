@@ -60,7 +60,7 @@ export default function Home(props) {
         setConvos([...conversations.values()].sort((c1, c2) => {
             if (!c1.messages?.length) return -1
             if (!c2.messages?.length) return 1
-            return c1.messages[0]?.sent_at < c2.messages[0]?.sent_at ? 1 : -1
+            return new Date(c1.messages[0]?.sent_at).getTime() < new Date(c2.messages[0]?.sent_at).getTime() ? 1 : -1
         }))
     }, [conversations])
 
