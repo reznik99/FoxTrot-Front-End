@@ -37,7 +37,7 @@ export default function Conversation(props) {
     const handleSend = async () => {
         if (message.trim() === "") return
 
-        setDecryptedMessages(new Map(decryptedMessages.set(0, message)))
+        setDecryptedMessages(new Map(decryptedMessages.set(conversation.messages.length + 1, message)))
         await dispatch(sendMessage(message, peer_user))
         scrollView.current?.scrollToOffset({ offset: 0, animated: true })
         
@@ -45,13 +45,14 @@ export default function Conversation(props) {
     }
 
     const decryptMessage = async (index, message) => {
-        if (message.trim() === "" || decryptedMessages.has(index)) return
+        const idx = conversation.messages.length - index
+        if (message.trim() === "" || decryptedMessages.has(idx)) return
 
         try {
             setDecryptingIndex(index)
             const peer = contacts.find((contact) => contact.id === peer_user.id)
             const decryptedMessage = await decrypt(peer.session_key, message)
-            setDecryptedMessages(new Map(decryptedMessages.set(index, decryptedMessage)))
+            setDecryptedMessages(new Map(decryptedMessages.set(idx, decryptedMessage)))
         } catch (err) {
             console.error("Error decrypting message", err)
             Toast.show({
@@ -64,13 +65,14 @@ export default function Conversation(props) {
     }
 
     const handleClick = async (index, item) => {
-        if (!decryptedMessages.has(index)) {
+        const idx = conversation.messages.length - index
+        if (!decryptedMessages.has(idx)) {
             await decryptMessage(index, item.message)
             return
         }
 
         // Check if URL or Image is contained in message
-        const messageChunks = decryptedMessages.get(index).split(" ")
+        const messageChunks = decryptedMessages.get(idx).split(" ")
         const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://') )
         if (link) Linking.openURL(link)
     }
@@ -92,9 +94,10 @@ export default function Conversation(props) {
     }
 
     const renderMessage = useCallback(({item, index}) => {
+        const idx = conversation.messages.length - index
         const sentOrRecievedStyle = item.sender === user_data.phone_no ? styles.sent : styles.received
-        const isEncrypted = !decryptedMessages.has(index)
-        const loading = decryptingIndex == index && isEncrypted
+        const isEncrypted = !decryptedMessages.has(idx)
+        const loading = decryptingIndex === index && isEncrypted
         const sent_at = new Date(item.sent_at)
         return (
             <Pressable key={index} 
@@ -104,7 +107,7 @@ export default function Conversation(props) {
                     <ActivityIndicator style={{position: 'absolute', zIndex: 10}} animating={loading}/>
                     { isEncrypted 
                         ? <Text selectable> { item.message } </Text>
-                        : renderMessageText(decryptedMessages.get(index))
+                        : renderMessageText(decryptedMessages.get(idx))
                     }
                     { isEncrypted && <FontAwesomeIcon style={{position: 'absolute', zIndex: 10}} color="#333" icon={faLock} size={20} />}
                     <Text style={styles.messageTime}> 
