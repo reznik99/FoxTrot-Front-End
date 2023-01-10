@@ -1,5 +1,5 @@
 
-export function humanTime(lastTime) {
+export function humanTime(lastTime: string) {
     if (!lastTime)
         return null;
 
@@ -10,7 +10,7 @@ export function humanTime(lastTime) {
         ? diff / 1000 / 60 > 60
             ? diff / 1000 / 60 / 60 > 24
                 ? `${new Date(lastTime).toLocaleDateString()}`
-                : `${parseInt(diff / 1000 / 60 / 60)} h ago`
-            : `${parseInt(diff / 1000 / 60)} m ago`
+                : `${~~(diff / 1000 / 60 / 60)} h ago`
+            : `${~~(diff / 1000 / 60)} m ago`
         : 'just now';
 }

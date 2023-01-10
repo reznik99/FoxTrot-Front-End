@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { PRIMARY, SECONDARY, ACCENT } from './variables'
+import { SECONDARY } from './variables'
 
 const globalStyle = StyleSheet.create({
     wrapper: {

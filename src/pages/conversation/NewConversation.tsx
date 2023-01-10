@@ -5,32 +5,27 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faUserPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
 
-import { ContactPeek } from './../../components'
-import globalStyle from "../../global/globalStyle"
+import { ContactPeek } from '~/components'
+import globalStyle from "~/global/globalStyle"
+import { RootState } from "~/store/store"
+import { UserData } from "~/store/reducers/user"
 
-
-export default function NewConversation(props) {
-
+export default function NewConversation(props: { navigation: any }) {
+    
     const { navigation } = props
-    const { contacts, conversations } = useSelector(state => state.userReducer)
+    const contacts = useSelector((state: RootState) => state.userReducer.contacts)
+    const [results, setResults] = useState<UserData[]>([])
     const [loading, setLoading] = useState(true)
-    const [results, setResults] = useState([])
+    const [prefix, setPrefix] = useState("")
 
     useEffect(() => {
-        searchContact('')
-    }, [])
-
-    const searchContact = useCallback((newPrefix) => {
         setLoading(true)
-        newPrefix = newPrefix.toLowerCase()
 
-        // Load data
-        const newResults = contacts.filter((contact) => contact.phone_no?.toLowerCase().startsWith(newPrefix))
+        const newResults = contacts.filter((contact) => contact.phone_no?.toLowerCase().startsWith(prefix.toLowerCase()))
+        setResults(newResults.sort((r1, r2) => (r1.phone_no > r2.phone_no) ? 1 : -1))
 
-        // Sort results
-        setResults(newResults.sort((r1, r2) => (r1.identifier > r2.identifier) ? 1 : -1))
         setLoading(false)
-    }, [contacts])
+    }, [prefix])
 
     return (
         <View style={globalStyle.wrapper}>
@@ -41,13 +36,15 @@ export default function NewConversation(props) {
                         <FontAwesomeIcon size={size} icon={faSearch} style={{ color: color }} />
                     )}
                     placeholder="Search contacts"
-                    onChangeText={val => searchContact(val)}
+                    value={prefix}
+                    onChangeText={val => setPrefix(val)}
                 />
             </View>
 
-            {loading || !results
-                ? <ActivityIndicator size="large" />
-                : <ScrollView>
+            { loading && <ActivityIndicator size="large" /> }
+
+            { !loading && 
+                <ScrollView>
                     { results?.length
                         ? results.map((contact, index) => {
                             return <ContactPeek data={{ ...contact, isContact: true }} key={index} navigation={navigation}

@@ -161,7 +161,7 @@ export function addContact(user: UserData) {
 }
 
 export function searchUsers(prefix: string) {
-    return async (dispatch: AppDispatch, getState: GetState) => {
+    return async (dispatch: AppDispatch, getState: GetState): Promise<UserData[]> => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
             const state = getState().userReducer

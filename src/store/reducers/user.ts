@@ -11,6 +11,8 @@ export interface State {
     callOffer?: RTCSessionDescription;
     callAnswer?: RTCSessionDescription;
     callCandidate?: unknown;
+    loading: boolean;
+    refreshing: boolean;
 }
 
 export interface UserData {
@@ -41,14 +43,14 @@ const initialState: State = {
     conversations: new Map(),
     socketErr: '',
     socketConn: undefined,
+    loading: false,
+    refreshing: false,
 }
 
 function userReducer(state = initialState, action: Action) {
     let newState = { ...state }
     let message
     switch (action.type) {
-        case "ADDING_CONTACT":
-            return { ...state, adding_contact: action.payload }
         case "ADD_CONTACT_SUCCESS":
             return { ...state, contacts: [...state.contacts, action.payload] as UserData[] }
         case "LOAD_CONTACTS":
@@ -70,9 +72,9 @@ function userReducer(state = initialState, action: Action) {
         case "SIGNUP_ERROR_MSG":
             return { ...state, signupErr: action.payload }
         case "SET_LOADING":
-            return { ...state, loading: action.payload }
+            return { ...state, loading: action.payload as boolean }
         case "SET_REFRESHING":
-            return { ...state, refreshing: action.payload }
+            return { ...state, refreshing: action.payload as boolean }
         case "SEND_MESSAGE":
             newState.conversations = new Map(state.conversations)
             const reciever = action.payload.reciever

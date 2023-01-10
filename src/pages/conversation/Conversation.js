@@ -170,7 +170,8 @@ const styles = StyleSheet.create({
         marginVertical: 5,
         borderRadius: 10,
         justifyContent: 'center', 
-        alignItems: 'center'
+        alignItems: 'center',
+        maxWidth: '75%'
     }, message: {
         padding: 15,
         borderRadius: 10,
