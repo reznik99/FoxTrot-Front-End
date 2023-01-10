@@ -1,6 +1,56 @@
-# FoxTrot (Front-End)
+<div id="top"></div>
+
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![LinkedIn][linkedin-shield]][linkedin-url]
+
+### `FoxTrot Mobile App`
+
 FoxTrot, Mobile App offering end-to-end encrypted communication
-
-
-
 Simple React-Native application for sending, recieving (encrypted) messages and phone/video communications
+
+### This project uses:
+- [React-Native](https://reactnative.dev/)
+- [Typescript](https://github.com/microsoft/TypeScript)
+- [SubtleCrypto](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto)
+- [Websockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
+- [WebRTC](https://webrtc.org/)
+
+<!-- ROADMAP -->
+## Roadmap
+
+- [x] __Messaging__ End-To-End Encrypted Messaging.
+- [x] __Notifications__ Push Notifications.
+- [x] __Device Migration__ Key Archival.
+- [x] __Calling__ Peer-To-Peer Encrypted Audio Calls.
+- [x] __Calling__ Peer-To-Peer Encrypted Audio Calls.
+
+See the [open issues](https://github.com/reznik99/FoxTrot-Front-End/issues) for a full list of proposed features (and known issues).
+<br>
+<br>
+
+<!-- CONTACT -->
+## Contact
+
+Francesco Gorini - goras.francesco@gmail.com - https://francescogorini.com
+
+Project Link: [https://github.com/reznik99/FoxTrot-Front-End](https://github.com/reznik99/FoxTrot-Front-End)
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[contributors-shield]: https://img.shields.io/github/contributors/reznik99/FoxTrot-Front-End.svg?style=for-the-badge
+[contributors-url]: https://github.com/reznik99/FoxTrot-Front-End/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/reznik99/FoxTrot-Front-End.svg?style=for-the-badge
+[forks-url]: https://github.com/reznik99/FoxTrot-Front-End/network/members
+[stars-shield]: https://img.shields.io/github/stars/reznik99/FoxTrot-Front-End.svg?style=for-the-badge
+[stars-url]: https://github.com/reznik99/FoxTrot-Front-End/stargazers
+[issues-shield]: https://img.shields.io/github/issues/reznik99/FoxTrot-Front-End?style=for-the-badge
+[issues-url]: https://github.com/reznik99/FoxTrot-Front-End/issues
+[license-shield]: https://img.shields.io/github/license/reznik99/FoxTrot-Front-End?style=for-the-badge
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[linkedin-url]: https://www.linkedin.com/in/francesco-gorini-b334861a6/
+[screenshot]: res/read-me-banner.jpg
