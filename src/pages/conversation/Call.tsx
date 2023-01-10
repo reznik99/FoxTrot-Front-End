@@ -16,11 +16,12 @@ class Call extends React.Component<Props, State> {
         super(props)
         this.state = {
             peer_user: this.props.route.params.data.peer_user,
+            iceCandidates: [],
             peerConnection: undefined,
             stream: undefined,
             peerStream: undefined,
             videoEnabled: true,
-            voiceEnabled: false,
+            voiceEnabled: true,
             isFrontCamera: true,
             callStatus: "",
             callTime: Date.now(),
@@ -30,7 +31,7 @@ class Call extends React.Component<Props, State> {
     }
 
     componentDidMount = () => {
-        this.timer = setInterval(() => this.setState({callTime: (Date.now() - this.state.startTime) / 1000}), 1000)
+        this.timer = setInterval(() => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }), 1000)
     }
     componentWillUnmount = () => {
         this.endCall()
@@ -43,6 +44,8 @@ class Call extends React.Component<Props, State> {
                 console.debug('---peerConnection.setRemoteDescription---')
                 const offerDescription = new RTCSessionDescription(this.props.callAnswer);
                 await this.state.peerConnection.setRemoteDescription(offerDescription);
+
+                this.state.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate))
             }
         }
 
@@ -51,8 +54,7 @@ class Call extends React.Component<Props, State> {
                 console.debug('---peerConnection?.addIceCandidate---')
                 await this.state.peerConnection.addIceCandidate(this.props.callCandidate)
             } else {
-                // TODO: Fix this hacky crap
-                setTimeout(() => this.state.peerConnection?.addIceCandidate(this.props.callCandidate), 3000)
+                this.setState({iceCandidates: [...this.state.iceCandidates, this.props.callCandidate]})
             }
         }
 
@@ -65,8 +67,7 @@ class Call extends React.Component<Props, State> {
     }
 
     onIceCandidate = (event: any) => {
-        console.debug('on icecandidate: ');
-        if (!event.candidate) console.debug("onIceCandidate is undefined")
+        if (!event.candidate) console.debug("onIceCandidate finished")
 
         // Send the iceCandidate to the other participant. Using websockets
         const message: SocketData = {
@@ -103,15 +104,17 @@ class Call extends React.Component<Props, State> {
             }
         }
         this.props.socketConn?.send(JSON.stringify(message))
+
+        this.state.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate))
     }
 
     call = async () => {
         if (!this.state.peerConnection) return console.debug('---peerConnection null after start()---')
 
         let sessionConstraints = {
-            OfferToReceiveAudio: false,
+            OfferToReceiveAudio: true,
             OfferToReceiveVideo: true,
-            VoiceActivityDetection: false
+            VoiceActivityDetection: true
         };
         let offerDescription = await this.state.peerConnection.createOffer(sessionConstraints) as RTCSessionDescriptionInit;
         await this.state.peerConnection.setLocalDescription(offerDescription as RTCSessionDescription);
@@ -138,17 +141,26 @@ class Call extends React.Component<Props, State> {
             const newStream = await mediaDevices.getUserMedia({ video: true, audio: true })
 
             console.debug('Start - RTCPeerConnection Init')
-            let peerConstraints = { iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun.services.mozilla.com' },
-                { urls: 'stun:stun.l.google.com:19302' }
-            ]};
+            let peerConstraints = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun.services.mozilla.com' },
+                    { urls: 'stun:stun.l.google.com:19302' }
+                ]
+            };
             let newConnection = new RTCPeerConnection(peerConstraints);
 
-            newConnection.addEventListener('connectionstatechange', event => console.debug('on connectionstatechange: ', newConnection?.connectionState));
+            // Event handlers
             newConnection.addEventListener('icecandidate', event => this.onIceCandidate(event));
             newConnection.addEventListener('icecandidateerror', event => console.debug('on icecandidateerror'));
-            newConnection.addEventListener('iceconnectionstatechange', event => console.debug('on iceconnectionstatechange: ', newConnection?.iceConnectionState));
+            newConnection.addEventListener('connectionstatechange', event => {
+                console.debug('on connectionstatechange: ', newConnection?.connectionState)
+                this.setState({ callStatus: `${newConnection?.connectionState} : ${this.state.peer_user?.phone_no}` })
+            });
+            newConnection.addEventListener('iceconnectionstatechange', event => {
+                console.debug('on iceconnectionstatechange: ', newConnection?.iceConnectionState)
+                // this.setState({ callStatus: `ICE: ${newConnection?.iceConnectionState} : ${this.state.peer_user?.phone_no}` })
+            });
             newConnection.addEventListener('track', (event: any) => {
                 console.debug('on track: ');
                 // const newPeerStream = new MediaStream([event.track])
@@ -156,7 +168,7 @@ class Call extends React.Component<Props, State> {
                 newPeerStream.addTrack(event.track)
                 this.setState({ peerStream: newPeerStream })
             });
-            newStream.getTracks().forEach(track => newConnection.addTrack(track, newStream ))
+            newStream.getTracks().forEach(track => newConnection.addTrack(track, newStream))
 
             this.setState({
                 startTime: Date.now(),
@@ -167,7 +179,6 @@ class Call extends React.Component<Props, State> {
             console.debug('Start - Loading tracks')
             if (!this.props.callOffer) await this.call()
 
-            this.setState({ callStatus: `Dialing ${this.state.peer_user?.phone_no}...` })
         } catch (e) {
             console.error(e)
         }
@@ -183,7 +194,7 @@ class Call extends React.Component<Props, State> {
             peerConnection: undefined,
             stream: undefined,
             peerStream: undefined,
-            callStatus: 'Call ended',
+            callStatus: ''
         })
         // Reset redux state
         this.props.resetCallState()
@@ -229,18 +240,20 @@ class Call extends React.Component<Props, State> {
                     {this.state.stream && <Text>{this.printCallTime()}</Text>}
                 </View>
                 <View style={{ width: '100%', flex: 1 }}>
-                    {this.state.peerStream
+                    {this.state.peerStream && this.state.peerConnection?.connectionState === 'connected'
                         ? <RTCView style={styles.stream}
                             streamURL={this.state.peerStream.toURL()}
                             mirror={true}
-                            objectFit={'cover'} />
+                            objectFit={'cover'} 
+                            zOrder={1}/>
                         : <Image style={[styles.stream, { backgroundColor: '#333333' }]} source={{ uri: this.state.peer_user.pic }} />
                     }
                     {this.state.stream && this.state.videoEnabled
                         ? <RTCView style={styles.cameraDisabled}
                             streamURL={this.state.stream.toURL()}
                             mirror={this.state.isFrontCamera}
-                            objectFit={'cover'} />
+                            objectFit={'cover'} 
+                            zOrder={2}/>
                         : <Image style={styles.cameraDisabled} source={{ uri: this.props.user_data.pic }} />
                     }
                 </View>
@@ -299,6 +312,7 @@ interface IProps {
 
 interface State {
     peer_user: UserData;
+    iceCandidates: Array<any>;
     peerConnection: RTCPeerConnection | undefined;
     stream: MediaStream | undefined;
     peerStream: MediaStream | undefined;
@@ -330,7 +344,7 @@ const styles = StyleSheet.create({
         height: '100%',
     }, stream: {
         flex: 1,
-        width: '100%'
+        width: '100%',
     }, footer: {
         flexDirection: "column",
         justifyContent: "center",
@@ -352,6 +366,6 @@ const styles = StyleSheet.create({
         bottom: 60,
         right: 0,
         borderRadius: 5,
-        backgroundColor: '#333333f0'
+        backgroundColor: '#333333f0',
     }
 });
