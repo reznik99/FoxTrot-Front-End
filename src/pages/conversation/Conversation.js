@@ -9,6 +9,7 @@ import { faArrowRight, faEllipsisH, faLock } from "@fortawesome/free-solid-svg-i
 import { sendMessage } from '~/store/actions/user';
 import { decrypt } from "~/global/crypto";
 
+const todaysDate = new Date().toLocaleDateString()
 export default function Conversation(props) {
 
     const { peer_user } = props.route.params.data
@@ -21,7 +22,6 @@ export default function Conversation(props) {
     const [message, setMessage] = useState("")
     const [decryptedMessages, setDecryptedMessages] = useState(new Map())
     const [decryptingIndex, setDecryptingIndex] = useState(-1)
-    const [todaysDate, _] = useState(new Date().toLocaleDateString())
     
     const scrollView = useRef()
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
@@ -126,6 +126,7 @@ export default function Conversation(props) {
 
             <FlatList style={styles.messageList} 
                 ref={scrollView}
+                removeClippedSubviews={true}
                 inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
                 data={conversation.messages}
                 renderItem={renderMessage}
