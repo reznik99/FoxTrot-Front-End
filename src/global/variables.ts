@@ -23,3 +23,6 @@ export const PRIMARY = '#199187';
 export const SECONDARY = '#333';
 export const SECONDARY_LITE = '#aaa';
 export const ACCENT = '#6227e3';
+
+
+export const VibratePattern = [250, 500, 250, 500, 250, 500, 250, 500, 250, 500, 250, 500, 250, 500, 250, 500]

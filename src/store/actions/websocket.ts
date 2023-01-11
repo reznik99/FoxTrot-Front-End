@@ -1,4 +1,4 @@
-import { WEBSOCKET_URL } from '~/global/variables'
+import { VibratePattern, WEBSOCKET_URL } from '~/global/variables'
 import PushNotification from 'react-native-push-notification'
 import InCallManager from 'react-native-incall-manager'
 import RNNotificationCall from "react-native-full-screen-notification-incoming-call"
@@ -117,7 +117,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 dispatch({ type: "RECV_CALL_OFFER", payload: {offer: parsedData.data?.offer, caller: caller} })
 
                 // Ring and show notification
-                InCallManager.startRingtone('_DEFAULT_', [1000, 1000, 1000, 1000, 1000], undefined, 20);
+                InCallManager.startRingtone('_DEFAULT_', VibratePattern, undefined, 20);
                 RNNotificationCall.displayNotification(
                     "22221a97-8eb4-4ac2-b2cf-0a3c0b9100ad",
                     caller?.pic || "",
