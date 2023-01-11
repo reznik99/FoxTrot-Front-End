@@ -24,7 +24,7 @@ class Call extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            peer_user: this.props.route.params.data.peer_user,
+            peer_user: this.props.route?.params?.data?.peer_user || this.props.caller,
             peerConnection: undefined,
             stream: undefined,
             peerStream: undefined,
@@ -260,7 +260,7 @@ class Call extends React.Component<Props, State> {
                             mirror={true}
                             objectFit={'cover'} 
                             zOrder={1}/>
-                        : <Image style={[styles.stream, { backgroundColor: '#333333' }]} source={{ uri: this.state.peer_user.pic }} />
+                        : <Image style={[styles.stream, { backgroundColor: '#333333' }]} source={{ uri: this.state.peer_user?.pic }} />
                     }
                     {this.state.stream && this.state.videoEnabled
                         ? <RTCView style={styles.cameraDisabled}

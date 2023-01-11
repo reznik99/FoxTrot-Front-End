@@ -9,6 +9,7 @@ export interface State {
     conversations: Map<string, Conversation>;
     socketErr: string;
     socketConn?: WebSocket;
+    caller?: UserData;
     callOffer?: RTCSessionDescription;
     callAnswer?: RTCSessionDescription;
     iceCandidates: RTCIceCandidate[];
@@ -43,6 +44,7 @@ const initialState: State = {
     contacts: [],
     conversations: new Map(),
     iceCandidates: [],
+    caller: undefined,
     socketErr: '',
     socketConn: undefined,
     loading: false,
@@ -103,7 +105,7 @@ function userReducer(state = initialState, action: Action) {
             }
             return newState
         case "RECV_CALL_OFFER":
-            return { ...state, callOffer: action.payload as RTCSessionDescription }
+            return { ...state, callOffer: action.payload?.offer as RTCSessionDescription, caller: action.payload?.caller as UserData }
         case "RECV_CALL_ANSWER":
             return { ...state, callAnswer: action.payload as RTCSessionDescription }
         case "RECV_CALL_ICE_CANDIDATE":

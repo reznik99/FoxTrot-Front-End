@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, ScrollView, RefreshControl, Text } from 'react-native'
+import { useSelector, useDispatch } from 'react-redux'
 import { Divider, FAB, ActivityIndicator, Snackbar } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faComment } from '@fortawesome/free-solid-svg-icons'
-import { useSelector, useDispatch } from 'react-redux'
+import RNNotificationCall from "react-native-full-screen-notification-incoming-call"
 
 import { ConversationPeek } from '~/components'
 import globalStyle from "~/global/globalStyle"
@@ -15,9 +16,9 @@ import { setupInterceptors } from '~/store/actions/auth'
 export default function Home(props) {
 
     const dispatch = useDispatch()
-    const {conversations, loading, refreshing, socketErr} = useSelector(state => state.userReducer)
+    const { conversations, loading, refreshing, socketErr, caller } = useSelector(state => state.userReducer)
     const [loadingMsg, setLoadingMsg] = useState('')
-    const [convos, setConvos ] = useState([])
+    const [convos, setConvos] = useState([])
 
     useEffect(() => {
         const initLoad = async () => {
@@ -29,11 +30,11 @@ export default function Home(props) {
                 setLoadingMsg("Generating cryptographic keys...")
                 const success = await dispatch(generateAndSyncKeys())
                 setLoadingMsg('')
-                if(!success) {
-                    return props.navigation.navigate('Login', { 
-                        data: { 
-                            loggedOut: true, 
-                            errorMsg: "This account has already loggin in another device. Public key cannot be overridden for security reasons." 
+                if (!success) {
+                    return props.navigation.navigate('Login', {
+                        data: {
+                            loggedOut: true,
+                            errorMsg: "This account has already loggin in another device. Public key cannot be overridden for security reasons."
                         }
                     })
                 }
@@ -46,6 +47,17 @@ export default function Home(props) {
 
             // Setup axios interceptors
             setupInterceptors(props.navigation)
+
+            RNNotificationCall.addEventListener("answer", (payload) => {
+                console.log('User Answered')
+                RNNotificationCall.backToApp()
+                // console.log(props)
+                props.navigation.navigate('Call', { data: {peer_user: caller } })
+            })
+            RNNotificationCall.addEventListener("endCall", (payload) => {
+                console.log('User Declined')
+            })
+
         }
 
         initLoad()
@@ -81,7 +93,7 @@ export default function Home(props) {
     return (
         <View style={globalStyle.wrapper}>
             <Snackbar visible={socketErr} style={{ zIndex: 100 }}
-                onDismiss={() =>{}}
+                onDismiss={() => { }}
                 action={{
                     label: 'Reconnect',
                     onPress: configureWebsocket,
@@ -91,24 +103,24 @@ export default function Home(props) {
             {
                 loading || loadingMsg
                     ? <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                        <Text style={[globalStyle.errorMsg, {color: 'white', marginBottom: 10}]}>{loadingMsg}</Text>
+                        <Text style={[globalStyle.errorMsg, { color: 'white', marginBottom: 10 }]}>{loadingMsg}</Text>
                         <ActivityIndicator size="large" />
                     </View>
                     : <>
                         <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadAllMessages} />}>
-                            { convos?.length
+                            {convos?.length
                                 ? convos.map((convo, index) =>
-                                    (<View key={index} >
-                                        <ConversationPeek data={convo} navigation={props.navigation} />
-                                        <Divider />
-                                    </View>)
+                                (<View key={index} >
+                                    <ConversationPeek data={convo} navigation={props.navigation} />
+                                    <Divider />
+                                </View>)
                                 )
-                                : <View style={{ flex: 1, justifyContent: "center", alignItems: "center"}}>
-                                    <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No Conversations.</Text>
+                                : <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                                    <Text style={[globalStyle.errorMsg, { color: '#fff' }]}>No Conversations.</Text>
                                 </View>
                             }
                         </ScrollView>
-                        
+
                         <FAB
                             style={globalStyle.fab} color='#fff'
                             onPress={() => props.navigation.navigate('NewConversation')}

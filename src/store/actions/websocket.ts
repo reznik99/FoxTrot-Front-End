@@ -1,6 +1,8 @@
 import { WEBSOCKET_URL } from '~/global/variables'
 import PushNotification from 'react-native-push-notification'
 import InCallManager from 'react-native-incall-manager'
+import RNNotificationCall from "react-native-full-screen-notification-incoming-call"
+
 import { AppDispatch, GetState } from '../store'
 
 export interface SocketData {
@@ -53,7 +55,7 @@ export function initializeWebsocket() {
                 dispatch({ type: "WEBSOCKET_ERROR", payload: err })
             }
             socketConn.onmessage = (event) => {
-                handleSocketMessage(event.data, dispatch)
+                handleSocketMessage(event.data, dispatch, getState)
             }
             dispatch({ type: "WEBSOCKET_CONNECT", payload: socketConn })
         } catch (err) {
@@ -92,7 +94,7 @@ export function resetCallState() {
     }
 }
 
-function handleSocketMessage(data: any, dispatch: AppDispatch) {
+function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetState) {
     try {
         const parsedData = JSON.parse(data) as SocketData
         switch(parsedData.cmd) {
@@ -108,17 +110,39 @@ function handleSocketMessage(data: any, dispatch: AppDispatch) {
                 })
                 break;
             case "CALL_OFFER":
-                dispatch({ type: "RECV_CALL_OFFER", payload: parsedData.data?.offer })
                 console.debug("Websocket CALL_OFFER Recieved: ", parsedData.data?.sender)
-                InCallManager.startRingtone('_DEFAULT_');
+                
+                const state = getState().userReducer
+                const caller = state.contacts.find(con => con.phone_no === parsedData.data.sender)
+                dispatch({ type: "RECV_CALL_OFFER", payload: {offer: parsedData.data?.offer, caller: caller} })
+
+                // Ring and show notification
+                InCallManager.startRingtone('_DEFAULT_', [1000, 1000, 1000, 1000, 1000], undefined, 20);
+                RNNotificationCall.displayNotification(
+                    "22221a97-8eb4-4ac2-b2cf-0a3c0b9100ad",
+                    caller?.pic || "",
+                    30000,
+                    {
+                        channelId: "com.foxtrot.callNotifications",
+                        channelName: "Notifications for incoming calls",
+                        notificationIcon: "@mipmap/foxtrot", // mipmap
+                        notificationTitle: caller?.phone_no || "Unknown User",
+                        notificationBody: "Incoming video call",
+                        answerText: "Answer",
+                        declineText: "Decline",
+                        notificationColor: "colorAccent",
+                        // notificationSound: 'skype_ring',
+                        // mainComponent: "CallScreen"
+                    }
+                )
                 break;
             case "CALL_ANSWER":
-                dispatch({ type: "RECV_CALL_ANSWER", payload: parsedData.data?.answer })
                 console.debug("Websocket CALL_ANSWER Recieved: ", parsedData.data?.sender)
+                dispatch({ type: "RECV_CALL_ANSWER", payload: parsedData.data?.answer })
                 break;
             case "CALL_ICE_CANDIDATE":
-                dispatch({ type: "RECV_CALL_ICE_CANDIDATE", payload: parsedData.data?.candidate })
                 console.debug("Websocket RECV_CALL_ICE_CANDIDATE Recieved: ", parsedData.data?.sender)
+                dispatch({ type: "RECV_CALL_ICE_CANDIDATE", payload: parsedData.data?.candidate })
                 break;
             default:
                 console.debug("Websocket RECV unknown command from: ", parsedData.data?.sender, parsedData.cmd)

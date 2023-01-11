@@ -27,15 +27,15 @@ export default class HeaderConversation extends Component {
                     }
                     <TouchableOpacity style={styles.profileBtn}>
                         <View style={styles.profilePicContainer}>
-                            <Image source={{ uri: this.props.data.peer_user.pic }}
+                            <Image source={{ uri: this.props.data?.peer_user?.pic }}
                                 style={styles.profilePic}
                                 PlaceholderContent={<ActivityIndicator />} />
                         </View>
-                        <Text style={styles.topBarText}>{this.props.data.peer_user.identifier || this.props.data.peer_user.phone_no}</Text>
+                        <Text style={styles.topBarText}>{this.props.data?.peer_user?.phone_no}</Text>
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.buttonContainer, { width: '50%' }]}>
-                    <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: {peer_user: this.props.data.peer_user} })}>
+                    <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: {peer_user: this.props.data?.peer_user} })}>
                         <FontAwesomeIcon icon={faVideo} size={20} style={styles.topBarText} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.button}>
