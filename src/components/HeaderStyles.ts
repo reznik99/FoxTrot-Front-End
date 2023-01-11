@@ -1,16 +1,16 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
     topBar: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "space-between",
         backgroundColor: '#1F1D21',//"#fc501c",
         paddingVertical: 5,
     }, backAndTitle: {
         flexDirection: 'row',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        width: '50%',
         overflow: 'hidden'
     }, topBarText: {
         color: '#fff',
@@ -18,11 +18,10 @@ const styles = StyleSheet.create({
     }, buttonContainer: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-around",
-        zIndex: 20
     }, button: {
         height: 50,
         padding: 10,
+        marginHorizontal: 5,
         justifyContent: 'center',
         alignItems: 'center'
     }, rightFloat: {

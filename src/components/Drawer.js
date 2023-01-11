@@ -1,14 +1,15 @@
 import React from 'react';
-import { ScrollView, View } from 'react-native';
-import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import { StyleSheet, ScrollView, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { ActivityIndicator, Avatar, Chip } from 'react-native-paper';
+import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faDoorOpen, faCog } from '@fortawesome/free-solid-svg-icons';
-import { ActivityIndicator, Avatar, Chip } from 'react-native-paper';
+
 import { KeypairAlgorithm } from '~/global/variables';
 import { logOut } from '~/store/actions/auth';
 
-const styles = {
+const styles = StyleSheet.create({
     profileContainer: {
         flex: 0,
         flexDirection: "column",
@@ -29,7 +30,7 @@ const styles = {
         color: "#fff",
         marginRight: 10,
     }
-}
+})
 
 export default function Drawer(props) {
     const state = useSelector(state => state.userReducer)
@@ -39,8 +40,8 @@ export default function Drawer(props) {
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: "#222" }} {...props}>
             <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
 
-                <View style={[styles.profileContainer, {marginBottom: 25}]}>
-                    <Avatar.Image size={150} style={{marginBottom: 25}}
+                <View style={[styles.profileContainer, { marginBottom: 25 }]}>
+                    <Avatar.Image size={150} style={{ marginBottom: 25 }}
                         source={{ uri: state.user_data?.pic }}
                         PlaceholderContent={<ActivityIndicator />} />
                     <View>

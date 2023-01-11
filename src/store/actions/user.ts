@@ -168,7 +168,7 @@ export function searchUsers(prefix: string) {
 
             const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token))
 
-            // Append fake picture to users
+            // Append robot picture to users
             const results = response.data.map((user: any) => ({ ...user, pic: `https://robohash.org/${user.id}`, isContact: state.contacts.some(contact => contact.id === user.id) }))
 
             return results
@@ -189,7 +189,7 @@ export function sendMessage(message: string, to_user: UserData) {
             let state = getState().userReducer
 
             const peer = state.contacts.find((contact) => contact.id === to_user.id)
-            if(!peer || !peer.session_key) throw new Error("Cannot message a User who isn't a contact")
+            if(!peer?.session_key) throw new Error("Missing session_key for " + peer?.phone_no)
 
             // Encrypt message
             const encryptedMessage = await encrypt(peer.session_key, message)
@@ -253,7 +253,7 @@ export function syncFromStorage() {
             const user_data = await AsyncStorage.getItem('user_data')
             const token = await AsyncStorage.getItem('auth_token')
 
-            // TODO: Load existing messages/contacts and stuff
+            // TODO: Load existing messages/contacts and stuff from async storage
 
             if(!user_data || !token) return false
 
