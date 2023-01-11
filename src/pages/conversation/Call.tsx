@@ -3,11 +3,20 @@ import { SafeAreaView, StyleSheet, View, Text, TouchableOpacity, Image } from "r
 import { connect, ConnectedProps } from 'react-redux';
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCSessionDescription, RTCView } from 'react-native-webrtc';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPhone, faPhoneFlip, faMicrophone, faMicrophoneSlash, faVideoCamera, faVideoSlash, faCameraRotate } from "@fortawesome/free-solid-svg-icons";
+import { faPhone, faPhoneFlip, faVolumeHigh, faMicrophone, faMicrophoneSlash, faVideoCamera, faVideoSlash, faCameraRotate } from "@fortawesome/free-solid-svg-icons";
+import InCallManager from 'react-native-incall-manager';
+import Toast from 'react-native-toast-message'
 
 import { UserData } from "~/store/reducers/user";
 import { RootState } from "~/store/store";
 import { resetCallState, SocketData } from "~/store/actions/websocket";
+
+const peerConstraints = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun.services.mozilla.com' }
+    ]
+};
 
 class Call extends React.Component<Props, State> {
     timer: undefined | number;
@@ -16,12 +25,12 @@ class Call extends React.Component<Props, State> {
         super(props)
         this.state = {
             peer_user: this.props.route.params.data.peer_user,
-            iceCandidates: [],
             peerConnection: undefined,
             stream: undefined,
             peerStream: undefined,
             videoEnabled: true,
             voiceEnabled: true,
+            loudSpeaker: false,
             isFrontCamera: true,
             callStatus: "",
             callTime: Date.now(),
@@ -32,65 +41,52 @@ class Call extends React.Component<Props, State> {
 
     componentDidMount = () => {
         this.timer = setInterval(() => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }), 1000)
+        InCallManager.start()
+        InCallManager.setKeepScreenOn(true)
+        this.checkCallStatus(undefined)
     }
+
     componentWillUnmount = () => {
+        InCallManager.stop()
         this.endCall()
         if (this.timer) clearInterval(this.timer)
     }
 
     componentDidUpdate = async (prevProps: Readonly<Props>, prevState: Readonly<State>) => {
-        if (this.props.callAnswer && !prevProps.callAnswer) {
+        await this.checkCallStatus(prevProps)
+    }
+
+    checkCallStatus = async(prevProps: Readonly<Props> | undefined) => {
+        if (this.props.callAnswer && !prevProps?.callAnswer) {
             if (this.state.peerConnection) {
-                console.debug('---peerConnection.setRemoteDescription---')
+                // User answered our call, set remote description on webrtc connection
                 const offerDescription = new RTCSessionDescription(this.props.callAnswer);
                 await this.state.peerConnection.setRemoteDescription(offerDescription);
-
-                this.state.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate))
+                // Add ice candidates from peer
+                this.props.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate))
+                // Stop ringtone
+                InCallManager.stopRingback()
             }
         }
 
-        if (this.props.callCandidate !== prevProps.callCandidate) {
-            if (this.state.peerConnection?.remoteDescription) {
-                console.debug('---peerConnection?.addIceCandidate---')
-                await this.state.peerConnection.addIceCandidate(this.props.callCandidate)
-            } else {
-                this.setState({iceCandidates: [...this.state.iceCandidates, this.props.callCandidate]})
-            }
-        }
-
-        if (this.props.callOffer && !prevProps.callOffer) {
-            console.debug('---callOffer start()---')
+        if (this.props.callOffer && !prevProps?.callOffer) {
+            // Attempt to start local stream and answer the peer's call
             await this.startStream()
             await this.answerCall()
         }
-
-    }
-
-    onIceCandidate = (event: any) => {
-        if (!event.candidate) console.debug("onIceCandidate finished")
-
-        // Send the iceCandidate to the other participant. Using websockets
-        const message: SocketData = {
-            cmd: 'CALL_ICE_CANDIDATE',
-            data: {
-                sender_id: this.props.user_data.id,
-                sender: this.props.user_data.phone_no,
-                reciever_id: this.state.peer_user.id,
-                reciever: this.state.peer_user.phone_no,
-                candidate: event.candidate?.toJSON() || event.candidate
-            }
-        }
-        this.props.socketConn?.send(JSON.stringify(message))
     }
 
     answerCall = async () => {
-        if (!this.state.peerConnection) return console.debug('---peerConnection null after start()---')
+        if (!this.state.peerConnection) return console.debug('answerCall: Unable to answer call with null peerConnection')
+
         // Use the received offerDescription
         let offerDescription = new RTCSessionDescription(this.props.callOffer);
         await this.state.peerConnection.setRemoteDescription(offerDescription);
 
         const answerDescription = await this.state.peerConnection.createAnswer();
         await this.state.peerConnection.setLocalDescription(answerDescription as RTCSessionDescription);
+
+        InCallManager.stopRingtone()
 
         // Send the answerDescription back as a response to the offerDescription. Using websockets
         const message: SocketData = {
@@ -105,11 +101,11 @@ class Call extends React.Component<Props, State> {
         }
         this.props.socketConn?.send(JSON.stringify(message))
 
-        this.state.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate))
+        this.props.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate))
     }
 
     call = async () => {
-        if (!this.state.peerConnection) return console.debug('---peerConnection null after start()---')
+        if (!this.state.peerConnection) return console.error('call: Unable to initiate call with null peerConnection')
 
         let sessionConstraints = {
             OfferToReceiveAudio: true,
@@ -137,37 +133,49 @@ class Call extends React.Component<Props, State> {
         if (this.state.stream) return
 
         try {
-            console.debug('Start - Loading Camera/Microphone Streams')
+            console.debug('startStream - Loading local MediaStreams')
             const newStream = await mediaDevices.getUserMedia({ video: true, audio: true })
 
-            console.debug('Start - RTCPeerConnection Init')
-            let peerConstraints = {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun.services.mozilla.com' },
-                    { urls: 'stun:stun.l.google.com:19302' }
-                ]
-            };
-            let newConnection = new RTCPeerConnection(peerConstraints);
+            console.debug('startStream - RTCPeerConnection Init')
+            const newConnection = new RTCPeerConnection(peerConstraints);
 
             // Event handlers
-            newConnection.addEventListener('icecandidate', event => this.onIceCandidate(event));
-            newConnection.addEventListener('icecandidateerror', event => console.debug('on icecandidateerror'));
+            newConnection.addEventListener('icecandidateerror', () => Toast.show({
+                    type: 'error',
+                    text1: 'Error occoured during call',
+                    text2: 'Unable to find viable path to peer'
+                })
+            );
+            newConnection.addEventListener('icecandidate', (event: any) => {
+                if (!event.candidate) console.debug("onIceCandidate finished")
+                // Send the iceCandidate to the other participant. Using websockets
+                const message: SocketData = {
+                    cmd: 'CALL_ICE_CANDIDATE',
+                    data: {
+                        sender_id: this.props.user_data.id,
+                        sender: this.props.user_data.phone_no,
+                        reciever_id: this.state.peer_user.id,
+                        reciever: this.state.peer_user.phone_no,
+                        candidate: event.candidate?.toJSON() || event.candidate
+                    }
+                }
+                this.props.socketConn?.send(JSON.stringify(message))
+            });
             newConnection.addEventListener('connectionstatechange', event => {
-                console.debug('on connectionstatechange: ', newConnection?.connectionState)
-                this.setState({ callStatus: `${newConnection?.connectionState} : ${this.state.peer_user?.phone_no}` })
+                console.debug('WebRTC connection state change: ', newConnection?.connectionState)
+                this.setState({ callStatus: `${this.state.peer_user?.phone_no} : ${newConnection?.connectionState}` })
+                if(newConnection?.connectionState === "disconnected") this.endCall()
             });
             newConnection.addEventListener('iceconnectionstatechange', event => {
-                console.debug('on iceconnectionstatechange: ', newConnection?.iceConnectionState)
-                // this.setState({ callStatus: `ICE: ${newConnection?.iceConnectionState} : ${this.state.peer_user?.phone_no}` })
+                console.debug('ICE connection state change: ', newConnection?.iceConnectionState)
             });
             newConnection.addEventListener('track', (event: any) => {
-                console.debug('on track: ');
-                // const newPeerStream = new MediaStream([event.track])
                 const newPeerStream = event.streams[0]
                 newPeerStream.addTrack(event.track)
                 this.setState({ peerStream: newPeerStream })
             });
+
+            console.debug('startStream - Loading tracks')
             newStream.getTracks().forEach(track => newConnection.addTrack(track, newStream))
 
             this.setState({
@@ -176,16 +184,15 @@ class Call extends React.Component<Props, State> {
                 peerConnection: newConnection
             })
 
-            console.debug('Start - Loading tracks')
             if (!this.props.callOffer) await this.call()
-
         } catch (e) {
-            console.error(e)
+            console.error("startStream error: ", e)
         }
     }
 
     endCall = () => {
         if (!this.state.stream) return
+
         // Close networking
         this.state.stream.release()
         this.state.peerConnection?.close()
@@ -216,6 +223,13 @@ class Call extends React.Component<Props, State> {
         this.setState({ voiceEnabled: !this.state.voiceEnabled })
     };
 
+    toggleLoudSpeaker = () => {
+        if (!this.state.stream) return
+
+        InCallManager.setSpeakerphoneOn(!this.state.loudSpeaker)
+        this.setState({ loudSpeaker: !this.state.loudSpeaker })
+    };
+
     toggleCamera = async () => {
         if (!this.state.stream) return
 
@@ -229,7 +243,7 @@ class Call extends React.Component<Props, State> {
         const minutes = ~~(this.state.callTime / 60)
         const seconds = ~~(this.state.callTime - (minutes * 60))
 
-        return `${hours}:${minutes}:${seconds}`
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
     }
 
     render = () => {
@@ -266,6 +280,9 @@ class Call extends React.Component<Props, State> {
                         }
                         {this.state.stream &&
                             <>
+                                <TouchableOpacity onPress={this.toggleLoudSpeaker} style={[styles.actionButton, this.state.loudSpeaker && { backgroundColor: 'white' }]}>
+                                    <FontAwesomeIcon icon={faVolumeHigh} size={20} />
+                                </TouchableOpacity>
                                 <TouchableOpacity onPress={this.toggleVoiceEnabled} style={styles.actionButton}>
                                     <FontAwesomeIcon icon={this.state.voiceEnabled ? faMicrophone : faMicrophoneSlash} size={20} />
                                 </TouchableOpacity>
@@ -312,12 +329,12 @@ interface IProps {
 
 interface State {
     peer_user: UserData;
-    iceCandidates: Array<any>;
     peerConnection: RTCPeerConnection | undefined;
     stream: MediaStream | undefined;
     peerStream: MediaStream | undefined;
     videoEnabled: boolean;
     voiceEnabled: boolean;
+    loudSpeaker: boolean;
     isFrontCamera: boolean;
     callStatus: string;
     callTime: number;

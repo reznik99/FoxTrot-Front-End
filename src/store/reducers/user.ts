@@ -1,3 +1,4 @@
+import { RTCIceCandidate } from "react-native-webrtc";
 
 export interface State {
     tokenValid: boolean;
@@ -10,7 +11,7 @@ export interface State {
     socketConn?: WebSocket;
     callOffer?: RTCSessionDescription;
     callAnswer?: RTCSessionDescription;
-    callCandidate?: unknown;
+    iceCandidates: RTCIceCandidate[];
     loading: boolean;
     refreshing: boolean;
 }
@@ -41,6 +42,7 @@ const initialState: State = {
     },
     contacts: [],
     conversations: new Map(),
+    iceCandidates: [],
     socketErr: '',
     socketConn: undefined,
     loading: false,
@@ -102,10 +104,12 @@ function userReducer(state = initialState, action: Action) {
             return newState
         case "RECV_CALL_OFFER":
             return { ...state, callOffer: action.payload as RTCSessionDescription }
-        case "RECV_CALL_ICE_CANDIDATE":
-            return { ...state, callCandidate: action.payload }
         case "RECV_CALL_ANSWER":
             return { ...state, callAnswer: action.payload as RTCSessionDescription }
+        case "RECV_CALL_ICE_CANDIDATE":
+            return { ...state, iceCandidates: [...state.iceCandidates, action.payload] }
+        case "RESET_CALL_ICE_CANDIDATES":
+            return { ...state, iceCandidates: [] }
         case "WEBSOCKET_CONNECT":
             return { ...state, socketConn: action.payload as WebSocket, socketErr: '' }
         case "WEBSOCKET_ERROR":

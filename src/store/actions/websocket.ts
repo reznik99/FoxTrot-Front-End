@@ -1,7 +1,7 @@
 import { WEBSOCKET_URL } from '~/global/variables'
 import PushNotification from 'react-native-push-notification'
+import InCallManager from 'react-native-incall-manager'
 import { AppDispatch, GetState } from '../store'
-
 
 export interface SocketData {
     cmd: 'MSG' | 'CALL_OFFER' | 'CALL_ICE_CANDIDATE' | 'CALL_ANSWER';
@@ -83,7 +83,7 @@ export function resetCallState() {
     return async (dispatch: AppDispatch) => {
         try {
 
-            dispatch({ type: "RECV_CALL_ICE_CANDIDATE", payload: undefined })
+            dispatch({ type: "RESET_CALL_ICE_CANDIDATES", payload: undefined })
             dispatch({ type: "RECV_CALL_ANSWER", payload: undefined })
             dispatch({ type: "RECV_CALL_OFFER", payload: undefined })
         } catch (err) {
@@ -110,6 +110,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch) {
             case "CALL_OFFER":
                 dispatch({ type: "RECV_CALL_OFFER", payload: parsedData.data?.offer })
                 console.debug("Websocket CALL_OFFER Recieved: ", parsedData.data?.sender)
+                InCallManager.startRingtone('_DEFAULT_');
                 break;
             case "CALL_ANSWER":
                 dispatch({ type: "RECV_CALL_ANSWER", payload: parsedData.data?.answer })
