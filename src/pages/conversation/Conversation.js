@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Keyboard, Linking } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
@@ -10,21 +10,19 @@ import { sendMessage } from '~/store/actions/user';
 import { decrypt } from "~/global/crypto";
 
 const todaysDate = new Date().toLocaleDateString()
+
 export default function Conversation(props) {
 
     const { peer_user } = props.route.params.data
 
     const dispatch = useDispatch()
     const conversation = useSelector(state => state.userReducer.conversations.get(peer_user.phone_no) || { messages: [] })
-    const contacts = useSelector(state => state.userReducer.contacts)
+    const peer = useSelector(state => state.userReducer.contacts.find((contact) => contact.id === peer_user.id))
     const user_data = useSelector(state => state.userReducer.user_data)
 
     const [message, setMessage] = useState("")
-    const [decryptedMessages, setDecryptedMessages] = useState(new Map())
-    const [decryptingIndex, setDecryptingIndex] = useState(-1)
-    
-    const scrollView = useRef()
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
+    const scrollView = useRef()
 
     useEffect(() => {
         setkeyboardDidShowListener(Keyboard.addListener(
@@ -34,109 +32,33 @@ export default function Conversation(props) {
         return () => keyboardDidShowListener?.remove()
     }, [])
 
+    useEffect(() => {
+        scrollView.current?.scrollToOffset({ offset: 0, animated: true })
+    }, [conversation.messages?.length])
+
     const handleSend = async () => {
         if (message.trim() === "") return
 
-        setDecryptedMessages(new Map(decryptedMessages.set(conversation.messages.length + 1, message)))
-        await dispatch(sendMessage(message, peer_user))
-        scrollView.current?.scrollToOffset({ offset: 0, animated: true })
-        
         setMessage('')
+        await dispatch(sendMessage(message, peer))
     }
-
-    const decryptMessage = async (index, message) => {
-        const idx = conversation.messages.length - index
-        if (message.trim() === "" || decryptedMessages.has(idx)) return
-
-        try {
-            setDecryptingIndex(index)
-            const peer = contacts.find((contact) => contact.id === peer_user.id)
-            const decryptedMessage = await decrypt(peer.session_key, message)
-            setDecryptedMessages(new Map(decryptedMessages.set(idx, decryptedMessage)))
-        } catch (err) {
-            console.error("Error decrypting message", err)
-            Toast.show({
-                type: 'error',
-                text1: 'Failed to decrypt message',
-                text2: 'Session Key might have been rotated since this message was sent'
-            });
-            setDecryptingIndex(-1)
-        }
-    }
-
-    const handleClick = async (index, item) => {
-        const idx = conversation.messages.length - index
-        if (!decryptedMessages.has(idx)) {
-            await decryptMessage(index, item.message)
-            return
-        }
-
-        // Check if URL or Image is contained in message
-        const messageChunks = decryptedMessages.get(idx).split(" ")
-        const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://') )
-        if (link) Linking.openURL(link)
-    }
-
-    const renderMessageText = (message) => {
-
-        const messageChunks = message.split(" ")
-        const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://') )
-
-        if (linkIndex < 0) return <Text selectable>{message}</Text>
-        
-        return (
-            <Text selectable>
-                <Text>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
-                <Text style={{color: 'blue'}}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
-                <Text>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
-            </Text>
-        )
-    }
-
-    const renderMessage = useCallback(({item, index}) => {
-        const idx = conversation.messages.length - index
-        const sentOrRecievedStyle = item.sender === user_data.phone_no ? styles.sent : styles.received
-        const isEncrypted = !decryptedMessages.has(idx)
-        const loading = decryptingIndex === index && isEncrypted
-        const sent_at = new Date(item.sent_at)
-        return (
-            <Pressable key={index} 
-                style={[styles.messageContainer, sentOrRecievedStyle, loading && {backgroundColor: '#777777f0'}]} 
-                onPress={() => handleClick(index, item)}>
-                <View style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
-                    <ActivityIndicator style={{position: 'absolute', zIndex: 10}} animating={loading}/>
-                    { isEncrypted 
-                        ? <Text selectable> { item.message } </Text>
-                        : renderMessageText(decryptedMessages.get(idx))
-                    }
-                    { isEncrypted && <FontAwesomeIcon style={{position: 'absolute', zIndex: 10}} color="#333" icon={faLock} size={20} />}
-                    <Text style={styles.messageTime}> 
-                        { sent_at.toLocaleDateString() === todaysDate
-                            ? sent_at.toLocaleTimeString()
-                            : sent_at.toLocaleDateString()
-                        } 
-                    </Text>
-                </View>
-            </Pressable>
-        )
-    }, [decryptedMessages, decryptingIndex])
 
     return (
         <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
 
-            <FlatList style={styles.messageList} 
+            <FlatList style={styles.messageList}
                 ref={scrollView}
                 removeClippedSubviews={true}
                 inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
                 data={conversation.messages}
-                renderItem={renderMessage}
-                ListEmptyComponent={() => <View><Text style={[styles.message, styles.system]}> No messages </Text></View> }
+                renderItem={({ index, item }) => <Message index={index} item={item} peer={peer} isSent={item.sender === user_data.phone_no} />}
+                ListEmptyComponent={() => <View><Text style={[styles.message, styles.system]}> No messages </Text></View>}
                 ListHeaderComponent={() => (
                     <View style={styles.footer}>
                         <FontAwesomeIcon color="#77f777" icon={faLock} />
-                        <Text style={{color: 'white'}}> Click a message to decrypt it</Text>
+                        <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
                     </View>
-                )} 
+                )}
             />
 
             <View style={styles.inputContainer}>
@@ -158,6 +80,86 @@ export default function Conversation(props) {
     )
 }
 
+class Message extends PureComponent {
+
+    constructor(props) {
+        super(props)
+        this.state = {
+            loading: false,
+            decryptedMessage: '',
+        }
+    }
+
+    handleClick = async (item) => {
+        try {
+            if (!this.state.decryptedMessage) {
+                this.setState({ loading: true })
+                const decryptedMessage = await decrypt(this.props.peer.session_key, item.message)
+                this.setState({ decryptedMessage: decryptedMessage })
+                return
+            }
+
+            // Check if URL or Image is contained in message
+            const messageChunks = this.state.decryptedMessage.split(" ")
+            const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
+            if (link) Linking.openURL(link)
+        } catch (err) {
+            console.error("Error decrypting message", err)
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to decrypt message',
+                text2: 'Session Key might have been rotated since this message was sent'
+            });
+            this.setState({ loading: false })
+        }
+    }
+
+    renderMessageText = (message) => {
+        const messageChunks = message.split(" ")
+        const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
+
+        if (linkIndex < 0) return <Text selectable>{message}</Text>
+
+        return (
+            <Text selectable>
+                <Text>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
+                <Text style={{ color: 'blue' }}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
+                <Text>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
+            </Text>
+        )
+    }
+
+    render = () => {
+        const { item, index, isSent } = this.props
+
+        if (index === 0) console.debug("Rendered whole list", ~~(Math.random() * 100))
+
+        const isEncrypted = !this.state.decryptedMessage
+        const sent_at = new Date(item.sent_at)
+
+        return (
+            <Pressable key={index}
+                style={[styles.messageContainer, isSent ? styles.sent : styles.received]}
+                onPress={() => this.handleClick(item)}>
+                <View style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
+                    <ActivityIndicator style={{ position: 'absolute', zIndex: 10 }} animating={this.state.loading && !this.state.decryptedMessage} />
+                    {isEncrypted
+                        ? <Text selectable> {item.message} </Text>
+                        : this.renderMessageText(this.state.decryptedMessage)
+                    }
+                    {isEncrypted && <FontAwesomeIcon style={{ position: 'absolute', zIndex: 10 }} color="#333" icon={faLock} size={20} />}
+                    <Text style={styles.messageTime}>
+                        {sent_at.toLocaleDateString() === todaysDate
+                            ? sent_at.toLocaleTimeString()
+                            : sent_at.toLocaleDateString()
+                        }
+                    </Text>
+                </View>
+            </Pressable>
+        )
+    }
+}
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -169,13 +171,13 @@ const styles = StyleSheet.create({
     }, messageContainer: {
         marginVertical: 5,
         borderRadius: 10,
-        justifyContent: 'center', 
+        justifyContent: 'center',
         alignItems: 'center',
         maxWidth: '75%'
     }, message: {
         padding: 15,
         borderRadius: 10,
-        justifyContent: 'center', 
+        justifyContent: 'center',
         alignItems: 'center'
     }, received: {
         alignSelf: 'flex-start',

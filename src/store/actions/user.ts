@@ -188,11 +188,10 @@ export function sendMessage(message: string, to_user: UserData) {
             dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
 
-            const peer = state.contacts.find((contact) => contact.id === to_user.id)
-            if(!peer?.session_key) throw new Error("Missing session_key for " + peer?.phone_no)
+            if(!to_user?.session_key) throw new Error("Missing session_key for " + to_user?.phone_no)
 
             // Encrypt message
-            const encryptedMessage = await encrypt(peer.session_key, message)
+            const encryptedMessage = await encrypt(to_user.session_key, message)
 
             // Save message locally
             let msg = {
