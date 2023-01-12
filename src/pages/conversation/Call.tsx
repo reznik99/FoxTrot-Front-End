@@ -41,12 +41,13 @@ class Call extends React.Component<Props, State> {
 
     componentDidMount = () => {
         this.timer = setInterval(() => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }), 1000)
-        InCallManager.start()
+        InCallManager.start({ media: 'video', auto: true })
         InCallManager.setKeepScreenOn(true)
         this.checkCallStatus(undefined)
     }
 
     componentWillUnmount = () => {
+        InCallManager.setKeepScreenOn(false)
         InCallManager.stop()
         this.endCall()
         if (this.timer) clearInterval(this.timer)
@@ -56,7 +57,7 @@ class Call extends React.Component<Props, State> {
         await this.checkCallStatus(prevProps)
     }
 
-    checkCallStatus = async(prevProps: Readonly<Props> | undefined) => {
+    checkCallStatus = async (prevProps: Readonly<Props> | undefined) => {
         if (this.props.callAnswer && !prevProps?.callAnswer) {
             if (this.state.peerConnection) {
                 // User answered our call, set remote description on webrtc connection
@@ -64,8 +65,6 @@ class Call extends React.Component<Props, State> {
                 await this.state.peerConnection.setRemoteDescription(offerDescription);
                 // Add ice candidates from peer
                 this.props.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate))
-                // Stop ringtone
-                InCallManager.stopRingback()
             }
         }
 
@@ -141,10 +140,10 @@ class Call extends React.Component<Props, State> {
 
             // Event handlers
             newConnection.addEventListener('icecandidateerror', () => Toast.show({
-                    type: 'error',
-                    text1: 'Error occoured during call',
-                    text2: 'Unable to find viable path to peer'
-                })
+                type: 'error',
+                text1: 'Error occoured during call',
+                text2: 'Unable to find viable path to peer'
+            })
             );
             newConnection.addEventListener('icecandidate', (event: any) => {
                 if (!event.candidate) console.debug("onIceCandidate finished")
@@ -164,7 +163,7 @@ class Call extends React.Component<Props, State> {
             newConnection.addEventListener('connectionstatechange', event => {
                 console.debug('WebRTC connection state change: ', newConnection?.connectionState)
                 this.setState({ callStatus: `${this.state.peer_user?.phone_no} : ${newConnection?.connectionState}` })
-                if(newConnection?.connectionState === "disconnected") this.endCall()
+                if (newConnection?.connectionState === "disconnected") this.endCall()
             });
             newConnection.addEventListener('iceconnectionstatechange', event => {
                 console.debug('ICE connection state change: ', newConnection?.iceConnectionState)
@@ -258,16 +257,16 @@ class Call extends React.Component<Props, State> {
                         ? <RTCView style={styles.stream}
                             streamURL={this.state.peerStream.toURL()}
                             mirror={true}
-                            objectFit={'cover'} 
-                            zOrder={1}/>
+                            objectFit={'cover'}
+                            zOrder={1} />
                         : <Image style={[styles.stream, { backgroundColor: '#333333' }]} source={{ uri: this.state.peer_user?.pic }} />
                     }
                     {this.state.stream && this.state.videoEnabled
                         ? <RTCView style={styles.cameraDisabled}
                             streamURL={this.state.stream.toURL()}
                             mirror={this.state.isFrontCamera}
-                            objectFit={'cover'} 
-                            zOrder={2}/>
+                            objectFit={'cover'}
+                            zOrder={2} />
                         : <Image style={styles.cameraDisabled} source={{ uri: this.props.user_data.pic }} />
                     }
                 </View>
