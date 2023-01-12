@@ -30,8 +30,14 @@ export function loadKeys() {
             // Store keypair in memory
             dispatch({ type: "KEY_LOAD", payload: keys })
             return true
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error loading keys:', err, JSON.stringify(await Keychain.getSupportedBiometryType()))
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to load Identity Keypair from TPM',
+                text2: err.message || err,
+                visibilityTime: 5000
+            });
             return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -69,8 +75,14 @@ export function generateAndSyncKeys() {
             dispatch({ type: "KEY_LOAD", payload: keyPair })
             return true
 
-        } catch (err) {
+        } catch (err: any) {
             console.error(`Error generating and syncing keys: ${err}`)
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to generate Identity Keypair',
+                text2: err.message || err,
+                visibilityTime: 5000
+            });
             return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -107,8 +119,14 @@ export function loadMessages() {
 
             dispatch({ type: "LOAD_CONVERSATIONS", payload: conversations })
 
-        } catch (err) {
-            console.error(`Error loading messages: ${err}`)
+        } catch (err: any) {
+            console.error('Error loading messages: ', err)
+            Toast.show({
+                type: 'error',
+                text1: 'Error loading messages',
+                text2: err.message || err,
+                visibilityTime: 5000
+            });
         } finally {
             dispatch({ type: "SET_REFRESHING", payload: false })
         }
@@ -136,8 +154,14 @@ export function loadContacts(atomic = true) {
 
             dispatch({ type: "LOAD_CONTACTS", payload: contacts })
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error loading contacts:', err)
+            Toast.show({
+                type: 'error',
+                text1: 'Error loading contacts',
+                text2: err.message || err,
+                visibilityTime: 5000
+            });
         } finally {
             if(atomic) dispatch({ type: "SET_REFRESHING", payload: false })
         }
@@ -154,7 +178,13 @@ export function addContact(user: UserData) {
             dispatch({ type: "ADD_CONTACT_SUCCESS", payload: {...data, session_key} })
             return true
         } catch (err) {
-            console.error(`Error adding contact: ${err}`)
+            console.error('Error adding contact: ', err)
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to add contact',
+                text2: 'Please try again later',
+                visibilityTime: 5000
+            });
             return false
         }
     }
@@ -265,8 +295,14 @@ export function syncFromStorage() {
                 payload: payload,
             })
             return true
-        } catch (err) {
-            console.error(`Error syncing from storage: ${err}`)
+        } catch (err: any) {
+            console.error('Error syncing from storage: ', err)
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to sync data from storage',
+                text2: err.message || err,
+                visibilityTime: 5000
+            });
             return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -295,8 +331,14 @@ export function registerPushNotifications() {
                 // });
             }
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error Registering for Push Notifications:', err)
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to register for push notifications',
+                text2: err.message || err,
+                visibilityTime: 5000
+            });
         }
     }
 }

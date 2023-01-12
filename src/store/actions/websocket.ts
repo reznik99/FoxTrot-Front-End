@@ -2,6 +2,7 @@ import { VibratePattern, WEBSOCKET_URL } from '~/global/variables'
 import PushNotification from 'react-native-push-notification'
 import InCallManager from 'react-native-incall-manager'
 import RNNotificationCall from "react-native-full-screen-notification-incoming-call"
+import Toast from 'react-native-toast-message'
 
 import { AppDispatch, GetState } from '../store'
 
@@ -50,8 +51,14 @@ export function initializeWebsocket() {
             socketConn.onclose = () => {
                 console.debug("Websocket connection has been closed gracefully")
             }
-            socketConn.onerror = (err) => {
+            socketConn.onerror = (err: any) => {
                 console.error("Websocket err:", err)
+                Toast.show({
+                    type: 'error',
+                    text1: 'Connection to Servers Lost! Please restart Foxtrot',
+                    text2: err.message || err,
+                    visibilityTime: 5000
+                });
                 dispatch({ type: "WEBSOCKET_ERROR", payload: err })
             }
             socketConn.onmessage = (event) => {
