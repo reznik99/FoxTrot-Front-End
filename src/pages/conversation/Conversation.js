@@ -16,7 +16,7 @@ export default function Conversation(props) {
     const { peer_user } = props.route.params.data
 
     const dispatch = useDispatch()
-    const conversation = useSelector(state => state.userReducer.conversations.get(peer_user.phone_no) || { messages: [] })
+    const conversation = useSelector(state => state.userReducer.conversations).get(peer_user.phone_no) ?? { messages: [] }
     const peer = useSelector(state => state.userReducer.contacts.find((contact) => contact.id === peer_user.id))
     const user_data = useSelector(state => state.userReducer.user_data)
 
@@ -32,16 +32,17 @@ export default function Conversation(props) {
         return () => keyboardDidShowListener?.remove()
     }, [])
 
+    // Scroll to end when new messages appear (sent or recieved)
     useEffect(() => {
         scrollView.current?.scrollToOffset({ offset: 0, animated: true })
-    }, [conversation.messages?.length])
+    }, [conversation.messages])
 
-    const handleSend = async () => {
+    const handleSend = useCallback(() => {
         if (message.trim() === "") return
 
         setMessage('')
-        await dispatch(sendMessage(message, peer))
-    }
+        dispatch(sendMessage(message.trim(), peer))
+    }, [message])
 
     return (
         <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
@@ -81,7 +82,6 @@ export default function Conversation(props) {
 }
 
 class Message extends PureComponent {
-
     constructor(props) {
         super(props)
         this.state = {
@@ -130,15 +130,12 @@ class Message extends PureComponent {
     }
 
     render = () => {
-        const { item, index, isSent } = this.props
-
-        if (index === 0) console.debug("Rendered whole list", ~~(Math.random() * 100))
-
+        const { item, isSent } = this.props
         const isEncrypted = !this.state.decryptedMessage
         const sent_at = new Date(item.sent_at)
 
         return (
-            <Pressable key={index}
+            <Pressable
                 style={[styles.messageContainer, isSent ? styles.sent : styles.received]}
                 onPress={() => this.handleClick(item)}>
                 <View style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>

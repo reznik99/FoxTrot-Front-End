@@ -38,15 +38,7 @@ export default function AddContact(props: { navigation: any }) {
     const handleAddContact = async (user: UserData) => {
         setAddingContact(user)
         const success = await dispatch(addContact(user))
-        if (!success) {
-            Toast.show({
-                type: 'error',
-                text1: 'Failed to add contact',
-                text2: 'Please try again later',
-                visibilityTime: 5000
-            });
-        }
-        else navigation.replace('Conversation', { data: { peer_user: user } })
+        if (Boolean(success)) navigation.replace('Conversation', { data: { peer_user: user } })
 
         setAddingContact(undefined)
     }

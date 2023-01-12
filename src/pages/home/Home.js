@@ -31,6 +31,7 @@ export default function Home(props) {
                 const success = await dispatch(generateAndSyncKeys())
                 setLoadingMsg('')
                 if (!success) {
+                    // TODO: Allow login but prevent messaging until Key Import
                     return props.navigation.navigate('Login', {
                         data: {
                             loggedOut: true,
