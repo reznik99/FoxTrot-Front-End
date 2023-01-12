@@ -32,6 +32,7 @@ class Call extends React.Component<Props, State> {
             voiceEnabled: true,
             loudSpeaker: false,
             isFrontCamera: true,
+            minimizeLocalStream: true,
             callStatus: "",
             callTime: Date.now(),
             startTime: Date.now(),
@@ -237,6 +238,10 @@ class Call extends React.Component<Props, State> {
         this.setState({ isFrontCamera: !this.state.isFrontCamera })
     };
 
+    toggleMinimizedStream = () => {
+        this.setState({minimizeLocalStream: !this.state.minimizeLocalStream})
+    }
+
     printCallTime = () => {
         const hours = ~~(this.state.callTime / (60 * 60))
         const minutes = ~~(this.state.callTime / 60)
@@ -262,12 +267,12 @@ class Call extends React.Component<Props, State> {
                         : <Image style={[styles.stream, { backgroundColor: '#333333' }]} source={{ uri: this.state.peer_user?.pic }} />
                     }
                     {this.state.stream && this.state.videoEnabled
-                        ? <RTCView style={styles.cameraDisabled}
+                        ? <RTCView style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]}
                             streamURL={this.state.stream.toURL()}
                             mirror={this.state.isFrontCamera}
                             objectFit={'cover'}
-                            zOrder={2} />
-                        : <Image style={styles.cameraDisabled} source={{ uri: this.props.user_data.pic }} />
+                            zOrder={2} onTouchEnd={this.toggleMinimizedStream}/>
+                        : <Image style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]} source={{ uri: this.props.user_data.pic }} />
                     }
                 </View>
                 <View style={styles.footer}>
@@ -335,6 +340,7 @@ interface State {
     voiceEnabled: boolean;
     loudSpeaker: boolean;
     isFrontCamera: boolean;
+    minimizeLocalStream: boolean;
     callStatus: string;
     callTime: number;
     startTime: number;
@@ -377,11 +383,14 @@ const styles = StyleSheet.create({
         backgroundColor: 'gray'
     }, cameraDisabled: {
         position: 'absolute',
-        height: 250,
-        width: 200,
+        height: 275,
+        width: 225,
         bottom: 60,
         right: 0,
         borderRadius: 5,
         backgroundColor: '#333333f0',
+    }, cameraDisabledSmall: {
+        height: 175,
+        width: 125,
     }
 });
