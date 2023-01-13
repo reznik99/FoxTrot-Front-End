@@ -228,6 +228,7 @@ export function sendMessage(message: string, to_user: UserData) {
                 sender: state.user_data,
                 reciever: to_user,
                 rawMessage: {
+                    id: Date.now(),
                     message: encryptedMessage,
                     sender: state.user_data.phone_no,
                     reciever: to_user.phone_no,

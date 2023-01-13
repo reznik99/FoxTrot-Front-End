@@ -44,6 +44,7 @@ export default function Conversation(props) {
         dispatch(sendMessage(message.trim(), peer))
     }, [message])
 
+
     return (
         <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
 
@@ -52,7 +53,7 @@ export default function Conversation(props) {
                 removeClippedSubviews={true}
                 inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
                 data={conversation.messages}
-                renderItem={({ index, item }) => <Message index={index} item={item} peer={peer} isSent={item.sender === user_data.phone_no} />}
+                renderItem={({ item }) => <Message key={item.id} item={item} peer={peer} isSent={item.sender === user_data.phone_no} />}
                 ListEmptyComponent={() => <View><Text style={[styles.message, styles.system]}> No messages </Text></View>}
                 ListHeaderComponent={() => (
                     <View style={styles.footer}>
