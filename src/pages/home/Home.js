@@ -50,13 +50,12 @@ export default function Home(props) {
             setupInterceptors(props.navigation)
 
             RNNotificationCall.addEventListener("answer", (payload) => {
-                console.log('User Answered')
+                console.debug('User Answered')
                 RNNotificationCall.backToApp()
-                // console.log(props)
                 props.navigation.navigate('Call', { data: {peer_user: caller } })
             })
             RNNotificationCall.addEventListener("endCall", (payload) => {
-                console.log('User Declined')
+                console.debug('User Declined')
             })
 
         }

@@ -1,6 +1,7 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Keychain from 'react-native-keychain'
+import Toast from 'react-native-toast-message'
 
 import { API_URL } from '~/global/variables'
 import { AppDispatch } from '../store'
@@ -19,7 +20,7 @@ export function logIn(username: string, password: string) {
                 password: password
             })
 
-            const user_data = {pic: `https://robohash.org/${res.data.user_data?.id}`, ...res.data.user_data}
+            const user_data = { pic: `https://robohash.org/${res.data.user_data?.id}`, ...res.data.user_data }
 
             console.debug('Saving user in storage')
             // Save data in phone storage
@@ -55,8 +56,8 @@ export function logIn(username: string, password: string) {
 }
 
 export function signUp(username: string, password: string, re_password: string) {
-    return async (dispatch: AppDispatch) => {
-        if (!username || !password || !re_password ) {
+    return async (dispatch: AppDispatch): Promise<boolean> => {
+        if (!username || !password || !re_password) {
             dispatch({ type: "SIGNUP_ERROR_MSG", payload: "Textfields cannot be blank!" })
             return false
         } else if (password !== re_password) {
@@ -76,8 +77,14 @@ export function signUp(username: string, password: string, re_password: string) 
             })
             // Save data in phone storage
             await AsyncStorage.setItem('user_data', JSON.stringify(response.data?.user_data || { phone_no: username }))
-            dispatch({ type: "SIGNED_UP", payload: response.data?.user_data || { phone_no: username },
-            })
+            dispatch({ type: "SIGNED_UP", payload: response.data?.user_data || { phone_no: username } })
+
+            Toast.show({
+                type: 'success',
+                text1: 'Signed up successfully',
+                text2: `As ${username}`,
+                visibilityTime: 6000
+            });
             return true
         }
         catch (err: any) {
@@ -92,7 +99,7 @@ export function signUp(username: string, password: string, re_password: string) 
 }
 
 export function logOut(navigation: any) {
-    return async (dispatch: AppDispatch) => {
+    return async (dispatch: AppDispatch): Promise<void> => {
         console.debug("Logging out")
         // Clear redux state
         dispatch({ type: "LOGOUT", payload: undefined })
@@ -106,10 +113,11 @@ export function logOut(navigation: any) {
 
 export function setupInterceptors(navigation: any) {
     axios.interceptors.response.use(
-        (response) => response, 
-        (error) => {
-            if ( error.response.status == 403) logOut(navigation)
+        (response) => response,
+        (error: AxiosError) => {
+            if (error.response?.status == 403) navigation.replace('Login')
             return Promise.reject(error);
+
         }
     );
 }
