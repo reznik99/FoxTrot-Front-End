@@ -175,7 +175,7 @@ export function addContact(user: UserData) {
             const { data } = await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
             const session_key = await generateSessionKeyECDH(data.public_key || '', state.keys?.privateKey)
 
-            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: {...data, session_key} })
+            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: {...data, pic: `https://robohash.org/${data.id}`, session_key} })
             return true
         } catch (err) {
             console.error('Error adding contact: ', err)
