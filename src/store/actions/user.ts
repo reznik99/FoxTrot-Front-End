@@ -7,7 +7,7 @@ import Toast from 'react-native-toast-message';
 import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt } from '~/global/crypto';
 import { AppDispatch, GetState } from '~/store/store';
-import { UserData } from '../reducers/user';
+import { Conversation, UserData } from '~/store/reducers/user';
 
 export function loadKeys() {
     return async (dispatch: AppDispatch, getState: GetState) => {
@@ -15,7 +15,7 @@ export function loadKeys() {
             dispatch({ type: "SET_LOADING", payload: true })
 
             let state = getState().userReducer
-            if(state.keys) return true
+            if (state.keys) return true
 
             console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`)
 
@@ -96,28 +96,55 @@ export function loadMessages() {
             dispatch({ type: "SET_REFRESHING", payload: true })
 
             let state = getState().userReducer
-            // Load user conversations
-            const conversations = new Map()
 
-            const response = await axios.get(`${API_URL}/getConversations`, axiosBearerConfig(state.token))
-            response.data = response.data.sort((msg1: any, msg2: any): any => msg1.sent_at < msg2.sent_at ? 1 : -1)
+            // Check last time we hit the API for messages
+            const cachedLastChecked = (await AsyncStorage.getItem(`messages-${state.user_data.phone_no}-last-checked`)) || '0'
+            let lastChecked = parseInt(cachedLastChecked)
 
-            // TODO: Fix this mess up
+            let previousConversations = new Map<string, Conversation>()
+
+            // Load bulk messages from storage if there aren't any in the redux state
+            if (!state.conversations.size) {
+                try {
+                    const cachedConversations = await AsyncStorage.getItem(`messages-${state.user_data.phone_no}`)
+                    if (!cachedConversations) throw new Error("No cached messages")
+
+                    previousConversations = new Map(JSON.parse(cachedConversations))
+                    console.debug(`Loaded ${previousConversations.size} messages from storage. Last checked ${lastChecked}`)
+                } catch (err) {
+                    console.warn('Failed to load messages from storage')
+                }
+            } else {
+                previousConversations = new Map(state.conversations)
+            }
+
+            // If no cached conversations, load all from API just in case.
+            if(!previousConversations.size) lastChecked = 0 
+
+            // Load new user messages
+            const conversations = new Map(previousConversations)
+            const response = await axios.get(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token) )
             response.data.forEach((message: any) => {
                 let other = message.sender === state.user_data.phone_no
                     ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever_id}` }
                     : { phone_no: message.sender, id: message.sender_id, pic: `https://robohash.org/${message.sender_id}` }
-                let exists = conversations.has(other.phone_no)
-                if (!exists) {
+                if (conversations.has(other.phone_no)) {
+                    conversations.get(other.phone_no)?.messages.push(message)
+                } else {
                     conversations.set(other.phone_no, {
                         other_user: other,
-                        messages: []
+                        messages: [message]
                     });
                 }
-                conversations.get(other.phone_no).messages.push(message)
             })
+            console.debug(`Loaded ${response.data?.length} new messages from api`)
 
+            // Save all new conversations to redux state
             dispatch({ type: "LOAD_CONVERSATIONS", payload: conversations })
+
+            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
+            AsyncStorage.setItem(`messages-${state.user_data.phone_no}`, JSON.stringify(Array.from(conversations.entries())))
+            AsyncStorage.setItem(`messages-${state.user_data.phone_no}-last-checked`, String(Date.now()) )
 
         } catch (err: any) {
             console.error('Error loading messages: ', err)
@@ -142,7 +169,7 @@ export function loadContacts(atomic = true) {
             // Load contacts
             const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token))
 
-            const contacts = await Promise.all( response.data.map(async (contact: any) => {
+            const contacts = await Promise.all(response.data.map(async (contact: any) => {
                 try {
                     const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey)
                     return { ...contact, pic: `https://robohash.org/${contact.id}`, session_key }
@@ -163,7 +190,7 @@ export function loadContacts(atomic = true) {
                 visibilityTime: 5000
             });
         } finally {
-            if(atomic) dispatch({ type: "SET_REFRESHING", payload: false })
+            if (atomic) dispatch({ type: "SET_REFRESHING", payload: false })
         }
     }
 }
@@ -175,7 +202,7 @@ export function addContact(user: UserData) {
             const { data } = await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
             const session_key = await generateSessionKeyECDH(data.public_key || '', state.keys?.privateKey)
 
-            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: {...data, pic: `https://robohash.org/${data.id}`, session_key} })
+            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: { ...data, pic: `https://robohash.org/${data.id}`, session_key } })
             return true
         } catch (err) {
             console.error('Error adding contact: ', err)
@@ -218,7 +245,7 @@ export function sendMessage(message: string, to_user: UserData) {
             dispatch({ type: "SET_LOADING", payload: true })
             let state = getState().userReducer
 
-            if(!to_user?.session_key) throw new Error("Missing session_key for " + to_user?.phone_no)
+            if (!to_user?.session_key) throw new Error("Missing session_key for " + to_user?.phone_no)
 
             // Encrypt message
             const encryptedMessage = await encrypt(to_user.session_key, message)
@@ -285,16 +312,13 @@ export function syncFromStorage() {
 
             // TODO: Load existing messages/contacts and stuff from async storage
 
-            if(!user_data || !token) return false
+            if (!user_data || !token) return false
 
             const payload = {
                 token: token,
                 user_data: JSON.parse(user_data),
             }
-            dispatch({
-                type: "SYNC_FROM_STORAGE",
-                payload: payload,
-            })
+            dispatch({ type: "SYNC_FROM_STORAGE", payload: payload })
             return true
         } catch (err: any) {
             console.error('Error syncing from storage: ', err)
@@ -315,7 +339,7 @@ export function registerPushNotifications() {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             let state = getState().userReducer
-            
+
             console.debug('Registering for Push Notifications');
             const authStatus = await messaging().requestPermission();
             const enabled =
@@ -325,7 +349,7 @@ export function registerPushNotifications() {
             if (enabled) {
                 await messaging().registerDeviceForRemoteMessages();
                 const token = await messaging().getToken();
-                await axios.post(`${API_URL}/registerPushNotifications`, {token}, axiosBearerConfig(state.token))
+                await axios.post(`${API_URL}/registerPushNotifications`, { token }, axiosBearerConfig(state.token))
                 // Register background handler
                 // messaging().setBackgroundMessageHandler(async remoteMessage => {
                 //     console.log('Message handled in the background!', remoteMessage);
