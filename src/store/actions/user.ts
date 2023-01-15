@@ -98,7 +98,7 @@ export function loadMessages() {
             let state = getState().userReducer
 
             // Check last time we hit the API for messages
-            const cachedLastChecked = (await AsyncStorage.getItem(`messages-${state.user_data.phone_no}-last-checked`)) || '0'
+            const cachedLastChecked = (await AsyncStorage.getItem(`messages-${state.user_data.id}-last-checked`)) || '0'
             let lastChecked = parseInt(cachedLastChecked)
 
             let previousConversations = new Map<string, Conversation>()
@@ -106,11 +106,11 @@ export function loadMessages() {
             // Load bulk messages from storage if there aren't any in the redux state
             if (!state.conversations.size) {
                 try {
-                    const cachedConversations = await AsyncStorage.getItem(`messages-${state.user_data.phone_no}`)
+                    const cachedConversations = await AsyncStorage.getItem(`messages-${state.user_data.id}`)
                     if (!cachedConversations) throw new Error("No cached messages")
 
                     previousConversations = new Map(JSON.parse(cachedConversations))
-                    console.debug(`Loaded ${previousConversations.size} messages from storage. Last checked ${lastChecked}`)
+                    console.debug(`Loaded ${previousConversations.size} conversations from storage. Last checked ${lastChecked}`)
                 } catch (err) {
                     console.warn('Failed to load messages from storage')
                 }
@@ -124,12 +124,14 @@ export function loadMessages() {
             // Load new user messages
             const conversations = new Map(previousConversations)
             const response = await axios.get(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token) )
+            response.data = response.data.reverse()
+
             response.data.forEach((message: any) => {
                 let other = message.sender === state.user_data.phone_no
                     ? { phone_no: message.reciever, id: message.reciever_id, pic: `https://robohash.org/${message.reciever_id}` }
                     : { phone_no: message.sender, id: message.sender_id, pic: `https://robohash.org/${message.sender_id}` }
                 if (conversations.has(other.phone_no)) {
-                    conversations.get(other.phone_no)?.messages.push(message)
+                    conversations.get(other.phone_no)?.messages.unshift(message)
                 } else {
                     conversations.set(other.phone_no, {
                         other_user: other,
@@ -143,8 +145,8 @@ export function loadMessages() {
             dispatch({ type: "LOAD_CONVERSATIONS", payload: conversations })
 
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            AsyncStorage.setItem(`messages-${state.user_data.phone_no}`, JSON.stringify(Array.from(conversations.entries())))
-            AsyncStorage.setItem(`messages-${state.user_data.phone_no}-last-checked`, String(Date.now()) )
+            AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries())))
+            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()) )
 
         } catch (err: any) {
             console.error('Error loading messages: ', err)

@@ -49,13 +49,11 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
         []
     )
 
-    console.debug("Imported Contact's public ECDH Key")
-
     const sessionKey = await crypto.subtle.deriveKey(
         {
-            name: "ECDH",
+            name: KeypairAlgorithm.name,
             public: publicKey,
-            namedCurve: "P-384"
+            namedCurve: KeypairAlgorithm.namedCurve
         } as any,
         userPrivate,
         {
