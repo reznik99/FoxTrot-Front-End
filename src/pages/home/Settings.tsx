@@ -43,6 +43,12 @@ export default function Settings(props: any) {
         props.navigation.navigate('Login', { data: { loggedOut: true } })
     }, [keys, user_data])
 
+    const resetValue = useCallback(async (key: string) => {
+        console.log("Deleting:", key)
+        await AsyncStorage.removeItem(key)
+        setKeys(keys.filter(k => k !== key))
+    }, [keys])
+
     const importKeys = async () => {
         if(!encPassword?.trim()) return
 
@@ -143,7 +149,7 @@ export default function Settings(props: any) {
                     <Text>Stored on device:</Text>
                     <Chip icon="key">{user_data?.phone_no}-keys</Chip>
                     <Chip icon="account-key">{user_data?.phone_no}-password</Chip>
-                    { keys.map((key, idx) => <Chip key={idx} icon="account">{key}</Chip> ) }
+                    { keys.map((key, idx) => <Chip key={idx} onPress={() => resetValue(key)} icon="account">{key}</Chip> ) }
 
                     <Button mode='contained' onPress={() => setVisibleDialog('reset')} loading={visibleDialog === 'reset'} style={{marginTop: 10}}>
                         Factory Reset App
