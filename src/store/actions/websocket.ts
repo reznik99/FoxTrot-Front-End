@@ -113,7 +113,9 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                     message: parsedData.data?.message || '',
                     when: parsedData.data.sent_at,
                     visibility: "public",
-                    picture: `https://robohash.org/${parsedData.data.sender_id}`
+                    picture: `https://robohash.org/${parsedData.data.sender_id}`,
+                    largeIcon: 'foxtrot',
+                    smallIcon: 'foxtrot',
                 })
                 break;
             case "CALL_OFFER":
