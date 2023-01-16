@@ -245,7 +245,7 @@ export function sendMessage(message: string, to_user: UserData) {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
-            let state = getState().userReducer
+            const state = getState().userReducer
 
             if (!to_user?.session_key) throw new Error("Missing session_key for " + to_user?.phone_no)
 
@@ -269,6 +269,9 @@ export function sendMessage(message: string, to_user: UserData) {
 
             await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
+            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
+            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()) )
+            AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(state.conversations.entries())))
         } catch (err: any) {
             console.error('Error sending message:', err)
             Toast.show({

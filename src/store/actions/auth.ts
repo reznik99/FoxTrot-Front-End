@@ -115,9 +115,11 @@ export function setupInterceptors(navigation: any) {
     axios.interceptors.response.use(
         (response) => response,
         (error: AxiosError) => {
-            if (error.response?.status == 403) navigation.replace('Login')
+            if (error.response?.status == 403) {
+                // TODO: Re-authenticate instead of signing out
+                navigation.replace('Login')
+            }
             return Promise.reject(error);
-
         }
     );
 }

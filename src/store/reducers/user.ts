@@ -54,7 +54,6 @@ const initialState: State = {
 
 function userReducer(state = initialState, action: Action) {
     let newState = { ...state }
-    let message
     switch (action.type) {
         case "ADD_CONTACT_SUCCESS":
             return { ...state, contacts: [...state.contacts, action.payload] as UserData[] }
@@ -83,7 +82,7 @@ function userReducer(state = initialState, action: Action) {
         case "SEND_MESSAGE":
             newState.conversations = new Map(state.conversations)
             const reciever = action.payload.reciever
-            message = action.payload.rawMessage
+            const message = action.payload.rawMessage
             const converastionS = newState.conversations.get(reciever.phone_no)
             if (converastionS) converastionS.messages = [message, ...converastionS.messages]
             else {
@@ -92,9 +91,6 @@ function userReducer(state = initialState, action: Action) {
                     messages: [message]
                 })
             }
-            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()) )
-            AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(newState.conversations.entries())))
             return newState
         case "RECV_MESSAGE":
             newState.conversations = new Map(state.conversations)
