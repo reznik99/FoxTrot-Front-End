@@ -50,7 +50,6 @@ export default function Conversation(props) {
 
             <FlatList style={styles.messageList}
                 ref={scrollView}
-                removeClippedSubviews={true}
                 inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
                 data={conversation.messages}
                 renderItem={({ item }) => <Message key={item.id} item={item} peer={peer} isSent={item.sender === user_data.phone_no} />}
@@ -64,7 +63,7 @@ export default function Conversation(props) {
             />
 
             <View style={styles.inputContainer}>
-                <TouchableOpacity style={styles.button}>
+                <TouchableOpacity style={styles.button} onPress={() => props.navigation.navigate('CameraView')}>
                     <FontAwesomeIcon icon={faEllipsisH} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
                 <TextInput placeholder="Type a message"
@@ -122,10 +121,10 @@ class Message extends PureComponent {
         if (linkIndex < 0) return <Text selectable>{message}</Text>
 
         return (
-            <Text selectable>
-                <Text>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
-                <Text style={{ color: 'blue' }}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
-                <Text>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
+            <Text>
+                <Text selectable>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
+                <Text selectable style={{ color: 'blue' }}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
+                <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
             </Text>
         )
     }

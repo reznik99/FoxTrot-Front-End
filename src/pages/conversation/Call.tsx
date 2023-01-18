@@ -127,6 +127,8 @@ class Call extends React.Component<Props, State> {
             }
         }
         this.props.socketConn?.send(JSON.stringify(message))
+
+        this.setState({ callStatus: `${this.state.peer_user?.phone_no} : Dialing`})
     }
 
     startStream = async () => {

@@ -4,7 +4,6 @@ import { Divider, Searchbar, ActivityIndicator } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
-import Toast from 'react-native-toast-message'
 
 import { searchUsers, addContact } from '../../store/actions/user'
 import { ContactPeek } from '../../components'
