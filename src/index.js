@@ -6,4 +6,5 @@ export { default as Conversation } from "./pages/conversation/Conversation";
 export { default as NewConversation } from "./pages/conversation/NewConversation";
 export { default as AddContact } from "./pages/conversation/AddContact";
 export { default as Call } from "./pages/conversation/Call";
+export { default as CameraView } from "./pages/conversation/CameraView";
 export { default as Settings } from "./pages/home/Settings";
