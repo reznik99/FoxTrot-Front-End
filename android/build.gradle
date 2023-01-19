@@ -6,6 +6,8 @@ buildscript {
         minSdkVersion = 24
         compileSdkVersion = 31
         targetSdkVersion = 31
+
+        ndkVersion = "21.4.7075529"
     }
     repositories {
         google()  // Google's Maven repository
@@ -13,7 +15,10 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath('com.android.tools.build:gradle:7.0.3')
+        classpath("com.android.tools.build:gradle:7.2.1")
+        // classpath("com.facebook.react:react-native-gradle-plugin")
+        // classpath("de.undercouch:gradle-download-task:5.0.1")
+
         classpath 'com.google.gms:google-services:+'
         // classpath 'com.google.gms:google-services:4.3.13'
 
