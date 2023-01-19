@@ -41,7 +41,12 @@ export default function Conversation(props) {
         if (message.trim() === "") return
 
         setMessage('')
-        dispatch(sendMessage(message.trim(), peer))
+
+        const toSend = {
+            type: "MSG",
+            message: message.trim()
+        }
+        dispatch(sendMessage(JSON.stringify(toSend), peer))
     }, [message])
 
 
@@ -63,7 +68,7 @@ export default function Conversation(props) {
             />
 
             <View style={styles.inputContainer}>
-                <TouchableOpacity style={styles.button} onPress={() => props.navigation.navigate('CameraView')}>
+                <TouchableOpacity style={styles.button} onPress={() => props.navigation.navigate('CameraView', { data: { peer: peer } })}>
                     <FontAwesomeIcon icon={faEllipsisH} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
                 <TextInput placeholder="Type a message"
@@ -86,7 +91,7 @@ class Message extends PureComponent {
         super(props)
         this.state = {
             loading: false,
-            decryptedMessage: '',
+            decryptedMessage: undefined,
         }
     }
 
@@ -95,14 +100,24 @@ class Message extends PureComponent {
             if (!this.state.decryptedMessage) {
                 this.setState({ loading: true })
                 const decryptedMessage = await decrypt(this.props.peer.session_key, item.message)
-                this.setState({ decryptedMessage: decryptedMessage })
+                try {
+                    const message = JSON.parse(decryptedMessage);
+                    this.setState({ decryptedMessage: message })
+                } catch (err) {
+                    // Backwards compatibility
+                    this.setState({ decryptedMessage: { type: "MSG", message: decryptedMessage } })
+                }
                 return
             }
 
             // Check if URL or Image is contained in message
-            const messageChunks = this.state.decryptedMessage.split(" ")
-            const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
-            if (link) Linking.openURL(link)
+            if (this.state.decryptedMessage?.type === "MSG") {
+                const messageChunks = this.state.decryptedMessage.split(" ")
+                const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
+                if (link) Linking.openURL(link)
+            } else {
+                // TODO: Full screen the image/video ?
+            }
         } catch (err) {
             console.error("Error decrypting message", err)
             Toast.show({
@@ -114,19 +129,25 @@ class Message extends PureComponent {
         }
     }
 
-    renderMessageText = (message) => {
-        const messageChunks = message.split(" ")
-        const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
+    renderMessageText = (decryptedMessage) => {
+        const { type, message } = decryptedMessage
 
-        if (linkIndex < 0) return <Text selectable>{message}</Text>
+        if (type === "IMG") {
+            return <Image source={{ uri: 'data:image/jpg;base64,' + message }} width={250} />
+        } else {
+            const messageChunks = message.split(" ")
+            const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
 
-        return (
-            <Text>
-                <Text selectable>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
-                <Text selectable style={{ color: 'blue' }}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
-                <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
-            </Text>
-        )
+            if (linkIndex < 0) return <Text selectable>{message}</Text>
+
+            return (
+                <Text>
+                    <Text selectable>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
+                    <Text selectable style={{ color: 'blue' }}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
+                    <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
+                </Text>
+            )
+        }
     }
 
     render = () => {
@@ -141,7 +162,7 @@ class Message extends PureComponent {
                 <View style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
                     <ActivityIndicator style={{ position: 'absolute', zIndex: 10 }} animating={this.state.loading && !this.state.decryptedMessage} />
                     {isEncrypted
-                        ? <Text selectable> {item.message} </Text>
+                        ? <Text selectable> {item.message?.length < 200 ? item.message : item.message?.substring(0, 197).padEnd(200, '...')} </Text>
                         : this.renderMessageText(this.state.decryptedMessage)
                     }
                     {isEncrypted && <FontAwesomeIcon style={{ position: 'absolute', zIndex: 10 }} color="#333" icon={faLock} size={20} />}

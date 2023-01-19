@@ -4,9 +4,22 @@ import { ActivityIndicator, Button } from 'react-native-paper'
 import { Camera, useCameraDevices } from "react-native-vision-camera"
 import Toast from 'react-native-toast-message'
 import RNFS from 'react-native-fs'
+import { useDispatch } from "react-redux"
+import { sendMessage } from "~/store/actions/user"
+import { UserData } from "~/store/reducers/user"
 
-export default function CameraView(props: { navigation: any }) {
 
+interface IProps {
+    navigation: any;
+    route: { 
+        params: { 
+            data: {peer: UserData} 
+        }
+    }
+}
+export default function CameraView(props: IProps) {
+
+    const dispatch = useDispatch()
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
     const [device, setDevice] = useState(devices.back)
@@ -51,28 +64,34 @@ export default function CameraView(props: { navigation: any }) {
 
     const takePic = useCallback(async () => {
         if (!camera.current) return
-
         const pic = await camera.current.takeSnapshot()
         setPicture(pic.path)
-        console.debug('took pic: ', pic.path)
-
-        const rawPic = await RNFS.readFile(pic.path, 'base64')
-        console.debug(rawPic.substring(0, 50), rawPic.length)
     }, [])
+
+    const send = useCallback(async () => {
+        const rawPic = await RNFS.readFile(picture, 'base64')
+        console.debug(rawPic.substring(0, 50), rawPic.length)
+
+        const toSend = JSON.stringify({
+            type: "IMG",
+            message: rawPic
+        })
+        dispatch(sendMessage(toSend, props?.route?.params?.data?.peer))
+    }, [picture])
 
     return (
         <View style={styles.container}>
-            <ActivityIndicator animating={!device || !hasPermission} style={{position: "absolute"}} />
+            <ActivityIndicator animating={!device || !hasPermission} style={{ position: "absolute" }} />
 
-            {picture && 
+            {picture &&
                 <>
-                    <Image source={{ uri: `file://${picture}` }} style={{width: '100%', height: '100%'}}/>
+                    <Image source={{ uri: `file://${picture}` }} style={{ width: '100%', height: '100%' }} />
 
                     <View style={styles.buttonContainer}>
                         <Button style={styles.button} icon='refresh' mode="contained" onPress={() => setPicture('')} color="white">
                             Take again
                         </Button>
-                        <Button style={styles.button} icon="send" mode="contained" onPress={() => setPicture('')}>
+                        <Button style={styles.button} icon="send" mode="contained" onPress={send}>
                             Send
                         </Button>
                     </View>
@@ -105,15 +124,15 @@ export default function CameraView(props: { navigation: any }) {
 
 const styles = StyleSheet.create({
     container: {
-        position: "absolute", 
-        width: '100%', 
+        position: "absolute",
+        width: '100%',
         height: '100%'
     }, buttonContainer: {
-        position: "absolute", 
-        bottom: 30, 
-        width: '100%', 
+        position: "absolute",
+        bottom: 30,
+        width: '100%',
         display: 'flex',
-        flexDirection: 'row', 
+        flexDirection: 'row',
         justifyContent: 'space-evenly'
     }, button: {
         borderRadius: 100
