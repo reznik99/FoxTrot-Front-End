@@ -1,22 +1,26 @@
 import React, { useEffect, useState, useCallback, useRef } from "react"
-import { View, Image } from "react-native"
+import { View, Image, StyleSheet } from "react-native"
 import { ActivityIndicator, Button } from 'react-native-paper'
-import Toast from 'react-native-toast-message'
 import { Camera, useCameraDevices } from "react-native-vision-camera"
-
+import Toast from 'react-native-toast-message'
+import RNFS from 'react-native-fs'
 
 export default function CameraView(props: { navigation: any }) {
 
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
-    const device = devices.back
+    const [device, setDevice] = useState(devices.back)
+    const [isFront, setIsFront] = useState(false)
     const [hasPermission, setHasPermission] = useState(false)
     const [picture, setPicture] = useState('')
 
     useEffect(() => {
         requestPermissions()
-
     }, [])
+
+    useEffect(() => {
+        setDevice(devices.back)
+    }, [devices])
 
     const requestPermissions = useCallback(async () => {
         try {
@@ -36,8 +40,14 @@ export default function CameraView(props: { navigation: any }) {
             return true
         } catch (err) {
             console.error(err)
+            return false
         }
     }, [devices])
+
+    const swapCamera = useCallback(() => {
+        setDevice(isFront ? devices.back : devices.front)
+        setIsFront(!isFront)
+    }, [devices, isFront])
 
     const takePic = useCallback(async () => {
         if (!camera.current) return
@@ -45,23 +55,24 @@ export default function CameraView(props: { navigation: any }) {
         const pic = await camera.current.takeSnapshot()
         setPicture(pic.path)
         console.debug('took pic: ', pic.path)
+
+        const rawPic = await RNFS.readFile(pic.path, 'base64')
+        console.debug(rawPic.substring(0, 50), rawPic.length)
     }, [])
 
     return (
-        <View style={{ position: "absolute", width: '100%', height: '100%' }}>
+        <View style={styles.container}>
             <ActivityIndicator animating={!device || !hasPermission} style={{position: "absolute"}} />
 
             {picture && 
                 <>
                     <Image source={{ uri: `file://${picture}` }} style={{width: '100%', height: '100%'}}/>
 
-                    <View style={{ position: "absolute", bottom: 30, width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly' }}>
-                        <Button style={{ borderRadius: 100 }} color="white"
-                            icon='refresh' mode="contained" onPress={() => setPicture('')}>
+                    <View style={styles.buttonContainer}>
+                        <Button style={styles.button} icon='refresh' mode="contained" onPress={() => setPicture('')} color="white">
                             Take again
                         </Button>
-                        <Button style={{ borderRadius: 100 }}
-                            icon="arrow-right" mode="contained" onPress={() => setPicture('')}>
+                        <Button style={styles.button} icon="send" mode="contained" onPress={() => setPicture('')}>
                             Send
                         </Button>
                     </View>
@@ -76,9 +87,11 @@ export default function CameraView(props: { navigation: any }) {
                         isActive={true}
                         enableZoomGesture={true}
                     />
-                    <View style={{ position: "absolute", bottom: 30, width: '100%', display: 'flex', alignItems: 'center' }}>
-                        <Button style={{ borderRadius: 100 }}
-                            icon='camera' mode="contained" onPress={takePic}>
+                    <View style={styles.buttonContainer}>
+                        <Button style={styles.button} icon='camera-party-mode' mode="contained" onPress={swapCamera}>
+                            Swap Camera
+                        </Button>
+                        <Button style={styles.button} icon='camera' mode="contained" onPress={takePic}>
                             Take pic
                         </Button>
                     </View>
@@ -88,3 +101,21 @@ export default function CameraView(props: { navigation: any }) {
         </View>
     )
 }
+
+
+const styles = StyleSheet.create({
+    container: {
+        position: "absolute", 
+        width: '100%', 
+        height: '100%'
+    }, buttonContainer: {
+        position: "absolute", 
+        bottom: 30, 
+        width: '100%', 
+        display: 'flex',
+        flexDirection: 'row', 
+        justifyContent: 'space-evenly'
+    }, button: {
+        borderRadius: 100
+    }
+})
