@@ -64,13 +64,13 @@ export default function CameraView(props: IProps) {
 
     const takePic = useCallback(async () => {
         if (!camera.current) return
-        const pic = await camera.current.takeSnapshot()
+        const pic = await camera.current.takeSnapshot({quality: 10})
         setPicture(pic.path)
     }, [])
 
     const send = useCallback(async () => {
         const rawPic = await RNFS.readFile(picture, 'base64')
-        console.debug(rawPic.substring(0, 50), rawPic.length)
+        console.debug(rawPic.substring(0, 50), rawPic.slice(-50), rawPic.length)
 
         const toSend = JSON.stringify({
             type: "IMG",
