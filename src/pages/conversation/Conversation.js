@@ -1,8 +1,9 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Keyboard, Linking } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Keyboard, Linking } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
+import { FlashList } from "@shopify/flash-list";
 
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowRight, faEllipsisH, faLock } from "@fortawesome/free-solid-svg-icons";
@@ -53,10 +54,11 @@ export default function Conversation(props) {
     return (
         <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
 
-            <FlatList style={styles.messageList}
+            <FlashList contentContainerStyle={styles.messageList}
                 ref={scrollView}
                 inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
                 data={conversation.messages}
+                estimatedItemSize={95}
                 renderItem={({ item }) => <Message key={item.id} item={item} peer={peer} isSent={item.sender === user_data.phone_no} />}
                 ListEmptyComponent={() => <View><Text style={[styles.message, styles.system]}> No messages </Text></View>}
                 ListHeaderComponent={() => (
@@ -112,7 +114,7 @@ class Message extends PureComponent {
 
             // Check if URL or Image is contained in message
             if (this.state.decryptedMessage?.type === "MSG") {
-                const messageChunks = this.state.decryptedMessage.split(" ")
+                const messageChunks = this.state.decryptedMessage?.message.split(" ")
                 const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
                 if (link) Linking.openURL(link)
             } else {
@@ -183,8 +185,6 @@ const styles = StyleSheet.create({
         flex: 1,
         width: "100%",
     }, messageList: {
-        height: "90%",
-        width: "100%",
         paddingHorizontal: 10
     }, messageContainer: {
         marginVertical: 5,
