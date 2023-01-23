@@ -272,6 +272,7 @@ export function sendMessage(message: string, to_user: UserData) {
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
             AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()) )
             AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(state.conversations.entries())))
+            return true
         } catch (err: any) {
             console.error('Error sending message:', err)
             Toast.show({
@@ -279,6 +280,7 @@ export function sendMessage(message: string, to_user: UserData) {
                 text1: 'Error sending message',
                 text2: err.message || err
             });
+            return false
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }

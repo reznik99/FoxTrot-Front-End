@@ -5,27 +5,33 @@ import { Camera, useCameraDevices } from "react-native-vision-camera"
 import Toast from 'react-native-toast-message'
 import RNFS from 'react-native-fs'
 import { useDispatch } from "react-redux"
+import { AnyAction } from "redux";
 import { sendMessage } from "~/store/actions/user"
 import { UserData } from "~/store/reducers/user"
+import { ThunkDispatch } from "redux-thunk"
 
 
 interface IProps {
     navigation: any;
-    route: { 
-        params: { 
-            data: {peer: UserData} 
+    route: {
+        params: {
+            data: { peer: UserData }
         }
     }
 }
+
+type AppDispatch = ThunkDispatch<any, any, AnyAction>
+
 export default function CameraView(props: IProps) {
 
-    const dispatch = useDispatch()
+    const dispatch: AppDispatch = useDispatch()
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
     const [device, setDevice] = useState(devices.back)
     const [isFront, setIsFront] = useState(false)
     const [hasPermission, setHasPermission] = useState(false)
     const [picture, setPicture] = useState('')
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         requestPermissions()
@@ -64,19 +70,27 @@ export default function CameraView(props: IProps) {
 
     const takePic = useCallback(async () => {
         if (!camera.current) return
-        const pic = await camera.current.takeSnapshot({quality: 10})
+        const pic = await camera.current.takeSnapshot({ quality: 10 })
         setPicture(pic.path)
     }, [])
 
     const send = useCallback(async () => {
-        const rawPic = await RNFS.readFile(picture, 'base64')
-        console.debug(rawPic.substring(0, 50), rawPic.slice(-50), rawPic.length)
+        setLoading(true)
+        try {
+            const rawPic = await RNFS.readFile(picture, 'base64')
+            console.debug("Took picture:", rawPic.length, 'bytes')
 
-        const toSend = JSON.stringify({
-            type: "IMG",
-            message: rawPic
-        })
-        dispatch(sendMessage(toSend, props?.route?.params?.data?.peer))
+            const toSend = JSON.stringify({
+                type: "IMG",
+                message: rawPic
+            })
+            const success = await dispatch(sendMessage(toSend, props?.route?.params?.data?.peer))
+            if (success) props.navigation.goBack()
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
     }, [picture])
 
     return (
@@ -91,7 +105,7 @@ export default function CameraView(props: IProps) {
                         <Button style={styles.button} icon='refresh' mode="contained" onPress={() => setPicture('')} color="white">
                             Take again
                         </Button>
-                        <Button style={styles.button} icon="send" mode="contained" onPress={send}>
+                        <Button style={styles.button} icon="send" mode="contained" onPress={send} loading={loading} disabled={loading}>
                             Send
                         </Button>
                     </View>
