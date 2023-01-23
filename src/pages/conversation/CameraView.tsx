@@ -2,13 +2,14 @@ import React, { useEffect, useState, useCallback, useRef } from "react"
 import { View, Image, StyleSheet } from "react-native"
 import { ActivityIndicator, Button } from 'react-native-paper'
 import { Camera, useCameraDevices } from "react-native-vision-camera"
+import { useDispatch } from "react-redux"
+import { ThunkDispatch } from "redux-thunk"
+import { AnyAction } from "redux";
 import Toast from 'react-native-toast-message'
 import RNFS from 'react-native-fs'
-import { useDispatch } from "react-redux"
-import { AnyAction } from "redux";
+
 import { sendMessage } from "~/store/actions/user"
 import { UserData } from "~/store/reducers/user"
-import { ThunkDispatch } from "redux-thunk"
 
 
 interface IProps {

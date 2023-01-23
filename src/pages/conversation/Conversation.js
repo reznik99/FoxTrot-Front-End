@@ -1,5 +1,5 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Image, Keyboard, Linking } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Image, Keyboard, Linking, Platform, KeyboardAvoidingView } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
@@ -73,12 +73,15 @@ export default function Conversation(props) {
                 <TouchableOpacity style={styles.button} onPress={() => props.navigation.navigate('CameraView', { data: { peer: peer } })}>
                     <FontAwesomeIcon icon={faCamera} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
-                <TextInput placeholder="Type a message"
-                    multiline={true}
-                    value={message}
-                    onChangeText={setMessage}
-                    style={styles.input}
-                />
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex: 1}}>
+                    <TextInput placeholder="Type a message"
+                        multiline={true}
+                        value={message}
+                        onChangeText={setMessage}
+                        style={styles.input}
+                        clearButtonMode="always"
+                    />
+                </KeyboardAvoidingView>
                 <TouchableOpacity style={styles.button} onPress={handleSend}>
                     <FontAwesomeIcon icon={faArrowRight} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
@@ -115,7 +118,7 @@ class Message extends PureComponent {
 
             // Check if URL or Image is contained in message
             if (this.state.decryptedMessage?.type === "IMG") {
-                this.setState({showMediaLarge: !this.state.showMediaLarge})
+                this.setState({ showMediaLarge: !this.state.showMediaLarge })
             } else if (this.state.decryptedMessage?.type === "MSG") {
                 const messageChunks = this.state.decryptedMessage?.message.split(" ")
                 const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
@@ -136,7 +139,7 @@ class Message extends PureComponent {
         const { type, message } = decryptedMessage
 
         if (type === "IMG") {
-            return <Image source={{ uri: `data:image/jpeg;base64,${message}` }} style={this.state.showMediaLarge ? {height: 250, width: 250} : {height: 150, width: 150}} />
+            return <Image source={{ uri: `data:image/jpeg;base64,${message}` }} style={this.state.showMediaLarge ? { height: 250, width: 250 } : { height: 150, width: 150 }} />
         } else {
             const messageChunks = message.split(" ")
             const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
