@@ -1,7 +1,7 @@
+apply plugin: "com.android.application"
+
 import com.android.build.OutputFile
 import org.apache.tools.ant.taskdefs.condition.Os
-
-apply plugin: 'com.android.application'
 
 
 /**
@@ -80,7 +80,7 @@ apply plugin: 'com.android.application'
 project.ext.react = [
     entryFile: "index.js",
     enableHermes: true,  // clean and rebuild if changing
-    hermesCommand: "../../node_modules/hermes-engine/%OS-BIN%/hermesc",
+    // hermesCommand: "../../node_modules/hermes-engine/%OS-BIN%/hermesc",
 ]
 
 apply from: "../../node_modules/react-native/react.gradle"
@@ -122,13 +122,18 @@ def jscFlavor = 'org.webkit:android-jsc:+'
  */
 def enableHermes = project.ext.react.get("enableHermes", false);
 
-android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
+/**
+ * Architectures to build native code for.
+ */
+def reactNativeArchitectures() {
+    def value = project.getProperties().get("reactNativeArchitectures")
+    return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+}
 
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
+android {
+    ndkVersion rootProject.ext.ndkVersion
+
+    compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
         applicationId "com.francescogorini.foxtrot"
@@ -143,7 +148,7 @@ android {
             reset()
             enable enableSeparateBuildPerCPUArchitecture
             universalApk false  // If true, also generate a universal APK
-            include "armeabi-v7a", "x86", "arm64-v8a", "x86_64"
+            include (*reactNativeArchitectures())
         }
     }
     signingConfigs {
@@ -199,12 +204,16 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
+
+    //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules
+
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
 
     if (enableHermes) {
         def hermesPath = "../../node_modules/hermes-engine/android/"; 
-        implementation("com.facebook.react:hermes-engine:+") {
-            exclude group: 'com.facebook.fbjni'
+        implementation("com.facebook.react:hermes-engine:+") { // From node_modules
+            exclude group:'com.facebook.fbjni'
         }
     } else {
         implementation jscFlavor
