@@ -79,7 +79,7 @@ export default function CameraView(props: IProps) {
         setLoading(true)
         try {
             const rawPic = await RNFS.readFile(picture, 'base64')
-            console.debug("Took picture:", rawPic.length, 'bytes')
+            console.debug("Took picture:", rawPic.length.toLocaleString(), 'bytes')
 
             const toSend = JSON.stringify({
                 type: "IMG",

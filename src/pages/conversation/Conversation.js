@@ -73,7 +73,7 @@ export default function Conversation(props) {
                 <TouchableOpacity style={styles.button} onPress={() => props.navigation.navigate('CameraView', { data: { peer: peer } })}>
                     <FontAwesomeIcon icon={faCamera} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex: 1}}>
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                     <TextInput placeholder="Type a message"
                         multiline={true}
                         value={message}
@@ -188,6 +188,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         width: "100%",
+        backgroundColor: '#222'
     }, messageList: {
         paddingHorizontal: 10
     }, messageContainer: {

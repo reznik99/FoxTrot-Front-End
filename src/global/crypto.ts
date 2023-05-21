@@ -8,6 +8,8 @@ interface exportedKeypair {
     publicKey: string
 }
 
+const chunkSize = 32 * 1024;
+
 export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKeyPair> {
 
     const privateKey = await crypto.subtle.importKey(
@@ -76,16 +78,16 @@ export async function deriveKeyFromPassword(password: string, salt: Uint8Array, 
         false,
         ["deriveBits", "deriveKey"],
     );
-    
+
     return await crypto.subtle.deriveKey(
         {
-        name: "PBKDF2",
-        salt,
-        iterations: iterations,
-        hash: "SHA-256",
+            name: "PBKDF2",
+            salt,
+            iterations: iterations,
+            hash: "SHA-256",
         },
         keyMaterial,
-        { name: "AES-GCM", length: 256},
+        { name: "AES-GCM", length: 256 },
         true,
         ["encrypt", "decrypt"],
     );
@@ -95,10 +97,7 @@ export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): 
 
     const [IV, cipherText] = encryptedMessage.split(":")
     const decrypted = await crypto.subtle.decrypt(
-        {
-            name: "AES-CBC",
-            iv: Buffer.from(IV, 'base64')
-        },
+        { name: "AES-CBC", iv: Buffer.from(IV, 'base64') },
         sessionKey,
         Buffer.from(cipherText, 'base64')
     )
@@ -110,10 +109,7 @@ export async function encrypt(sessionKey: CryptoKey, message: string): Promise<s
 
     const IV = crypto.getRandomValues(new Uint8Array(16));
     const cipherText = await crypto.subtle.encrypt(
-        {
-            name: "AES-CBC",
-            iv: IV,
-        },
+        { name: "AES-CBC", iv: IV },
         sessionKey,
         Buffer.from(message)
     )
