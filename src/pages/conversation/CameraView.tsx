@@ -71,7 +71,7 @@ export default function CameraView(props: IProps) {
 
     const takePic = useCallback(async () => {
         if (!camera.current) return
-        const pic = await camera.current.takeSnapshot({ quality: 10 })
+        const pic = await camera.current.takeSnapshot({ quality: 25 })
         setPicture(pic.path)
     }, [])
 
@@ -85,6 +85,7 @@ export default function CameraView(props: IProps) {
                 type: "IMG",
                 message: rawPic
             })
+
             const success = await dispatch(sendMessage(toSend, props?.route?.params?.data?.peer))
             if (success) props.navigation.goBack()
         } catch (err) {

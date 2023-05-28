@@ -1,14 +1,13 @@
 
 // Crypto
 import { Buffer } from 'buffer'
+import Sodium from 'react-native-sodium'
 import { KeypairAlgorithm } from '~/global/variables';
 
 interface exportedKeypair {
     privateKey: string
     publicKey: string
 }
-
-const chunkSize = 32 * 1024;
 
 export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKeyPair> {
 
@@ -94,7 +93,7 @@ export async function deriveKeyFromPassword(password: string, salt: Uint8Array, 
 }
 
 export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
-
+    
     const [IV, cipherText] = encryptedMessage.split(":")
     const decrypted = await crypto.subtle.decrypt(
         { name: "AES-CBC", iv: Buffer.from(IV, 'base64') },
@@ -115,4 +114,33 @@ export async function encrypt(sessionKey: CryptoKey, message: string): Promise<s
     )
 
     return Buffer.from(IV).toString("base64") + ":" + Buffer.from(cipherText).toString("base64")
+}
+
+// encryptSodium encrypts a message with Sodium (using XSalsa20 stream cipher with Poly1305 MAC)
+export async function encryptSodium(sessionKey: CryptoKey, message: string): Promise<string> {
+
+    const key = await crypto.subtle.exportKey('raw', sessionKey)
+    const nonce = await Sodium.randombytes_buf(Sodium.crypto_secretbox_NONCEBYTES)
+
+    const ciphertext = await Sodium.crypto_secretbox_easy(
+        Buffer.from(message).toString('base64'),
+        nonce,
+        Buffer.from(key).toString('base64')
+    )
+    console.debug("ciphertext", ciphertext.length.toLocaleString())
+
+    return `${nonce}:${ciphertext}`
+}
+
+// decryptSodium decrypts a message with Sodium (using XSalsa20 stream cipher with Poly1305 MAC)
+export async function decryptSodium(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
+
+    const key = Buffer.from(await crypto.subtle.exportKey('raw', sessionKey)).toString('base64')
+    const nonce = encryptedMessage.split(':')[0]
+    const ciphertext = encryptedMessage.split(':')[1]
+
+    const message = await Sodium.crypto_secretbox_open_easy(ciphertext, nonce, key)
+    console.debug("message", message.length.toLocaleString())
+
+    return message
 }

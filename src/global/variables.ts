@@ -9,6 +9,8 @@ export const KeypairAlgorithm = {
   namedCurve: 'P-384'
 }
 
+export const ChunkSize = 48 * 1024;
+
 export const KeychainOpts = {
     authenticationPrompt: {
       title: 'Authentication required',
