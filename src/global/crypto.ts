@@ -142,5 +142,5 @@ export async function decryptSodium(sessionKey: CryptoKey, encryptedMessage: str
     const message = await Sodium.crypto_secretbox_open_easy(ciphertext, nonce, key)
     console.debug("message", message.length.toLocaleString())
 
-    return message
+    return Buffer.from(message, 'base64').toString()
 }

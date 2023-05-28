@@ -10,7 +10,7 @@ import { Buffer } from 'buffer'
 
 import { sendMessage } from '~/store/actions/user';
 import { decrypt, decryptSodium } from "~/global/crypto";
-import { crypto_box_NONCEBYTES } from "react-native-sodium";
+import Sodium from "react-native-sodium";
 
 const todaysDate = new Date().toLocaleDateString()
 
@@ -107,7 +107,7 @@ class Message extends PureComponent {
         let decryptedMessage
         // Decrypt message with standard or Sodium decryption
         const ivNonce = Buffer.from(item.message?.split(':')[0], 'base64')
-        if (ivNonce.byteLength === crypto_box_NONCEBYTES) {
+        if (ivNonce.length === Sodium.crypto_secretbox_NONCEBYTES) {
             decryptedMessage = await decryptSodium(this.props.peer.session_key, item.message)
         } else {
             decryptedMessage = await decrypt(this.props.peer.session_key, item.message)
@@ -140,7 +140,7 @@ class Message extends PureComponent {
                 if (link) Linking.openURL(link)
             }
         } catch (err) {
-            console.error("Error on message click", err?.message)
+            console.error("Error on message click:", err?.message)
             Toast.show({
                 type: 'error',
                 text1: 'Failed to decrypt message',
