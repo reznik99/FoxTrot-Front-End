@@ -4,11 +4,13 @@ import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
 import { FlashList } from "@shopify/flash-list";
-
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowRight, faCamera, faLock } from "@fortawesome/free-solid-svg-icons";
+import { Buffer } from 'buffer'
+
 import { sendMessage } from '~/store/actions/user';
-import { decrypt } from "~/global/crypto";
+import { decrypt, decryptSodium } from "~/global/crypto";
+import { crypto_box_NONCEBYTES } from "react-native-sodium";
 
 const todaysDate = new Date().toLocaleDateString()
 
@@ -101,58 +103,79 @@ class Message extends PureComponent {
         }
     }
 
+    decryptMessage = async (item) => {
+        let decryptedMessage
+        // Decrypt message with standard or Sodium decryption
+        const ivNonce = Buffer.from(item.message?.split(':')[0], 'base64')
+        if (ivNonce.byteLength === crypto_box_NONCEBYTES) {
+            decryptedMessage = await decryptSodium(this.props.peer.session_key, item.message)
+        } else {
+            decryptedMessage = await decrypt(this.props.peer.session_key, item.message)
+        }
+        // Backwards compatibility for messages that didn't contain a type (pre v1.7)
+        try {
+            return JSON.parse(decryptedMessage);
+        } catch (err) {
+            return { type: "MSG", message: decryptedMessage }
+        }
+    }
+
     handleClick = async (item) => {
         try {
-            if (!this.state.decryptedMessage) {
-                this.setState({ loading: true })
-                const decryptedMessage = await decrypt(this.props.peer.session_key, item.message)
-                try {
-                    const message = JSON.parse(decryptedMessage);
-                    this.setState({ decryptedMessage: message })
-                } catch (err) {
-                    // Backwards compatibility
-                    this.setState({ decryptedMessage: { type: "MSG", message: decryptedMessage } })
-                }
-                return
-            }
+            this.setState({ loading: true })
 
-            // Check if URL or Image is contained in message
+            // Check if message is encrypted, if so, decrypt it
+            if (!this.state.decryptedMessage) {
+                const decryptedMessage = await this.decryptMessage(item)
+                return this.setState({ decryptedMessage: decryptedMessage })
+            }
+            // Check if URL or Image is contained in message, if so toggle size.
             if (this.state.decryptedMessage?.type === "IMG") {
-                this.setState({ showMediaLarge: !this.state.showMediaLarge })
-            } else if (this.state.decryptedMessage?.type === "MSG") {
-                const messageChunks = this.state.decryptedMessage?.message.split(" ")
+                return this.setState({ showMediaLarge: !this.state.showMediaLarge })
+            }
+            // Check if message contains URL, if so, open browser.
+            if (this.state.decryptedMessage?.type === "MSG") {
+                const messageChunks = this.state.decryptedMessage?.message?.split(" ")
                 const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
                 if (link) Linking.openURL(link)
             }
         } catch (err) {
-            console.error("Error decrypting message", err)
+            console.error("Error on message click", err?.message)
             Toast.show({
                 type: 'error',
                 text1: 'Failed to decrypt message',
-                text2: 'Session Key might have been rotated since this message was sent'
+                text2: err?.message || 'Session Key might have been rotated since this message was sent'
             });
+        } finally {
             this.setState({ loading: false })
         }
     }
 
-    renderMessageText = (decryptedMessage) => {
-        const { type, message } = decryptedMessage
+    renderMessageText = (item) => {
+        switch (item?.type) {
+            // TODO: Add VIDEO, GIF and AUDIO message types
+            case "IMG":
+                return (
+                    <Image source={{ uri: `data:image/jpeg;base64,${item.message}` }}
+                        style={this.state.showMediaLarge
+                            ? { height: 250, width: 250 }
+                            : { height: 150, width: 150 }}
+                    />
+                )
+            case "MSG":
+            default:
+                const messageChunks = item.message.split(" ")
+                const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
 
-        if (type === "IMG") {
-            return <Image source={{ uri: `data:image/jpeg;base64,${message}` }} style={this.state.showMediaLarge ? { height: 250, width: 250 } : { height: 150, width: 150 }} />
-        } else {
-            const messageChunks = message.split(" ")
-            const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
+                if (linkIndex < 0) return <Text selectable>{item.message}</Text>
 
-            if (linkIndex < 0) return <Text selectable>{message}</Text>
-
-            return (
-                <Text>
-                    <Text selectable>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
-                    <Text selectable style={{ color: 'blue' }}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
-                    <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
-                </Text>
-            )
+                return (
+                    <Text>
+                        <Text selectable>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
+                        <Text selectable style={{ color: 'blue' }}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
+                        <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
+                    </Text>
+                )
         }
     }
 

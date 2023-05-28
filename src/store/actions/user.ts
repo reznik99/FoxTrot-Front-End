@@ -4,8 +4,8 @@ import * as Keychain from 'react-native-keychain';
 import messaging from '@react-native-firebase/messaging'; // Push Notifications
 import Toast from 'react-native-toast-message';
 
-import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
-import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt } from '~/global/crypto';
+import { API_URL, KeypairAlgorithm, KeychainOpts, ChunkSize } from '~/global/variables';
+import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, encryptSodium } from '~/global/crypto';
 import { AppDispatch, GetState } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
 
@@ -119,11 +119,11 @@ export function loadMessages() {
             }
 
             // If no cached conversations, load all from API just in case.
-            if(!previousConversations.size) lastChecked = 0 
+            if (!previousConversations.size) lastChecked = 0
 
             // Load new user messages
             const conversations = new Map(previousConversations)
-            const response = await axios.get(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token) )
+            const response = await axios.get(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token))
             response.data = response.data.reverse()
 
             response.data.forEach((message: any) => {
@@ -146,7 +146,7 @@ export function loadMessages() {
 
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
             AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries())))
-            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()) )
+            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
 
         } catch (err: any) {
             console.error('Error loading messages: ', err)
@@ -249,8 +249,15 @@ export function sendMessage(message: string, to_user: UserData) {
 
             if (!to_user?.session_key) throw new Error("Missing session_key for " + to_user?.phone_no)
 
-            // Encrypt message
-            const encryptedMessage = await encrypt(to_user.session_key, message)
+            // Encrypt message. Account for Webview-Crypto bug for large payloads and use Sodium instead
+            // https://github.com/webview-crypto/react-native-webview-crypto/issues/26
+            // TODO: fully migrate to Sodium for encryption?
+            let encryptedMessage
+            if (message.length > ChunkSize) {
+                encryptedMessage = await encryptSodium(to_user.session_key, message)
+            } else {
+                encryptedMessage = await encrypt(to_user.session_key, message)
+            }
 
             // Save message locally
             let msg = {
@@ -270,7 +277,7 @@ export function sendMessage(message: string, to_user: UserData) {
             await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()) )
+            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
             AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(state.conversations.entries())))
             return true
         } catch (err: any) {
