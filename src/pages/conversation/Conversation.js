@@ -1,11 +1,13 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, Image, Keyboard, Linking, Platform, KeyboardAvoidingView } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, 
+    Image, Keyboard, Linking, Platform, KeyboardAvoidingView, ToastAndroid } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
 import { FlashList } from "@shopify/flash-list";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowRight, faCamera, faLock } from "@fortawesome/free-solid-svg-icons";
+import Clipboard from '@react-native-clipboard/clipboard';
 import { Buffer } from 'buffer'
 
 import { sendMessage } from '~/store/actions/user';
@@ -56,7 +58,9 @@ export default function Conversation(props) {
     return (
         <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
 
-            <FlashList contentContainerStyle={styles.messageList}
+            <FlashList 
+                removeClippedSubviews={false}
+                contentContainerStyle={styles.messageList}
                 ref={scrollView}
                 inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
                 data={conversation.messages}
@@ -101,6 +105,15 @@ class Message extends PureComponent {
             decryptedMessage: undefined,
             showMediaLarge: false
         }
+    }
+
+    copyMessage = () => {
+        if(!this.state.decryptedMessage) return
+        Clipboard.setString(this.state.decryptedMessage.message)
+        ToastAndroid.show(
+            'Message Copied',
+            ToastAndroid.SHORT
+          );
     }
 
     decryptMessage = async (item) => {
@@ -185,10 +198,11 @@ class Message extends PureComponent {
         const sent_at = new Date(item.sent_at)
 
         return (
-            <Pressable
+            <Pressable selectable
                 style={[styles.messageContainer, isSent ? styles.sent : styles.received]}
-                onPress={() => this.handleClick(item)}>
-                <View style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
+                onPress={() => this.handleClick(item)}
+                onLongPress={() => this.copyMessage()}>
+                <View selectable style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
                     <ActivityIndicator style={{ position: 'absolute', zIndex: 10 }} animating={this.state.loading && !this.state.decryptedMessage} />
                     {isEncrypted
                         ? <Text selectable> {item.message?.length < 200 ? item.message : item.message?.substring(0, 197).padEnd(200, '...')} </Text>
