@@ -1,8 +1,7 @@
 
 // Crypto
 import { Buffer } from 'buffer'
-import Sodium from 'react-native-sodium'
-import { KeypairAlgorithm } from '~/global/variables';
+import { KeypairAlgorithm, ChunkSize } from '~/global/variables';
 
 interface exportedKeypair {
     privateKey: string
@@ -93,54 +92,35 @@ export async function deriveKeyFromPassword(password: string, salt: Uint8Array, 
 }
 
 export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
-    
-    const [IV, cipherText] = encryptedMessage.split(":")
-    const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-CBC", iv: Buffer.from(IV, 'base64') },
-        sessionKey,
-        Buffer.from(cipherText, 'base64')
-    )
 
-    return Buffer.from(decrypted).toString()
+    const decryptedChunks: string[] = []
+    const chunks = encryptedMessage.split(":")
+
+    for (let i = 0; i < chunks.length; i += 2) {
+        console.debug("iv length", chunks[i].length)
+        const iv = Buffer.from(chunks[i], 'base64')
+        const cipherText = Buffer.from(chunks[i + 1], 'base64')
+        const plainText = await crypto.subtle.decrypt({ name: "AES-CBC", iv: iv }, sessionKey, cipherText)
+        decryptedChunks.push(Buffer.from(plainText).toString())
+    }
+
+    console.log("decryptedChunks:", decryptedChunks.length)
+    return decryptedChunks.join("")
 }
 
 export async function encrypt(sessionKey: CryptoKey, message: string): Promise<string> {
 
-    const IV = crypto.getRandomValues(new Uint8Array(16));
-    const cipherText = await crypto.subtle.encrypt(
-        { name: "AES-CBC", iv: IV },
-        sessionKey,
-        Buffer.from(message)
-    )
+    const encryptedChunks: string[] = []
+    const messageBuf = Buffer.from(message)
 
-    return Buffer.from(IV).toString("base64") + ":" + Buffer.from(cipherText).toString("base64")
-}
+    for (let i = 0; i < messageBuf.length; i += ChunkSize) {
+        const nextIndex = Math.min(messageBuf.length, i + ChunkSize)
+        const iv = crypto.getRandomValues(new Uint8Array(16));
+        const plainText = Buffer.from(messageBuf.subarray(i, nextIndex))
+        const cipherText = await crypto.subtle.encrypt({ name: "AES-CBC", iv: iv }, sessionKey, plainText)
+        encryptedChunks.push(Buffer.from(iv).toString("base64") + ":" + Buffer.from(cipherText).toString("base64"))
+    }
 
-// encryptSodium encrypts a message with Sodium (using XSalsa20 stream cipher with Poly1305 MAC)
-export async function encryptSodium(sessionKey: CryptoKey, message: string): Promise<string> {
-
-    const key = await crypto.subtle.exportKey('raw', sessionKey)
-    const nonce = await Sodium.randombytes_buf(Sodium.crypto_secretbox_NONCEBYTES)
-
-    const ciphertext = await Sodium.crypto_secretbox_easy(
-        Buffer.from(message).toString('base64'),
-        nonce,
-        Buffer.from(key).toString('base64')
-    )
-    console.debug("ciphertext", ciphertext.length.toLocaleString())
-
-    return `${nonce}:${ciphertext}`
-}
-
-// decryptSodium decrypts a message with Sodium (using XSalsa20 stream cipher with Poly1305 MAC)
-export async function decryptSodium(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
-
-    const key = Buffer.from(await crypto.subtle.exportKey('raw', sessionKey)).toString('base64')
-    const nonce = encryptedMessage.split(':')[0]
-    const ciphertext = encryptedMessage.split(':')[1]
-
-    const message = await Sodium.crypto_secretbox_open_easy(ciphertext, nonce, key)
-    console.debug("message", message.length.toLocaleString())
-
-    return Buffer.from(message, 'base64').toString()
+    console.log("encryptedChunks:", encryptedChunks.length)
+    return encryptedChunks.join(":")
 }

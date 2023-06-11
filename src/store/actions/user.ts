@@ -4,8 +4,8 @@ import * as Keychain from 'react-native-keychain';
 import messaging from '@react-native-firebase/messaging'; // Push Notifications
 import Toast from 'react-native-toast-message';
 
-import { API_URL, KeypairAlgorithm, KeychainOpts, ChunkSize } from '~/global/variables';
-import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, encryptSodium } from '~/global/crypto';
+import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
+import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt } from '~/global/crypto';
 import { AppDispatch, GetState } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
 
@@ -249,15 +249,9 @@ export function sendMessage(message: string, to_user: UserData) {
 
             if (!to_user?.session_key) throw new Error("Missing session_key for " + to_user?.phone_no)
 
-            // Encrypt message. Account for Webview-Crypto bug for large payloads and use Sodium instead
-            // https://github.com/webview-crypto/react-native-webview-crypto/issues/26
-            // TODO: fully migrate to Sodium for encryption?
-            let encryptedMessage
-            if (message.length > ChunkSize) {
-                encryptedMessage = await encryptSodium(to_user.session_key, message)
-            } else {
-                encryptedMessage = await encrypt(to_user.session_key, message)
-            }
+            // Encrypt and send message
+            const encryptedMessage = await encrypt(to_user.session_key, message)
+            await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
             // Save message locally
             let msg = {
@@ -273,8 +267,6 @@ export function sendMessage(message: string, to_user: UserData) {
                 }
             }
             dispatch({ type: "SEND_MESSAGE", payload: msg })
-
-            await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token))
 
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
             AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))

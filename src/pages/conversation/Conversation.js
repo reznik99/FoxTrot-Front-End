@@ -11,8 +11,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { Buffer } from 'buffer'
 
 import { sendMessage } from '~/store/actions/user';
-import { decrypt, decryptSodium } from "~/global/crypto";
-import Sodium from "react-native-sodium";
+import { decrypt } from "~/global/crypto";
 
 const todaysDate = new Date().toLocaleDateString()
 
@@ -117,18 +116,12 @@ class Message extends PureComponent {
     }
 
     decryptMessage = async (item) => {
-        let decryptedMessage
-        // Decrypt message with standard or Sodium decryption
-        const ivNonce = Buffer.from(item.message?.split(':')[0], 'base64')
-        if (ivNonce.length === Sodium.crypto_secretbox_NONCEBYTES) {
-            decryptedMessage = await decryptSodium(this.props.peer.session_key, item.message)
-        } else {
-            decryptedMessage = await decrypt(this.props.peer.session_key, item.message)
-        }
-        // Backwards compatibility for messages that didn't contain a type (pre v1.7)
+        const decryptedMessage = await decrypt(this.props.peer.session_key, item.message)
         try {
             return JSON.parse(decryptedMessage);
         } catch (err) {
+            // Backwards compatibility for messages that didn't contain a type (pre v1.7)
+            console.warn(err)
             return { type: "MSG", message: decryptedMessage }
         }
     }
@@ -142,7 +135,7 @@ class Message extends PureComponent {
                 const decryptedMessage = await this.decryptMessage(item)
                 return this.setState({ decryptedMessage: decryptedMessage })
             }
-            // Check if URL or Image is contained in message, if so toggle size.
+            // Check if Image is contained in message, if so toggle size.
             if (this.state.decryptedMessage?.type === "IMG") {
                 return this.setState({ showMediaLarge: !this.state.showMediaLarge })
             }
