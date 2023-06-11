@@ -35,7 +35,7 @@ export default function Home(props) {
                     return props.navigation.navigate('Login', {
                         data: {
                             loggedOut: true,
-                            errorMsg: "This account has already loggin in another device. Public key cannot be overridden for security reasons."
+                            errorMsg: "This account has already logged in another device. Public key cannot be overridden for security reasons."
                         }
                     })
                 }

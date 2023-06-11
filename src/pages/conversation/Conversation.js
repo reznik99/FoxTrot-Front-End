@@ -1,6 +1,8 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground, 
-    Image, Keyboard, Linking, Platform, KeyboardAvoidingView, ToastAndroid } from "react-native";
+import {
+    StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground,
+    Image, Keyboard, Linking, Platform, KeyboardAvoidingView, ToastAndroid
+} from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
@@ -8,7 +10,6 @@ import { FlashList } from "@shopify/flash-list";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowRight, faCamera, faLock } from "@fortawesome/free-solid-svg-icons";
 import Clipboard from '@react-native-clipboard/clipboard';
-import { Buffer } from 'buffer'
 
 import { sendMessage } from '~/store/actions/user';
 import { decrypt } from "~/global/crypto";
@@ -53,11 +54,10 @@ export default function Conversation(props) {
         dispatch(sendMessage(JSON.stringify(toSend), peer))
     }, [message])
 
-
     return (
         <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
 
-            <FlashList 
+            <FlashList
                 removeClippedSubviews={false}
                 contentContainerStyle={styles.messageList}
                 ref={scrollView}
@@ -107,12 +107,12 @@ class Message extends PureComponent {
     }
 
     copyMessage = () => {
-        if(!this.state.decryptedMessage) return
+        if (!this.state.decryptedMessage) return
         Clipboard.setString(this.state.decryptedMessage.message)
         ToastAndroid.show(
             'Message Copied',
             ToastAndroid.SHORT
-          );
+        );
     }
 
     decryptMessage = async (item) => {
