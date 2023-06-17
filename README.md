@@ -8,8 +8,7 @@
 
 ### `FoxTrot Mobile App`
 
-FoxTrot, Mobile App offering end-to-end encrypted communication
-Simple React-Native application for sending, recieving (encrypted) messages and phone/video communications
+FoxTrot, Mobile App offering end-to-end encrypted communication built in React-Native, for sending & recieving (encrypted) messages and phone/video communications.
 
 ### This project uses:
 - [React-Native](https://reactnative.dev/)
@@ -21,11 +20,13 @@ Simple React-Native application for sending, recieving (encrypted) messages and 
 <!-- ROADMAP -->
 ## Roadmap
 
-- [x] __Messaging__ End-To-End Encrypted Messaging.
-- [x] __Notifications__ Push Notifications.
+- [x] __Messaging__ End-To-End Encrypted text messaging and pictures.
+- [x] __Notifications__ Push Notifications for messages.
 - [x] __Device Migration__ Key Archival.
 - [x] __Calling__ Peer-To-Peer Encrypted Audio Calls.
-- [x] __Calling__ Peer-To-Peer Encrypted Audio Calls.
+- [x] __Calling__ Peer-To-Peer Encrypted Video Calls.
+- [] __Messaging__ End-To-End Encrypted GIFs/Audio/Video messages.
+- [] __Calling__ Push Notifications for calls.
 
 See the [open issues](https://github.com/reznik99/FoxTrot-Front-End/issues) for a full list of proposed features (and known issues).
 <br>

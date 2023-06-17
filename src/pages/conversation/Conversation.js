@@ -157,7 +157,7 @@ class Message extends PureComponent {
         }
     }
 
-    renderMessageText = (item) => {
+    renderMessage = (item) => {
         switch (item?.type) {
             // TODO: Add VIDEO, GIF and AUDIO message types
             case "IMG":
@@ -199,7 +199,7 @@ class Message extends PureComponent {
                     <ActivityIndicator style={{ position: 'absolute', zIndex: 10 }} animating={this.state.loading && !this.state.decryptedMessage} />
                     {isEncrypted
                         ? <Text selectable> {item.message?.length < 200 ? item.message : item.message?.substring(0, 197).padEnd(200, '...')} </Text>
-                        : this.renderMessageText(this.state.decryptedMessage)
+                        : this.renderMessage(this.state.decryptedMessage)
                     }
                     {isEncrypted && <FontAwesomeIcon style={{ position: 'absolute', zIndex: 10 }} color="#333" icon={faLock} size={20} />}
                     <Text style={styles.messageTime}>
