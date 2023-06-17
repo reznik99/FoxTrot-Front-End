@@ -13,6 +13,7 @@ FoxTrot, Mobile App offering end-to-end encrypted communication built in React-N
 ### This project uses:
 - [React-Native](https://reactnative.dev/)
 - [Typescript](https://github.com/microsoft/TypeScript)
+- [React-Redux](https://react-redux.js.org/)
 - [SubtleCrypto](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto)
 - [Websockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
 - [WebRTC](https://webrtc.org/)
@@ -25,8 +26,8 @@ FoxTrot, Mobile App offering end-to-end encrypted communication built in React-N
 - [x] __Device Migration__ Key Archival.
 - [x] __Calling__ Peer-To-Peer Encrypted Audio Calls.
 - [x] __Calling__ Peer-To-Peer Encrypted Video Calls.
-- [] __Messaging__ End-To-End Encrypted GIFs/Audio/Video messages.
-- [] __Calling__ Push Notifications for calls.
+- [ ] __Messaging__ End-To-End Encrypted GIFs/Audio/Video messages.
+- [ ] __Calling__ Push Notifications for calls.
 
 See the [open issues](https://github.com/reznik99/FoxTrot-Front-End/issues) for a full list of proposed features (and known issues).
 <br>
