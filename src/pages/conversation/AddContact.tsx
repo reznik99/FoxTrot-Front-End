@@ -4,19 +4,22 @@ import { Divider, Searchbar, ActivityIndicator } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
+import { ThunkDispatch } from "redux-thunk"
+import { AnyAction } from "redux";
 
-import { searchUsers, addContact } from '../../store/actions/user'
-import { ContactPeek } from '../../components'
+import { searchUsers, addContact } from '~/store/actions/user'
+import { ContactPeek } from '~/components'
 import globalStyle from "~/global/globalStyle"
 import { RootState } from "~/store/store"
 import { UserData } from "~/store/reducers/user"
 
+type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
 export default function AddContact(props: { navigation: any }) {
 
     const { navigation } = props
     const loading = useSelector((state: RootState) => state.userReducer.loading)
-    const dispatch = useDispatch()
+    const dispatch: AppDispatch = useDispatch()
 
     const [results, setResults] = useState<UserData[] | undefined>(undefined)
     const [addingContact, setAddingContact] = useState<UserData | undefined>(undefined)
