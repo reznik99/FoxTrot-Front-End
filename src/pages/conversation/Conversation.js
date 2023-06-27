@@ -108,6 +108,8 @@ class Message extends PureComponent {
 
     copyMessage = () => {
         if (!this.state.decryptedMessage) return
+        if (this.state.decryptedMessage?.type !== "MSG") return
+        
         Clipboard.setString(this.state.decryptedMessage.message)
         ToastAndroid.show(
             'Message Copied',
