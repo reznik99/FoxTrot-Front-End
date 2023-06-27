@@ -60,7 +60,7 @@ class Login extends Component {
             await this.attemptAutoLogin(auth.biometric);
 
         } catch(err){
-            console.error('Error on auto-login: ', err)
+            console.error('Error on auto-login:', err)
         } finally {
             this.setState({gloablLoading: false})
         }
@@ -122,7 +122,7 @@ class Login extends Component {
         console.debug('Attempting biometric auth')
         const biometricAuth = await LocalAuthentication.authenticateAsync()
         if(!biometricAuth.success) {
-            console.error('Biometric auth failed: ', biometricAuth.error)
+            console.error('Biometric auth failed:', biometricAuth.error)
             return false
         }
         return true

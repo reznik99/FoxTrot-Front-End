@@ -146,7 +146,7 @@ class Message extends PureComponent {
                 if (link) Linking.openURL(link)
             }
         } catch (err) {
-            console.error("Error on message click:", err?.message)
+            console.error("Error on message click:", err)
             Toast.show({
                 type: 'error',
                 text1: 'Failed to decrypt message',

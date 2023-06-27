@@ -187,8 +187,8 @@ class Call extends React.Component<Props, State> {
             })
 
             if (!this.props.callOffer) await this.call()
-        } catch (e) {
-            console.error("startStream error: ", e)
+        } catch (err: any) {
+            console.error("startStream error:", err)
         }
     }
 

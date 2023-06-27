@@ -24,15 +24,10 @@ export default function Settings(props: any) {
     const [visibleDialog, setVisibleDialog] = useState('')
     const [encPassword, setEncPassword] = useState('')
 
-    // Testing stuff
-    const [isSwitchOn, setIsSwitchOn] = useState(false)
-    const [checked, setChecked] = useState(false)
-    const [expanded, setExpanded] = useState(true)
-
     useEffect(() => {
         AsyncStorage.getAllKeys()
             .then(keys => setKeys([...keys]))
-            .catch(err => console.error("Error loading AsyncStorage items", err))
+            .catch(err => console.error("Error loading AsyncStorage items:", err))
     }, [])
 
     const resetApp = useCallback(() => {
@@ -44,7 +39,7 @@ export default function Settings(props: any) {
     }, [keys, user_data])
 
     const resetValue = useCallback(async (key: string) => {
-        console.log("Deleting:", key)
+        console.debug("Deleting:", key)
         await AsyncStorage.removeItem(key)
         setKeys(keys.filter(k => k !== key))
     }, [keys])

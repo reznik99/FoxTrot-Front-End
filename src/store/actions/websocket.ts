@@ -66,7 +66,7 @@ export function initializeWebsocket() {
             }
             dispatch({ type: "WEBSOCKET_CONNECT", payload: socketConn })
         } catch (err) {
-            console.error('Error establishing websocket: ', err)
+            console.error('Error establishing websocket:', err)
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
         }
@@ -156,7 +156,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
             default:
                 console.debug("Websocket RECV unknown command from: ", parsedData.data?.sender, parsedData.cmd)
         }
-    } catch (err) {
-        console.error("Websocket RECV error: ", err)
+    } catch (err: any) {
+        console.error("Websocket RECV error:", err)
     }
 }

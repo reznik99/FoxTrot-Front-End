@@ -59,7 +59,7 @@ export default function CameraView(props: IProps) {
             setHasPermission(true)
             return true
         } catch (err) {
-            console.error(err)
+            console.error('Error requesting camera permissions:', err)
             return false
         }
     }, [devices])
@@ -89,7 +89,7 @@ export default function CameraView(props: IProps) {
             const success = await dispatch(sendMessage(toSend, props?.route?.params?.data?.peer))
             if (success) props.navigation.goBack()
         } catch (err) {
-            console.error(err)
+            console.error('Error sending image:', err)
         } finally {
             setLoading(false)
         }

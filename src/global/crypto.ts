@@ -97,14 +97,13 @@ export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): 
     const chunks = encryptedMessage.split(":")
 
     for (let i = 0; i < chunks.length; i += 2) {
-        console.debug("iv length", chunks[i].length)
         const iv = Buffer.from(chunks[i], 'base64')
         const cipherText = Buffer.from(chunks[i + 1], 'base64')
         const plainText = await crypto.subtle.decrypt({ name: "AES-CBC", iv: iv }, sessionKey, cipherText)
         decryptedChunks.push(Buffer.from(plainText).toString())
     }
 
-    console.log("decryptedChunks:", decryptedChunks.length)
+    console.debug("decryptedChunks:", decryptedChunks.length)
     return decryptedChunks.join("")
 }
 
@@ -121,6 +120,6 @@ export async function encrypt(sessionKey: CryptoKey, message: string): Promise<s
         encryptedChunks.push(Buffer.from(iv).toString("base64") + ":" + Buffer.from(cipherText).toString("base64"))
     }
 
-    console.log("encryptedChunks:", encryptedChunks.length)
+    console.debug("encryptedChunks:", encryptedChunks.length)
     return encryptedChunks.join(":")
 }

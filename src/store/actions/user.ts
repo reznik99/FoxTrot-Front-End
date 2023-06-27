@@ -76,7 +76,7 @@ export function generateAndSyncKeys() {
             return true
 
         } catch (err: any) {
-            console.error(`Error generating and syncing keys: ${err}`)
+            console.error('Error generating and syncing keys:', err)
             Toast.show({
                 type: 'error',
                 text1: 'Failed to generate Identity Keypair',
@@ -111,8 +111,8 @@ export function loadMessages() {
 
                     previousConversations = new Map(JSON.parse(cachedConversations))
                     console.debug(`Loaded ${previousConversations.size} conversations from storage. Last checked ${lastChecked}`)
-                } catch (err) {
-                    console.warn('Failed to load messages from storage')
+                } catch (err: any) {
+                    console.warn('Failed to load messages from storage: ', err)
                 }
             } else {
                 previousConversations = new Map(state.conversations)
@@ -149,7 +149,7 @@ export function loadMessages() {
             AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
 
         } catch (err: any) {
-            console.error('Error loading messages: ', err)
+            console.error('Error loading messages:', err)
             Toast.show({
                 type: 'error',
                 text1: 'Error loading messages',
@@ -175,7 +175,7 @@ export function loadContacts(atomic = true) {
                 try {
                     const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey)
                     return { ...contact, pic: `https://robohash.org/${contact.id}`, session_key }
-                } catch (err) {
+                } catch (err: any) {
                     console.warn("Failed to generate session key:", contact.phone_no, err)
                     return { ...contact, pic: `https://robohash.org/${contact.id}` }
                 }
@@ -206,12 +206,12 @@ export function addContact(user: UserData) {
 
             dispatch({ type: "ADD_CONTACT_SUCCESS", payload: { ...data, pic: `https://robohash.org/${data.id}`, session_key } })
             return true
-        } catch (err) {
-            console.error('Error adding contact: ', err)
+        } catch (err: any) {
+            console.error('Error adding contact:', err)
             Toast.show({
                 type: 'error',
                 text1: 'Failed to add contact',
-                text2: 'Please try again later',
+                text2: err.message || 'Please try again later',
                 visibilityTime: 5000
             });
             return false
@@ -232,8 +232,8 @@ export function searchUsers(prefix: string) {
 
             return results
 
-        } catch (err) {
-            console.error(`Error searching users: ${err}`)
+        } catch (err: any) {
+            console.error('Error searching users:', err)
             return []
         } finally {
             dispatch({ type: "SET_LOADING", payload: false })
@@ -298,7 +298,7 @@ export function validateToken() {
 
             dispatch({ type: "TOKEN_VALID", payload: res.data?.valid })
             return res.data?.valid
-        } catch (err) {
+        } catch (err: any) {
             dispatch({ type: "TOKEN_VALID", payload: false })
             return false
         } finally {
@@ -327,7 +327,7 @@ export function syncFromStorage() {
             dispatch({ type: "SYNC_FROM_STORAGE", payload: payload })
             return true
         } catch (err: any) {
-            console.error('Error syncing from storage: ', err)
+            console.error('Error syncing from storage:', err)
             Toast.show({
                 type: 'error',
                 text1: 'Failed to sync data from storage',
