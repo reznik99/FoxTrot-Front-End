@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { connect } from 'react-redux'
+import { ConnectedProps, connect } from 'react-redux'
 import { View, ScrollView, Keyboard, Alert } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
@@ -9,11 +9,31 @@ import styles from './style';
 import { KeychainOpts } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
+import { UserData } from '~/store/reducers/user';
+import { RootState } from '~/store/store';
 
+interface IState {
+    gloablLoading: boolean;
+    username: string;
+    password: string;
+}
 
-class Login extends Component {
+interface IProps extends PropsFromRedux {
+    navigation: any;
+    route: {
+        params: {
+            data: {
+                peer_user: UserData;
+                errorMsg: string;
+                loggedOut: boolean;
+            }
+        }
+    },
+}
 
-    constructor(props) {
+class Login extends Component<IProps, IState> {
+
+    constructor(props: IProps) {
         super(props)
         this.state = {
             gloablLoading: false,
@@ -86,7 +106,7 @@ class Login extends Component {
         return {success: true, biometric: biometricSuccess}
     }
 
-    attemptAutoLogin = async (biometricSuccess) => {
+    attemptAutoLogin = async (biometricSuccess: boolean) => {
         const serviceKey = `${this.state.username}-password`
         const passwordsSaved = await Keychain.getAllGenericPasswordServices()
 
@@ -128,7 +148,7 @@ class Login extends Component {
         return true
     }
 
-    handleLogin = async (username, password) => {
+    handleLogin = async (username: string, password: string) => {
         if (this.props.loading) return
 
         Keyboard.dismiss()
@@ -155,21 +175,23 @@ class Login extends Component {
                                 onChangeText={val => this.setState({username: val.trim()})}
                                 value={this.state.username}
                                 label="Username"
-                                outlineColor={this.props.loginErr ? "red"  : null}
+                                outlineColor={this.props.loginErr ? "red"  : undefined}
                             />
                             <TextInput mode="outlined" 
                                 onChangeText={val => this.setState({password: val.trim()})}
                                 value={this.state.password} 
                                 label="Password"
                                 secureTextEntry={true}
-                                outlineColor={this.props.loginErr ? "red"  : null}
+                                outlineColor={this.props.loginErr ? "red"  : undefined}
                             />
                             
                             {/* Actions */}
                             <View style={{marginTop: 30, display: 'flex', alignItems: 'center'}}>
-                                <Button mode="contained" icon="login" style={styles.button} loading={this.props.loading} onPress={() => this.handleLogin(this.state.username, this.state.password)}>Login</Button>
+                                <Button mode="contained" icon="login" style={styles.button} loading={this.props.loading} 
+                                    onPress={() => this.handleLogin(this.state.username, this.state.password)}>Login</Button>
                                 <Text style={{paddingVertical: 10}}>Or</Text>
-                                <Button icon="account-plus" style={[styles.button, {backgroundColor: 'none'}]} onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
+                                <Button icon="account-plus" style={[styles.button, {backgroundColor: 'none'}]} 
+                                    onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
                             </View>
                         </View>
                     }
@@ -179,7 +201,7 @@ class Login extends Component {
     }
 }
 
-const mapStateToProps = (state, ownProps) => ({
+const mapStateToProps = (state: RootState) => ({
     user_data: state.userReducer.user_data,
     token: state.userReducer.token,
     loading: state.userReducer.loading,
@@ -192,6 +214,6 @@ const mapDispatchToProps = {
     logIn
 }
 
-
-// We normally do both in one step, like this:
-export default connect(mapStateToProps, mapDispatchToProps)(Login)
+const connector = connect(mapStateToProps, mapDispatchToProps)
+type PropsFromRedux = ConnectedProps<typeof connector>
+export default connector(Login)

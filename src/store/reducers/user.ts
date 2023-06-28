@@ -16,6 +16,7 @@ export interface State {
     iceCandidates: RTCIceCandidate[];
     loading: boolean;
     refreshing: boolean;
+    loginErr: string;
 }
 
 export interface UserData {
@@ -50,6 +51,7 @@ const initialState: State = {
     socketConn: undefined,
     loading: false,
     refreshing: false,
+    loginErr: ''
 }
 
 function userReducer(state = initialState, action: Action) {

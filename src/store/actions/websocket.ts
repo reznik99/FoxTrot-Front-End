@@ -103,7 +103,7 @@ export function resetCallState() {
 
 function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetState) {
     try {
-        const parsedData = JSON.parse(data) as SocketData
+        const parsedData: SocketData = JSON.parse(data)
         switch(parsedData.cmd) {
             case "MSG": 
                 dispatch({ type: "RECV_MESSAGE", payload: parsedData.data })
