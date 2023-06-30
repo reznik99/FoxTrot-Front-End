@@ -19,7 +19,7 @@ export default function AddContact(props: { navigation: any }) {
 
     const { navigation } = props
     const loading = useSelector((state: RootState) => state.userReducer.loading)
-    const dispatch: AppDispatch = useDispatch()
+    const dispatch = useDispatch<AppDispatch>()
 
     const [results, setResults] = useState<UserData[] | undefined>(undefined)
     const [addingContact, setAddingContact] = useState<UserData | undefined>(undefined)

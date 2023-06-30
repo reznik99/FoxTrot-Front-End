@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, ScrollView, RefreshControl, Text } from 'react-native'
+import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native'
 import { useSelector, useDispatch } from 'react-redux'
 import { Divider, FAB, ActivityIndicator, Snackbar } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
@@ -22,8 +22,26 @@ export default function Home(props) {
 
     useEffect(() => {
         const initLoad = async () => {
+
+            // Register device for push notifications
+            setLoadingMsg("Loading data from server...")
+            dispatch(registerPushNotifications())
+            // Load messages & start websocket connection to server
+            await configureWebsocket()
+            await loadAllMessages()
+
+            RNNotificationCall.addEventListener("answer", (payload) => {
+                console.debug('User Answered')
+                RNNotificationCall.backToApp()
+                props.navigation.navigate('Call', { data: { peer_user: caller } })
+            })
+            RNNotificationCall.addEventListener("endCall", (payload) => {
+                console.debug('User Declined')
+            })
+
             setLoadingMsg("Loading keys...")
             const loadedKeys = await (dispatch(loadKeys()))
+            setLoadingMsg('')
 
             // If keys not loaded, generate them (first time login)
             if (!loadedKeys) {
@@ -31,33 +49,29 @@ export default function Home(props) {
                 const success = await dispatch(generateAndSyncKeys())
                 setLoadingMsg('')
                 if (!success) {
-                    // TODO: Allow login but prevent messaging until Key Import
-                    return props.navigation.navigate('Login', {
-                        data: {
-                            loggedOut: true,
-                            errorMsg: "This account has already logged in another device. Public key cannot be overridden for security reasons."
-                        }
-                    })
+                    Alert.alert("Failed to generate keys", "This account might have already logged into another device. Keys must be imported in the settings page.",
+                        [
+                            {
+                                text: "Logout", onPress: () => {
+                                    props.navigation.navigate('Login', {
+                                        data: {
+                                            loggedOut: true,
+                                            errorMsg: "This account has already logged in another device. Public key cannot be overridden for security reasons."
+                                        }
+                                    })
+                                }
+                            },
+                            {
+                                text: "OK", onPress: () => { }
+                            }
+                        ]
+                    )
+                    return
                 }
             }
-            // Register device for push notifications
-            dispatch(registerPushNotifications())
-            // Load messages & start websocket connection to server
-            await configureWebsocket()
-            await loadAllMessages()
 
             // Setup axios interceptors
             setupInterceptors(props.navigation)
-
-            RNNotificationCall.addEventListener("answer", (payload) => {
-                console.debug('User Answered')
-                RNNotificationCall.backToApp()
-                props.navigation.navigate('Call', { data: {peer_user: caller } })
-            })
-            RNNotificationCall.addEventListener("endCall", (payload) => {
-                console.debug('User Declined')
-            })
-
         }
 
         initLoad()

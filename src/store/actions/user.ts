@@ -5,7 +5,7 @@ import messaging from '@react-native-firebase/messaging'; // Push Notifications
 import Toast from 'react-native-toast-message';
 
 import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
-import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt } from '~/global/crypto';
+import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { AppDispatch, GetState } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
 
@@ -35,7 +35,7 @@ export function loadKeys() {
             Toast.show({
                 type: 'error',
                 text1: 'Failed to load Identity Keypair from TPM',
-                text2: err.message || err,
+                text2: err.message ?? err.toString(),
                 visibilityTime: 5000
             });
             return false
@@ -53,11 +53,7 @@ export function generateAndSyncKeys() {
             let state = getState().userReducer
 
             // Generate User's Keypair
-            const keyPair = await window.crypto.subtle.generateKey(
-                KeypairAlgorithm,
-                true,
-                ["deriveKey"]
-            )
+            const keyPair = await generateIdentityKeypair()
             const keys = await exportKeypair(keyPair)
             console.debug(`Saving '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys to secure storage`)
 
@@ -80,7 +76,7 @@ export function generateAndSyncKeys() {
             Toast.show({
                 type: 'error',
                 text1: 'Failed to generate Identity Keypair',
-                text2: err.message || err,
+                text2: err.message ?? err.toString(),
                 visibilityTime: 5000
             });
             return false
@@ -153,7 +149,7 @@ export function loadMessages() {
             Toast.show({
                 type: 'error',
                 text1: 'Error loading messages',
-                text2: err.message || err,
+                text2: err.message ?? err.toString(),
                 visibilityTime: 5000
             });
         } finally {
@@ -188,7 +184,7 @@ export function loadContacts(atomic = true) {
             Toast.show({
                 type: 'error',
                 text1: 'Error loading contacts',
-                text2: err.message || err,
+                text2: err.message ?? err.toString(),
                 visibilityTime: 5000
             });
         } finally {
@@ -277,7 +273,7 @@ export function sendMessage(message: string, to_user: UserData) {
             Toast.show({
                 type: 'error',
                 text1: 'Error sending message',
-                text2: err.message || err
+                text2: err.message ?? err.toString()
             });
             return false
         } finally {
@@ -315,8 +311,7 @@ export function syncFromStorage() {
             console.debug('Loading user from local storage')
             const user_data = await AsyncStorage.getItem('user_data')
             const token = await AsyncStorage.getItem('auth_token')
-
-            // TODO: Load existing messages/contacts and stuff from async storage
+            // TODO: Load existing contacts from async storage
 
             if (!user_data || !token) return false
 
@@ -331,7 +326,7 @@ export function syncFromStorage() {
             Toast.show({
                 type: 'error',
                 text1: 'Failed to sync data from storage',
-                text2: err.message || err,
+                text2: err.message ?? err.toString(),
                 visibilityTime: 5000
             });
             return false
@@ -367,7 +362,7 @@ export function registerPushNotifications() {
             Toast.show({
                 type: 'error',
                 text1: 'Failed to register for push notifications',
-                text2: err.message || err,
+                text2: err.message ?? err.toString(),
                 visibilityTime: 5000
             });
         }

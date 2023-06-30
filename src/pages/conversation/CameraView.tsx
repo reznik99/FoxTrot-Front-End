@@ -25,7 +25,7 @@ type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
 export default function CameraView(props: IProps) {
 
-    const dispatch: AppDispatch = useDispatch()
+    const dispatch = useDispatch<AppDispatch>()
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
     const [device, setDevice] = useState(devices.back)

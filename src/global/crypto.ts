@@ -8,6 +8,15 @@ interface exportedKeypair {
     publicKey: string
 }
 
+export async function generateIdentityKeypair(): Promise<CryptoKeyPair> {
+    const keyPair = await window.crypto.subtle.generateKey(
+        KeypairAlgorithm,
+        true,
+        ["deriveKey"]
+    )
+    return keyPair
+}
+
 export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKeyPair> {
 
     const privateKey = await crypto.subtle.importKey(
@@ -93,6 +102,8 @@ export async function deriveKeyFromPassword(password: string, salt: Uint8Array, 
 
 export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
 
+    if (!sessionKey) throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.")
+
     const decryptedChunks: string[] = []
     const chunks = encryptedMessage.split(":")
 
@@ -108,6 +119,8 @@ export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): 
 }
 
 export async function encrypt(sessionKey: CryptoKey, message: string): Promise<string> {
+
+    if (!sessionKey) throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.")
 
     const encryptedChunks: string[] = []
     const messageBuf = Buffer.from(message)
