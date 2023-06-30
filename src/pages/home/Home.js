@@ -60,8 +60,7 @@ export default function Home(props) {
                                         }
                                     })
                                 }
-                            },
-                            {
+                            }, {
                                 text: "OK", onPress: () => { }
                             }
                         ]

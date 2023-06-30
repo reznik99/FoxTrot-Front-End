@@ -54,6 +54,7 @@ class Login extends Component<IProps, IState> {
             return console.debug("User logged out")
         }
 
+        // Auto-fill username field
         if(!this.state.username && this.props.user_data?.phone_no) {
             this.setState({username: this.props.user_data?.phone_no})
         }
@@ -72,11 +73,11 @@ class Login extends Component<IProps, IState> {
                 return
             }
 
-            // Auto-login if Token still valid (temporary disabled)
+            // Auto-login with JWT Token if still valid
             const auth = await this.attemptAutoLoginToken();
             if (auth.biometric && auth.success) return
 
-            // Check if user's password was saved to secure storage
+            // Auto-login with user password if it was previously saved to secure storage
             await this.attemptAutoLogin(auth.biometric);
 
         } catch(err){
