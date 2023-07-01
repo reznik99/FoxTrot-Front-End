@@ -20,11 +20,11 @@ export function loadKeys() {
             console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`)
 
             const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`, KeychainOpts)
-            if (!credentials || credentials.service !== `${state.user_data.phone_no}-keys`) {
+            if (!credentials || credentials.username !== `${state.user_data.phone_no}-keys`) {
                 console.debug('Warn: No keys found. First time login on device')
                 return false
             }
-
+            
             const keys = await importKeypair(JSON.parse(credentials.password))
 
             // Store keypair in memory

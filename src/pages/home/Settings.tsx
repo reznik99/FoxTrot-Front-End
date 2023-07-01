@@ -27,7 +27,9 @@ export default function Settings(props: any) {
     const user_data = useSelector((state: RootState) => state.userReducer.user_data)
     const keypair = useSelector((state: RootState) => state.userReducer.keys)
 
-    const [keys, setKeys] = useState([] as string[])
+    const [keys, setKeys] = useState<string[]>([])
+    const [hasIdentityKeys, setHasIdentityKeys] = useState(false)
+    const [hasPassword, setHasPassword] = useState(false)
     const [visibleDialog, setVisibleDialog] = useState('')
     const [encPassword, setEncPassword] = useState('')
 
@@ -35,6 +37,12 @@ export default function Settings(props: any) {
         AsyncStorage.getAllKeys()
             .then(keys => setKeys([...keys]))
             .catch(err => console.error("Error loading AsyncStorage items:", err))
+        Keychain.hasInternetCredentials(`${user_data.phone_no}-keys`)
+            .then(hasKeys => setHasIdentityKeys(Boolean(hasKeys)))
+            .catch(err => console.error("Error checking TPM for keys:", err))
+        Keychain.getGenericPassword({ service: `${user_data.phone_no}-password` })
+            .then(hasPassword => setHasPassword(Boolean(hasPassword)))
+            .catch(err => console.error("Error checking TPM for password:", err))
     }, [])
 
     const resetApp = useCallback(() => {
@@ -73,11 +81,10 @@ export default function Settings(props: any) {
                 derivedKEK,
                 Buffer.from(ciphertext, 'base64'),
             );
-            const stringKeys = Buffer.from(Ikeys).toString()
 
             // Store on device
             console.debug("Saving keys into TPM...")
-            await Keychain.setInternetCredentials(`${user_data.phone_no}-keys`, `${user_data.phone_no}-keys`, stringKeys, {
+            await Keychain.setInternetCredentials(`${user_data.phone_no}-keys`, `${user_data.phone_no}-keys`, Buffer.from(Ikeys).toString(), {
                 accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
                 authenticationPrompt: KeychainOpts.authenticationPrompt,
                 storage: Keychain.STORAGE_TYPE.AES,
@@ -168,8 +175,10 @@ export default function Settings(props: any) {
                 <Title>User Data</Title>
                 <View style={{ marginVertical: 15 }}>
                     <Text>Stored on device:</Text>
-                    <Chip icon="key">{user_data?.phone_no}-keys</Chip>
-                    <Chip icon="account-key">{user_data?.phone_no}-password</Chip>
+                    {/* TPM values */}
+                    {hasIdentityKeys && <Chip icon="key">{user_data?.phone_no}-keys</Chip>}
+                    {hasPassword && <Chip icon="account-key">{user_data?.phone_no}-password</Chip>}
+                    {/* Storage values */}
                     {keys.map((key, idx) => <Chip key={idx} onPress={() => resetValue(key)} icon="account">{key}</Chip>)}
 
                     <Button mode='contained' onPress={() => setVisibleDialog('reset')} loading={visibleDialog === 'reset'} style={{ marginTop: 10 }}>

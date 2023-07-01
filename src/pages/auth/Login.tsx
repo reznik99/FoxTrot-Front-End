@@ -43,6 +43,11 @@ class Login extends Component<IProps, IState> {
     }
 
     async componentDidMount() {
+        // Auto-fill username field
+        if(!this.state.username && this.props.user_data?.phone_no) {
+            this.setState({username: this.props.user_data?.phone_no})
+        }
+
         // If user manually logged out, don't try autologin
         if (this.props.route.params?.data?.loggedOut) {
             if(this.props.route.params?.data?.errorMsg) {
@@ -52,11 +57,6 @@ class Login extends Component<IProps, IState> {
                 );
             }
             return console.debug("User logged out")
-        }
-
-        // Auto-fill username field
-        if(!this.state.username && this.props.user_data?.phone_no) {
-            this.setState({username: this.props.user_data?.phone_no})
         }
 
         try {
