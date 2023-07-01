@@ -8,6 +8,7 @@ interface exportedKeypair {
     publicKey: string
 }
 
+/** Generates an Identity Keypair for this account/device */
 export async function generateIdentityKeypair(): Promise<CryptoKeyPair> {
     const keyPair = await window.crypto.subtle.generateKey(
         KeypairAlgorithm,
@@ -17,6 +18,7 @@ export async function generateIdentityKeypair(): Promise<CryptoKeyPair> {
     return keyPair
 }
 
+/** Imports an Identity Keypair into a usable Webcrypto form */
 export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKeyPair> {
 
     const privateKey = await crypto.subtle.importKey(
@@ -38,6 +40,7 @@ export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKey
     return { privateKey, publicKey }
 }
 
+/** Exports an Identity Keypair into JSON form containing Public and Private Key in DER Base64 */
 export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKeypair> {
     return {
         publicKey: Buffer.from(await crypto.subtle.exportKey('spki', keyPair.publicKey)).toString('base64'),
@@ -45,6 +48,7 @@ export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKey
     }
 }
 
+/** Generates a 256bit AES-CBC Encryption key for messages with a user */
 export async function generateSessionKeyECDH(peerPublic: string, userPrivate: CryptoKey | undefined): Promise<CryptoKey> {
 
     if (!peerPublic) throw new Error("Contacts's public key not present. ECDHE failed")
@@ -76,6 +80,7 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
     return sessionKey
 }
 
+/** Derives a 256bit AES-GCM Key Encryption key from a password and salt. Allows customising PBKDF2 difficulty through *Iterations* parameter */
 export async function deriveKeyFromPassword(password: string, salt: Uint8Array, iterations: number): Promise<CryptoKey> {
     // Derive Key from password using PBKDF2
     const keyMaterial = await crypto.subtle.importKey(
@@ -100,6 +105,16 @@ export async function deriveKeyFromPassword(password: string, salt: Uint8Array, 
     );
 }
 
+export async function publicKeyFingerprint(peerPublic: string): Promise<string> {
+    const digest = await crypto.subtle.digest(
+        {name: "sha-256"},
+        Buffer.from(peerPublic, 'base64')
+    )
+
+    return Buffer.from(digest).toString("hex").toUpperCase().split('').reduce((prev, curr, i)=> prev + curr + (i % 2 === 1 ? ' ' : ''), '');
+}
+
+/** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
 export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
 
     if (!sessionKey) throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.")
@@ -118,6 +133,7 @@ export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): 
     return decryptedChunks.join("")
 }
 
+/** Encrypts a given message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a Base64 string. */
 export async function encrypt(sessionKey: CryptoKey, message: string): Promise<string> {
 
     if (!sessionKey) throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.")

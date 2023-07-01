@@ -38,7 +38,7 @@ export default function ConversationPeek(props) {
         <>
             <TouchableOpacity style={styles.conversationPeek} onPress={() => { navigation.navigate('Conversation', { data: {peer_user: data.other_user} }) }}>
                 <Avatar.Image size={55} style={styles.profilePicContainer}
-                    source={{ uri: data.other_user.pic }}
+                    source={{ uri: `${data.other_user.pic}?size=100x100` }}
                     PlaceholderContent={<ActivityIndicator />} />
 
                 <View style={{ flex: 1}}>

@@ -122,8 +122,7 @@ export default function Home(props) {
                                 (<View key={index} >
                                     <ConversationPeek data={convo} navigation={props.navigation} />
                                     <Divider />
-                                </View>)
-                                )
+                                </View>))
                                 : <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                                     <Text style={[globalStyle.errorMsg, { color: '#fff' }]}>No Conversations.</Text>
                                 </View>
