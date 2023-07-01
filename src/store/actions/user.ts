@@ -47,10 +47,10 @@ export function loadKeys() {
 
 export function generateAndSyncKeys() {
     return async (dispatch: AppDispatch, getState: GetState) => {
+        const state = getState().userReducer
+
         try {
             dispatch({ type: "SET_LOADING", payload: true })
-
-            let state = getState().userReducer
 
             // Generate User's Keypair
             const keyPair = await generateIdentityKeypair()
@@ -72,6 +72,7 @@ export function generateAndSyncKeys() {
             return true
 
         } catch (err: any) {
+            Keychain.resetInternetCredentials(`${state.user_data.phone_no}-keys`)
             console.error('Error generating and syncing keys:', err)
             Toast.show({
                 type: 'error',
@@ -172,7 +173,7 @@ export function loadContacts(atomic = true) {
                     const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey)
                     return { ...contact, pic: `https://robohash.org/${contact.id}`, session_key }
                 } catch (err: any) {
-                    console.warn("Failed to generate session key:", contact.phone_no, err)
+                    console.warn("Failed to generate session key:", contact.phone_no, err.message || err)
                     return { ...contact, pic: `https://robohash.org/${contact.id}` }
                 }
             }))
@@ -265,8 +266,8 @@ export function sendMessage(message: string, to_user: UserData) {
             dispatch({ type: "SEND_MESSAGE", payload: msg })
 
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
             AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(getState().userReducer.conversations.entries())))
+            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
             return true
         } catch (err: any) {
             console.error('Error sending message:', err)
