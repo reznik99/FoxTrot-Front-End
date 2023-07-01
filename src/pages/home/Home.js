@@ -24,24 +24,27 @@ export default function Home(props) {
         const initLoad = async () => {
 
             // Register device for push notifications
-            setLoadingMsg("Loading data from server...")
+            setLoadingMsg("Connecting to server...")
             dispatch(registerPushNotifications())
-            // Load messages & start websocket connection to server
-            await configureWebsocket()
-            await loadAllMessages()
 
+            // Start websocket connection to server
+            await configureWebsocket()
+
+            // Register Call Screen handler
             RNNotificationCall.addEventListener("answer", (payload) => {
                 console.debug('User Answered')
                 RNNotificationCall.backToApp()
                 props.navigation.navigate('Call', { data: { peer_user: caller } })
             })
-            RNNotificationCall.addEventListener("endCall", (payload) => {
-                console.debug('User Declined')
-            })
+            RNNotificationCall.addEventListener("endCall", (payload) => console.debug('User Declined'))
 
-            setLoadingMsg("Loading keys...")
+            // Load keys from TPM
+            setLoadingMsg("Loading keys from TPM...")
             const loadedKeys = await (dispatch(loadKeys()))
-            setLoadingMsg('')
+
+            // Load new messages from backend and old messages from storage
+            setLoadingMsg('Loading data from server...')
+            await loadAllMessages()
 
             // If keys not loaded, generate them (first time login)
             if (!loadedKeys) {
@@ -52,14 +55,7 @@ export default function Home(props) {
                     Alert.alert("Failed to generate keys", "This account might have already logged into another device. Keys must be imported in the settings page.",
                         [
                             {
-                                text: "Logout", onPress: () => {
-                                    props.navigation.navigate('Login', {
-                                        data: {
-                                            loggedOut: true,
-                                            errorMsg: "This account has already logged in another device. Public key cannot be overridden for security reasons."
-                                        }
-                                    })
-                                }
+                                text: "Logout", onPress: () => props.navigation.navigate('Login', { data: { loggedOut: true } })
                             }, {
                                 text: "OK", onPress: () => { }
                             }
