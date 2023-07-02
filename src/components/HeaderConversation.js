@@ -67,8 +67,8 @@ export default function HeaderConversation(props) {
                     </Dialog.Title>
                     <Dialog.Content>
                         <Paragraph>Verify with your contact that this code matches their profile code:</Paragraph>
-                        {securityCode.match(/.{1,24}/g)?.map(val => (
-                            <Paragraph style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Paragraph>
+                        {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
+                            <Paragraph key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Paragraph>
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
