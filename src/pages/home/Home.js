@@ -16,7 +16,7 @@ import { setupInterceptors } from '~/store/actions/auth'
 export default function Home(props) {
 
     const dispatch = useDispatch()
-    const { conversations, loading, refreshing, socketErr, caller } = useSelector(state => state.userReducer)
+    const { conversations, loading, refreshing, socketErr } = useSelector(state => state.userReducer)
     const [loadingMsg, setLoadingMsg] = useState('')
     const [convos, setConvos] = useState([])
 
@@ -32,11 +32,14 @@ export default function Home(props) {
 
             // Register Call Screen handler
             RNNotificationCall.addEventListener("answer", (payload) => {
-                console.debug('User Answered')
+                console.debug('RNNotificationCall: User answered call', payload)
                 RNNotificationCall.backToApp()
-                props.navigation.navigate('Call', { data: { peer_user: caller } })
+                props.navigation.navigate('Call')
             })
-            RNNotificationCall.addEventListener("endCall", (payload) => console.debug('User Declined'))
+            RNNotificationCall.addEventListener("endCall", (payload) => {
+                console.debug('RNNotificationCall: User ended call', payload)
+                InCallManager.stopRingtone()
+            })
 
             // Load keys from TPM
             setLoadingMsg("Loading keys from TPM...")

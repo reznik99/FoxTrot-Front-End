@@ -59,16 +59,17 @@ class Call extends React.Component<Props, State> {
     }
 
     checkCallStatus = async (prevProps: Readonly<Props> | undefined) => {
+        // Check if peer has answered our call
         if (this.props.callAnswer && !prevProps?.callAnswer) {
             if (this.state.peerConnection) {
-                // User answered our call, set remote description on webrtc connection
-                const offerDescription = new RTCSessionDescription(this.props.callAnswer);
-                await this.state.peerConnection.setRemoteDescription(offerDescription);
-                // Add ice candidates from peer
+                // User answered our call, set remote description on webrtc connection and add recieved ice candidates
+                const offerDescription = new RTCSessionDescription(this.props.callAnswer)
+                await this.state.peerConnection.setRemoteDescription(offerDescription)
                 this.props.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate))
             }
         }
 
+        // Check if peer is calling us
         if (this.props.callOffer && !prevProps?.callOffer) {
             // Attempt to start local stream and answer the peer's call
             await this.startStream()
@@ -207,6 +208,7 @@ class Call extends React.Component<Props, State> {
         })
         // Reset redux state
         this.props.resetCallState()
+        // TODO: Let peer know we hung up, through websocket
     };
 
     toggleVideoEnabled = async () => {

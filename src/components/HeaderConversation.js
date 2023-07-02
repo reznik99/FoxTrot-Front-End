@@ -59,7 +59,7 @@ export default function HeaderConversation(props) {
             <Portal>
                 <Dialog visible={visibleDialog === 'SecurityCode'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Title>
-                        <Text> <FontAwesomeIcon icon={faLock} color="#00ff00" /> Security Code    </Text>
+                        <Text> <FontAwesomeIcon icon={faLock} color="#00ff00" /> Security Code </Text>
                         <Paragraph>
                             <Image source={{ uri: `${data?.peer_user?.pic}?size=40x40` }} style={styles.profilePic} PlaceholderContent={<ActivityIndicator />} />
                             {data?.peer_user?.phone_no}
