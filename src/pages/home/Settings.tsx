@@ -8,8 +8,9 @@ import * as Keychain from 'react-native-keychain'
 import DocumentPicker from 'react-native-document-picker'
 import Toast from 'react-native-toast-message'
 import RNFS from 'react-native-fs'
-import { useDispatch, useSelector } from 'react-redux'
 import { AnyAction } from "redux"
+import { useDispatch, useSelector } from 'react-redux'
+import { ThunkDispatch } from 'redux-thunk'
 import { Buffer } from 'buffer'
 
 import globalStyle from "~/global/globalStyle"
@@ -17,7 +18,7 @@ import { RootState } from '~/store/store'
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto'
 import { KeychainOpts } from '~/global/variables'
 import { loadContacts, loadKeys } from '~/store/actions/user'
-import { ThunkDispatch } from 'redux-thunk'
+import { logOut } from '~/store/actions/auth'
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
@@ -50,7 +51,7 @@ export default function Settings(props: any) {
         AsyncStorage.multiRemove(keys)
         Keychain.resetInternetCredentials(`${user_data?.phone_no}-keys`)
         Keychain.resetGenericPassword({ service: `${user_data?.phone_no}-password` })
-        props.navigation.navigate('Login', { data: { loggedOut: true } })
+        dispatch(logOut)
     }, [keys, user_data])
 
     const resetValue = useCallback(async (key: string) => {

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, ScrollView, View, ToastAndroid } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { ActivityIndicator, Avatar, Button, Chip, Dialog, Paragraph, Portal } from 'react-native-paper';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faDoorOpen, faCog, faLock } from '@fortawesome/free-solid-svg-icons';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 import { KeypairAlgorithm } from '~/global/variables';
 import { logOut } from '~/store/actions/auth';
@@ -16,6 +17,15 @@ export default function Drawer(props) {
     const dispatch = useDispatch()
     const [showSecurityCode, setShowSecurityCode] = useState(false)
     const [securityCode, setSecurityCode] = useState('')
+
+    const copySecurityCode = useCallback(() => {
+        setShowSecurityCode(false)
+        Clipboard.setString(securityCode)
+        ToastAndroid.show(
+            'Security Code Copied',
+            ToastAndroid.SHORT
+        );
+    })
 
     return (
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: "#222" }} {...props}>
@@ -77,7 +87,8 @@ export default function Drawer(props) {
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button onPress={() => setShowSecurityCode(false)} mode='contained' style={{ paddingHorizontal: 15 }}>OK</Button>
+                        <Button onPress={() => setShowSecurityCode(false)} mode='text' style={{ paddingHorizontal: 15 }}>OK</Button>
+                        <Button onPress={() => copySecurityCode()} mode='contained' style={{ paddingHorizontal: 15 }}>Copy Code</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

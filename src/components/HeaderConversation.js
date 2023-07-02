@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View, TouchableOpacity, ToastAndroid } from 'react-native'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faVideo, faPhone, faBars, faArrowLeft, faLock } from '@fortawesome/free-solid-svg-icons'
-import { ActivityIndicator, Text, Button, Chip, Dialog, Paragraph, Portal } from 'react-native-paper'
+import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal } from 'react-native-paper'
 import { Image } from "react-native-elements"
+import Clipboard from '@react-native-clipboard/clipboard'
 
 import styles from "./HeaderStyles"
 import { useSelector } from 'react-redux'
@@ -22,6 +23,15 @@ export default function HeaderConversation(props) {
         setVisibleDialog('SecurityCode')
         const digest = await publicKeyFingerprint(contact.public_key)
         setSecurityCode(digest)
+    })
+
+    const copySecurityCode = useCallback(() => {
+        setVisibleDialog('')
+        Clipboard.setString(securityCode)
+        ToastAndroid.show(
+            'Security Code Copied',
+            ToastAndroid.SHORT
+        );
     })
 
     return (
@@ -59,20 +69,17 @@ export default function HeaderConversation(props) {
             <Portal>
                 <Dialog visible={visibleDialog === 'SecurityCode'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Title>
-                        <Text> <FontAwesomeIcon icon={faLock} color="#00ff00" /> Security Code </Text>
-                        <Paragraph>
-                            <Image source={{ uri: `${data?.peer_user?.pic}?size=40x40` }} style={styles.profilePic} PlaceholderContent={<ActivityIndicator />} />
-                            {data?.peer_user?.phone_no}
-                        </Paragraph>
+                        <FontAwesomeIcon icon={faLock} color="#00ff00" /> Security Code
                     </Dialog.Title>
                     <Dialog.Content>
-                        <Paragraph>Verify with your contact that this code matches their profile code:</Paragraph>
+                        <Paragraph>Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code:</Paragraph>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
                             <Paragraph key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Paragraph>
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button onPress={() => setVisibleDialog('')} mode='contained' style={{ paddingHorizontal: 15 }}>OK</Button>
+                        <Button onPress={() => setVisibleDialog('')} mode='text' style={{ paddingHorizontal: 15 }}>Close</Button>
+                        <Button onPress={() => copySecurityCode()} mode='contained' style={{ paddingHorizontal: 15 }}>Copy Code</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
