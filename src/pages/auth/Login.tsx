@@ -4,6 +4,7 @@ import { View, ScrollView, Keyboard, Alert } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
 import * as LocalAuthentication from 'expo-local-authentication';
+import SplashScreen from 'react-native-splash-screen'
 
 import styles from './style';
 import { KeychainOpts } from '~/global/variables';
@@ -43,6 +44,8 @@ class Login extends Component<IProps, IState> {
     }
 
     async componentDidMount() {
+        SplashScreen.hide()
+
         // Auto-fill username field
         if(!this.state.username && this.props.user_data?.phone_no) {
             this.setState({username: this.props.user_data?.phone_no})
