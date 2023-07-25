@@ -1,9 +1,9 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
 import {
     StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground,
-    Image, Keyboard, Linking, Platform, KeyboardAvoidingView, ToastAndroid
+    Image, Keyboard, Linking, Platform, KeyboardAvoidingView, ToastAndroid, Dimensions
 } from "react-native";
-import { ActivityIndicator } from 'react-native-paper';
+import { ActivityIndicator, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
 import { FlashList } from "@shopify/flash-list";
@@ -27,6 +27,7 @@ export default function Conversation(props) {
 
     const [message, setMessage] = useState("")
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
+    const [zoomMedia, setZoomMedia] = useState("")
     const scrollView = useRef()
 
     useEffect(() => {
@@ -64,7 +65,14 @@ export default function Conversation(props) {
                 inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
                 data={conversation.messages}
                 estimatedItemSize={95}
-                renderItem={({ item }) => <Message key={item.id} item={item} peer={peer} isSent={item.sender === user_data.phone_no} />}
+                renderItem={({ item }) => (
+                    <Message
+                        key={item.id}
+                        item={item}
+                        peer={peer}
+                        isSent={item.sender === user_data.phone_no}
+                        zoomMedia={(data) => setZoomMedia(data)} />
+                )}
                 ListEmptyComponent={() => <View><Text style={[styles.message, styles.system]}> No messages </Text></View>}
                 ListHeaderComponent={() => (
                     <View style={styles.footer}>
@@ -92,6 +100,14 @@ export default function Conversation(props) {
                 </TouchableOpacity>
             </View>
 
+            <Portal>
+                <Modal visible={zoomMedia} onDismiss={() => setZoomMedia("")}>
+                    <Image source={{ uri: `data:image/jpeg;base64,${zoomMedia}` }}
+                        resizeMode={'cover'}
+                        style={{ width: "90%", height: "90%", alignSelf: 'center', alignContent: 'center' }}
+                    />
+                </Modal>
+            </Portal>
         </ImageBackground >
     )
 }
@@ -101,15 +117,14 @@ class Message extends PureComponent {
         super(props)
         this.state = {
             loading: false,
-            decryptedMessage: undefined,
-            showMediaLarge: false
+            decryptedMessage: undefined
         }
     }
 
     copyMessage = () => {
         if (!this.state.decryptedMessage) return
         if (this.state.decryptedMessage?.type !== "MSG") return
-        
+
         Clipboard.setString(this.state.decryptedMessage.message)
         ToastAndroid.show(
             'Message Copied',
@@ -139,7 +154,7 @@ class Message extends PureComponent {
             }
             // Check if Image is contained in message, if so toggle size.
             if (this.state.decryptedMessage?.type === "IMG") {
-                return this.setState({ showMediaLarge: !this.state.showMediaLarge })
+                return this.props.zoomMedia(this.state.decryptedMessage.message)
             }
             // Check if message contains URL, if so, open browser.
             if (this.state.decryptedMessage?.type === "MSG") {
@@ -165,9 +180,7 @@ class Message extends PureComponent {
             case "IMG":
                 return (
                     <Image source={{ uri: `data:image/jpeg;base64,${item.message}` }}
-                        style={this.state.showMediaLarge
-                            ? { height: 250, width: 250 }
-                            : { height: 150, width: 150 }}
+                        style={{ width: 160, height: 220 }}
                     />
                 )
             case "MSG":
