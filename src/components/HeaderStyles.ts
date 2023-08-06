@@ -1,11 +1,12 @@
 import { Platform, StyleSheet } from "react-native";
+import { DARKHEADER } from "~/global/variables";
 
 const styles = StyleSheet.create({
     topBar: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: '#1F1D21',//"#fc501c",
+        backgroundColor: DARKHEADER, // '#1F1D21',//"#fc501c",
         paddingVertical: 5,
     }, backAndTitle: {
         flexDirection: 'row',

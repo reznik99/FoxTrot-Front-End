@@ -21,10 +21,11 @@ export const KeychainOpts = {
 };
 
 // Style
-export const PRIMARY = '#199187';
-export const SECONDARY = '#333';
+export const PRIMARY = '#3672eb'; // '#199187';
+export const SECONDARY = '#1b1c1f';
 export const SECONDARY_LITE = '#aaa';
 export const ACCENT = '#6227e3';
+export const DARKHEADER = '#272a31';
 
 
 export const VibratePattern = [250, 500, 250, 500, 250, 500, 250, 500, 250, 500, 250, 500, 250, 500, 250, 500]

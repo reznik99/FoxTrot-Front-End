@@ -1,18 +1,19 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
 import {
     StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground,
-    Image, Keyboard, Linking, Platform, KeyboardAvoidingView, ToastAndroid, Dimensions
+    Image, Keyboard, Linking, Platform, KeyboardAvoidingView, ToastAndroid
 } from "react-native";
 import { ActivityIndicator, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
 import { FlashList } from "@shopify/flash-list";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faArrowRight, faCamera, faLock } from "@fortawesome/free-solid-svg-icons";
+import { faCamera, faLock, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import Clipboard from '@react-native-clipboard/clipboard';
 
 import { sendMessage } from '~/store/actions/user';
 import { decrypt } from "~/global/crypto";
+import { PRIMARY, SECONDARY } from "~/global/variables";
 
 const todaysDate = new Date().toLocaleDateString()
 
@@ -56,8 +57,8 @@ export default function Conversation(props) {
     }, [message])
 
     return (
-        <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
-
+        // <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
+        <View style={styles.container}>
             <FlashList
                 removeClippedSubviews={false}
                 contentContainerStyle={styles.messageList}
@@ -96,7 +97,7 @@ export default function Conversation(props) {
                     />
                 </KeyboardAvoidingView>
                 <TouchableOpacity style={styles.button} onPress={handleSend}>
-                    <FontAwesomeIcon icon={faArrowRight} size={20} style={styles.buttonIcon} />
+                    <FontAwesomeIcon icon={faPaperPlane} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
             </View>
 
@@ -108,7 +109,8 @@ export default function Conversation(props) {
                     />
                 </Modal>
             </Portal>
-        </ImageBackground >
+        </View>
+        // </ImageBackground >
     )
 }
 
@@ -174,7 +176,7 @@ class Message extends PureComponent {
         }
     }
 
-    renderMessage = (item) => {
+    renderMessage = (item, isSent) => {
         switch (item?.type) {
             // TODO: Add VIDEO, GIF and AUDIO message types
             case "IMG":
@@ -188,10 +190,10 @@ class Message extends PureComponent {
                 const messageChunks = item.message.split(" ")
                 const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
 
-                if (linkIndex < 0) return <Text selectable>{item.message}</Text>
+                if (linkIndex < 0) return <Text style={[isSent ? styles.sentText : styles.receivedText]} selectable>{item.message}</Text>
 
                 return (
-                    <Text>
+                    <Text style={[isSent ? styles.sentText : styles.receivedText]}>
                         <Text selectable>{messageChunks.slice(0, linkIndex).join(" ")}</Text>
                         <Text selectable style={{ color: 'blue' }}>{linkIndex > 0 ? " " : ""}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? " " : ""}</Text>
                         <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
@@ -210,19 +212,30 @@ class Message extends PureComponent {
                 style={[styles.messageContainer, isSent ? styles.sent : styles.received]}
                 onPress={() => this.handleClick(item)}
                 onLongPress={() => this.copyMessage()}>
-                <View selectable style={[styles.message, isEncrypted && { backgroundColor: '#999999a0' }]}>
+                <View selectable style={[styles.message]}>
+                    {/* Loader */}
                     <ActivityIndicator style={{ position: 'absolute', zIndex: 10 }} animating={this.state.loading && !this.state.decryptedMessage} />
-                    {isEncrypted
-                        ? <Text selectable> {item.message?.length < 200 ? item.message : item.message?.substring(0, 197).padEnd(200, '...')} </Text>
-                        : this.renderMessage(this.state.decryptedMessage)
+                    {/* Message preview */}
+                    {isEncrypted &&
+                        <>
+                            <Text selectable style={[isSent ? styles.sentText : styles.receivedText]}>
+                                {item.message?.length < 200 ? item.message : item.message?.substring(0, 197).padEnd(200, '...')}
+                            </Text>
+                            <FontAwesomeIcon style={{ position: 'absolute', zIndex: 10 }} color="#000" icon={faLock} size={25} />
+                        </>
                     }
-                    {isEncrypted && <FontAwesomeIcon style={{ position: 'absolute', zIndex: 10 }} color="#333" icon={faLock} size={20} />}
-                    <Text style={styles.messageTime}>
-                        {sent_at.toLocaleDateString() === todaysDate
-                            ? sent_at.toLocaleTimeString()
-                            : sent_at.toLocaleDateString()
-                        }
-                    </Text>
+                    {/* Message */}
+                    {!isEncrypted && this.renderMessage(this.state.decryptedMessage, isSent)}
+                    {/* Footers of message */}
+                    <View style={{ flexDirection: 'row', alignSelf: 'stretch', justifyContent: 'space-between' }}>
+                        {isEncrypted && <Text style={[styles.messageTime, { alignSelf: 'flex-start' }]}> Message Encrypted </Text>}
+                        <Text style={styles.messageTime}>
+                            {sent_at.toLocaleDateString() === todaysDate
+                                ? sent_at.toLocaleTimeString()
+                                : sent_at.toLocaleDateString()
+                            }
+                        </Text>
+                    </View>
                 </View>
             </Pressable>
         )
@@ -233,7 +246,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         width: "100%",
-        backgroundColor: '#222'
+        backgroundColor: SECONDARY
     }, messageList: {
         paddingHorizontal: 10
     }, messageContainer: {
@@ -249,13 +262,21 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     }, received: {
         alignSelf: 'flex-start',
-        backgroundColor: '#faf1e6'
+        backgroundColor: '#e6faea'
+    }, receivedText: {
+        color: SECONDARY
     }, sent: {
         alignSelf: 'flex-end',
-        backgroundColor: '#abed87'
+        backgroundColor: PRIMARY
+    }, sentText: {
+        color: '#f2f0f0'
     }, system: {
         alignSelf: 'center',
         backgroundColor: 'gray'
+    }, messageTime: {
+        color: '#969393',
+        alignContent: 'flex-end',
+        fontSize: 13
     }, footer: {
         width: '100%',
         display: 'flex',
@@ -277,12 +298,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         backgroundColor: '#faf1e6'
     }, buttonIcon: {
-        color: '#fff'
+        color: PRIMARY
     }, button: {
         padding: 10
-    }, messageTime: {
-        color: 'gray',
-        alignSelf: 'flex-end',
-        fontSize: 12
     }
 });

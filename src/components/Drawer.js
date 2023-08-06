@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faDoorOpen, faCog, faLock } from '@fortawesome/free-solid-svg-icons';
 import Clipboard from '@react-native-clipboard/clipboard';
 
-import { KeypairAlgorithm } from '~/global/variables';
+import { SECONDARY, KeypairAlgorithm } from '~/global/variables';
 import { logOut } from '~/store/actions/auth';
 import { publicKeyFingerprint } from '~/global/crypto';
 
@@ -28,7 +28,7 @@ export default function Drawer(props) {
     })
 
     return (
-        <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: "#222" }} {...props}>
+        <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: SECONDARY }} {...props}>
             <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
 
                 <View style={[styles.profileContainer, { marginBottom: 25 }]}>
@@ -49,15 +49,15 @@ export default function Drawer(props) {
                 </View>
 
                 <DrawerItem
-                    inactiveTintColor="#afa"
-                    label="View Security Code"
+                    inactiveTintColor='#e3e1e1'
+                    label="Security Code"
                     onPress={() => { setShowSecurityCode(true), publicKeyFingerprint(state.user_data.public_key).then(setSecurityCode).catch(err => console.error(err)) }}
                     icon={({ focused, size, color }) => (
                         <FontAwesomeIcon size={size} icon={faLock} style={{ color: color }} />
                     )}
                 />
                 <DrawerItem
-                    inactiveTintColor="#aaf"
+                    inactiveTintColor='#e3e1e1'
                     label="Settings"
                     onPress={() => props.navigation.navigate('Settings')}
                     icon={({ focused, size, color }) => (
@@ -65,9 +65,9 @@ export default function Drawer(props) {
                     )}
                 />
                 <DrawerItem
-                    inactiveTintColor="#e60e59"
+                    inactiveTintColor='#e3e1e1'
                     label="Logout"
-                    style={{ borderTopWidth: 1, borderTopColor: "#e60e59" }}
+                    style={{ borderTopWidth: 1, borderTopColor: "#e3e1e1" }}
                     onPress={() => dispatch(logOut(props.navigation))}
                     icon={({ focused, size, color }) => (
                         <FontAwesomeIcon size={size} icon={faDoorOpen} style={{ color: color }} />

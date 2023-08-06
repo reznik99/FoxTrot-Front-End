@@ -11,6 +11,7 @@ import globalStyle from "~/global/globalStyle"
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user'
 import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket'
 import { setupInterceptors } from '~/store/actions/auth'
+import { PRIMARY } from '~/global/variables'
 
 
 export default function Home(props) {
@@ -133,7 +134,7 @@ export default function Home(props) {
                         </ScrollView>
 
                         <FAB
-                            style={globalStyle.fab} color='#fff'
+                            style={[globalStyle.fab, { backgroundColor: PRIMARY }]} color='#fff'
                             onPress={() => props.navigation.navigate('NewConversation')}
                             icon={({ size, color }) => (
                                 <FontAwesomeIcon size={size} icon={faComment} style={{ color: color }} />

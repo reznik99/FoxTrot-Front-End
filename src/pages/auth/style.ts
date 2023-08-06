@@ -1,12 +1,12 @@
 import { StyleSheet } from 'react-native';
-import { PRIMARY } from '~/global/variables'
+import { PRIMARY, SECONDARY } from '~/global/variables'
 
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-        backgroundColor: '#232323'
+        backgroundColor: SECONDARY
     }, 
     wrapper: {
         flex: 1,

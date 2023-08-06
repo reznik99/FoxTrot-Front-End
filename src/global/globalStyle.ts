@@ -6,9 +6,9 @@ const globalStyle = StyleSheet.create({
         flex: 1,
         width: "100%",
         height: "100%",
-        backgroundColor: SECONDARY, //'#526a84'
+        backgroundColor: SECONDARY,
     }, textInfo: {
-        color: '#fff'
+        color: '#e3e1e1'
     }, searchContainer: {
         alignItems: 'center'
     }, errorMsg: {
