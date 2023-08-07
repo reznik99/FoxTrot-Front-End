@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     }, 
     subTitle: {
         fontSize: 20, 
-        color: 'gray'
+        color: PRIMARY
     }, 
     errorMsg: {
         color: 'red',

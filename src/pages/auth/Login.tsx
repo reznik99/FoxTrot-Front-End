@@ -7,7 +7,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import SplashScreen from 'react-native-splash-screen'
 
 import styles from './style';
-import { KeychainOpts } from '~/global/variables';
+import { DARKHEADER, KeychainOpts } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
 import { UserData } from '~/store/reducers/user';
@@ -47,31 +47,31 @@ class Login extends Component<IProps, IState> {
         SplashScreen.hide()
 
         // Auto-fill username field
-        if(!this.state.username && this.props.user_data?.phone_no) {
-            this.setState({username: this.props.user_data?.phone_no})
+        if (!this.state.username && this.props.user_data?.phone_no) {
+            this.setState({ username: this.props.user_data?.phone_no })
         }
 
         // If user manually logged out, don't try autologin
         if (this.props.route.params?.data?.loggedOut) {
-            if(this.props.route.params?.data?.errorMsg) {
+            if (this.props.route.params?.data?.errorMsg) {
                 Alert.alert("Unable to Login",
                     this.props.route.params?.data?.errorMsg,
-                    [{ text: "OK", onPress: () => {} }]
+                    [{ text: "OK", onPress: () => { } }]
                 );
             }
             return console.debug("User logged out")
         }
 
         try {
-            this.setState({gloablLoading: true})
+            this.setState({ gloablLoading: true })
 
             // Load data from disk into redux store
-            if(!this.props.user_data?.phone_no) {
+            if (!this.props.user_data?.phone_no) {
                 await this.props.syncFromStorage()
-                this.setState({username: this.props.user_data?.phone_no || ''})
+                this.setState({ username: this.props.user_data?.phone_no || '' })
             }
 
-            if(!this.state.username && !this.props.token) {
+            if (!this.state.username && !this.props.token) {
                 console.debug("No data for auto-login");
                 return
             }
@@ -83,46 +83,46 @@ class Login extends Component<IProps, IState> {
             // Auto-login with user password if it was previously saved to secure storage
             await this.attemptAutoLogin(auth.biometric);
 
-        } catch(err){
+        } catch (err) {
             console.error('Error on auto-login:', err)
         } finally {
-            this.setState({gloablLoading: false})
+            this.setState({ gloablLoading: false })
         }
     }
 
     attemptAutoLoginToken = async () => {
         if (!this.props.token) {
             console.debug('Token not present')
-            return {success: false, biometric: false}
+            return { success: false, biometric: false }
         }
 
         // Saved JWT token is present. Auth user before login
         const biometricSuccess = await this.biometricAuth()
-        if(!biometricSuccess) return {success: false, biometric: biometricSuccess}
+        if (!biometricSuccess) return { success: false, biometric: biometricSuccess }
 
         let loggedIn = await this.props.validateToken()
         if (!loggedIn) {
             console.debug('Token expired')
-            return {success: false, biometric: biometricSuccess}
+            return { success: false, biometric: biometricSuccess }
         }
 
         this.props.navigation.replace('App', { screen: 'Home' })
-        return {success: true, biometric: biometricSuccess}
+        return { success: true, biometric: biometricSuccess }
     }
 
     attemptAutoLogin = async (biometricSuccess: boolean) => {
         const serviceKey = `${this.state.username}-password`
         const passwordsSaved = await Keychain.getAllGenericPasswordServices()
 
-        if(!this.state.username || !passwordsSaved.includes(serviceKey)) {
+        if (!this.state.username || !passwordsSaved.includes(serviceKey)) {
             console.debug('No credentials found for password auto-login')
             return false
         }
 
         // Saved password is present. Auth user before retrieving
-        if(!biometricSuccess) {
+        if (!biometricSuccess) {
             const biometricSuccess = await this.biometricAuth()
-            if(!biometricSuccess) return false
+            if (!biometricSuccess) return false
         }
 
         // User is auth'd. Load password from secure storage
@@ -131,7 +131,7 @@ class Login extends Component<IProps, IState> {
             authenticationPrompt: KeychainOpts.authenticationPrompt,
             service: serviceKey,
         })
-        if(!res || !res.password) {
+        if (!res || !res.password) {
             console.debug('Failed to load password form secure storage')
             return false
         }
@@ -142,10 +142,10 @@ class Login extends Component<IProps, IState> {
         return true
     }
 
-    biometricAuth = async() => {
+    biometricAuth = async () => {
         console.debug('Attempting biometric auth')
         const biometricAuth = await LocalAuthentication.authenticateAsync()
-        if(!biometricAuth.success) {
+        if (!biometricAuth.success) {
             console.error('Biometric auth failed:', biometricAuth.error)
             return false
         }
@@ -171,30 +171,30 @@ class Login extends Component<IProps, IState> {
                         <Text style={styles.title}>FoxTrot</Text>
                         <Text style={styles.subTitle}>secure communications</Text>
                     </View>
-                    { this.props.loginErr && <Text style={styles.errorMsg}>{this.props.loginErr}</Text> }
-    
-                    { this.state.gloablLoading ? <ActivityIndicator size="large" />
+                    {this.props.loginErr && <Text style={styles.errorMsg}>{this.props.loginErr}</Text>}
+
+                    {this.state.gloablLoading ? <ActivityIndicator size="large" />
                         : <View>
-                            <TextInput mode="outlined" 
-                                onChangeText={val => this.setState({username: val.trim()})}
+                            <TextInput mode="outlined"
+                                onChangeText={val => this.setState({ username: val.trim() })}
                                 value={this.state.username}
                                 label="Username"
-                                outlineColor={this.props.loginErr ? "red"  : undefined}
+                                outlineColor={this.props.loginErr ? "red" : undefined}
                             />
-                            <TextInput mode="outlined" 
-                                onChangeText={val => this.setState({password: val.trim()})}
-                                value={this.state.password} 
+                            <TextInput mode="outlined"
+                                onChangeText={val => this.setState({ password: val.trim() })}
+                                value={this.state.password}
                                 label="Password"
                                 secureTextEntry={true}
-                                outlineColor={this.props.loginErr ? "red"  : undefined}
+                                outlineColor={this.props.loginErr ? "red" : undefined}
                             />
-                            
+
                             {/* Actions */}
-                            <View style={{marginTop: 30, display: 'flex', alignItems: 'center'}}>
-                                <Button mode="contained" icon="login" style={styles.button} loading={this.props.loading} 
+                            <View style={{ marginTop: 30, display: 'flex', alignItems: 'center' }}>
+                                <Button mode="contained" icon="login" style={styles.button} loading={this.props.loading}
                                     onPress={() => this.handleLogin(this.state.username, this.state.password)}>Login</Button>
-                                <Text style={{paddingVertical: 10}}>Or</Text>
-                                <Button icon="account-plus" style={[styles.button, {backgroundColor: 'none'}]} 
+                                <Text style={{ paddingVertical: 10 }}>Or</Text>
+                                <Button mode="contained" icon="account-plus" style={[styles.button, { backgroundColor: DARKHEADER }]}
                                     onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
                             </View>
                         </View>
@@ -211,7 +211,7 @@ const mapStateToProps = (state: RootState) => ({
     loading: state.userReducer.loading,
     loginErr: state.userReducer.loginErr,
 })
-  
+
 const mapDispatchToProps = {
     syncFromStorage,
     validateToken,
