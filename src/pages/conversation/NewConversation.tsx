@@ -9,9 +9,10 @@ import { ContactPeek } from '~/components'
 import globalStyle from "~/global/globalStyle"
 import { RootState } from "~/store/store"
 import { UserData } from "~/store/reducers/user"
+import { ACCENT } from "~/global/variables"
 
 export default function NewConversation(props: { navigation: any }) {
-    
+
     const { navigation } = props
     const contacts = useSelector((state: RootState) => state.userReducer.contacts)
     const [results, setResults] = useState<UserData[]>([])
@@ -35,22 +36,25 @@ export default function NewConversation(props: { navigation: any }) {
                     icon={({ size, color }) => (
                         <FontAwesomeIcon size={size} icon={faSearch} style={{ color: color }} />
                     )}
+                    iconColor="white"
+                    placeholderTextColor="white"
+                    style={{ color: 'white', backgroundColor: ACCENT }}
                     placeholder="Search contacts"
                     value={prefix}
                     onChangeText={val => setPrefix(val)}
                 />
             </View>
 
-            { loading && <ActivityIndicator size="large" /> }
+            {loading && <ActivityIndicator size="large" />}
 
-            { !loading && 
+            {!loading &&
                 <ScrollView>
-                    { results?.length
+                    {results?.length
                         ? results.map((contact, index) => {
                             return <ContactPeek data={{ ...contact, isContact: true }} key={index} navigation={navigation}
-                                onSelect={() => navigation.navigate('Conversation', { data: {peer_user: contact} })} />
+                                onSelect={() => navigation.navigate('Conversation', { data: { peer_user: contact } })} />
                         })
-                        : <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No Contacts</Text>
+                        : <Text style={[globalStyle.errorMsg, { color: '#fff' }]}>No Contacts</Text>
                     }
                 </ScrollView>
             }

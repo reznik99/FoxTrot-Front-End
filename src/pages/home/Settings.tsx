@@ -16,7 +16,7 @@ import { Buffer } from 'buffer'
 import globalStyle from "~/global/globalStyle"
 import { RootState } from '~/store/store'
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto'
-import { KeychainOpts } from '~/global/variables'
+import { DARKHEADER, KeychainOpts } from '~/global/variables'
 import { loadContacts, loadKeys } from '~/store/actions/user'
 import { logOut } from '~/store/actions/auth'
 
@@ -177,10 +177,10 @@ export default function Settings(props: any) {
                 <View style={{ marginVertical: 15 }}>
                     <Text>Stored on device:</Text>
                     {/* TPM values */}
-                    {hasIdentityKeys && <Chip icon="key">{user_data?.phone_no}-keys</Chip>}
-                    {hasPassword && <Chip icon="account-key">{user_data?.phone_no}-password</Chip>}
+                    {hasIdentityKeys && <Chip icon="key" style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-keys</Chip>}
+                    {hasPassword && <Chip icon="account-key" style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-password</Chip>}
                     {/* Storage values */}
-                    {keys.map((key, idx) => <Chip key={idx} onPress={() => resetValue(key)} icon="account">{key}</Chip>)}
+                    {keys.map((key, idx) => <Chip icon="account" style={{ backgroundColor: DARKHEADER }} key={idx} onPress={() => resetValue(key)}>{key}</Chip>)}
 
                     <Button mode='contained' onPress={() => setVisibleDialog('reset')} loading={visibleDialog === 'reset'} style={{ marginTop: 10 }}>
                         Factory Reset App

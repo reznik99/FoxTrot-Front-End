@@ -4,10 +4,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ActivityIndicator, Avatar, Button, Chip, Dialog, Paragraph, Portal } from 'react-native-paper';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faDoorOpen, faCog, faLock } from '@fortawesome/free-solid-svg-icons';
+import { faLock, faSignOut, faSliders } from '@fortawesome/free-solid-svg-icons';
 import Clipboard from '@react-native-clipboard/clipboard';
 
-import { SECONDARY, KeypairAlgorithm } from '~/global/variables';
+import { SECONDARY, KeypairAlgorithm, DARKHEADER, PRIMARY } from '~/global/variables';
 import { logOut } from '~/store/actions/auth';
 import { publicKeyFingerprint } from '~/global/crypto';
 
@@ -31,48 +31,52 @@ export default function Drawer(props) {
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: SECONDARY }} {...props}>
             <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
 
-                <View style={[styles.profileContainer, { marginBottom: 25 }]}>
-                    <Avatar.Image size={150} style={{ marginBottom: 25 }}
+                <View style={[styles.profileContainer]}>
+                    <Avatar.Image size={150} style={{ backgroundColor: DARKHEADER, marginBottom: 25 }}
                         source={{ uri: state.user_data?.pic }}
                         PlaceholderContent={<ActivityIndicator />} />
-                    <View>
-                        <View style={styles.profileInfoContainer}>
-                            <Chip icon="phone-forward">{state.user_data?.phone_no}</Chip>
+                    <View style={{ backgroundColor: DARKHEADER, width: '100%' }}>
+                        <View style={styles.profileInfo}>
+                            <Chip icon="phone-forward" style={{ backgroundColor: DARKHEADER }}>{state.user_data?.phone_no}</Chip>
                         </View>
-                        <View style={styles.profileInfoContainer}>
-                            <Chip icon="account">Contacts: {state.contacts?.length}</Chip>
+                        <View style={styles.profileInfo}>
+                            <Chip icon="account" style={{ backgroundColor: DARKHEADER }}>Contacts: {state.contacts?.length}</Chip>
                         </View>
-                        <View style={styles.profileInfoContainer}>
-                            <Chip icon="account-key">Keys: {KeypairAlgorithm.name + " " + KeypairAlgorithm.namedCurve}</Chip>
+                        <View style={styles.profileInfo}>
+                            <Chip icon="account-key" style={{ backgroundColor: DARKHEADER }}>Keys: {KeypairAlgorithm.name + " " + KeypairAlgorithm.namedCurve}</Chip>
                         </View>
                     </View>
                 </View>
 
-                <DrawerItem
-                    inactiveTintColor='#e3e1e1'
-                    label="Security Code"
-                    onPress={() => { setShowSecurityCode(true), publicKeyFingerprint(state.user_data.public_key).then(setSecurityCode).catch(err => console.error(err)) }}
-                    icon={({ focused, size, color }) => (
-                        <FontAwesomeIcon size={size} icon={faLock} style={{ color: color }} />
-                    )}
-                />
-                <DrawerItem
-                    inactiveTintColor='#e3e1e1'
-                    label="Settings"
-                    onPress={() => props.navigation.navigate('Settings')}
-                    icon={({ focused, size, color }) => (
-                        <FontAwesomeIcon size={size} icon={faCog} style={{ color: color }} />
-                    )}
-                />
-                <DrawerItem
-                    inactiveTintColor='#e3e1e1'
-                    label="Logout"
-                    style={{ borderTopWidth: 1, borderTopColor: "#e3e1e1" }}
-                    onPress={() => dispatch(logOut(props.navigation))}
-                    icon={({ focused, size, color }) => (
-                        <FontAwesomeIcon size={size} icon={faDoorOpen} style={{ color: color }} />
-                    )}
-                />
+                <View style={{ width: '100%' }}>
+                    <DrawerItem
+                        inactiveTintColor='#fff'
+                        label="Security Code"
+                        style={{ backgroundColor: PRIMARY }}
+                        onPress={() => { setShowSecurityCode(true), publicKeyFingerprint(state.user_data.public_key).then(setSecurityCode).catch(err => console.error(err)) }}
+                        icon={({ _, size, color }) => (
+                            <FontAwesomeIcon size={size} icon={faLock} style={{ color: color }} />
+                        )}
+                    />
+                    <DrawerItem
+                        inactiveTintColor='#fff'
+                        label="Settings"
+                        style={{ backgroundColor: PRIMARY }}
+                        onPress={() => props.navigation.navigate('Settings')}
+                        icon={({ _, size, color }) => (
+                            <FontAwesomeIcon size={size} icon={faSliders} style={{ color: color }} />
+                        )}
+                    />
+                    <DrawerItem
+                        inactiveTintColor='#fff'
+                        label="Logout"
+                        style={{ borderTopWidth: 1, borderTopColor: "#e3e1e1", backgroundColor: DARKHEADER }}
+                        onPress={() => dispatch(logOut(props.navigation))}
+                        icon={({ _, size, color }) => (
+                            <FontAwesomeIcon size={size} icon={faSignOut} style={{ color: color }} />
+                        )}
+                    />
+                </View>
 
             </ScrollView >
 
@@ -99,23 +103,12 @@ export default function Drawer(props) {
 
 const styles = StyleSheet.create({
     profileContainer: {
-        flex: 0,
+        flex: 1,
         flexDirection: "column",
         alignItems: "center",
-        paddingVertical: 30
-    },
-    profileInfoContainer: {
-        flex: 0,
-        marginVertical: 10,
-        flexDirection: "row",
-        textAlign: "right",
-        alignItems: "center"
+        paddingVertical: 30,
     },
     profileInfo: {
-        color: "#fff"
+        marginVertical: 5,
     },
-    profileInfoIcon: {
-        color: "#fff",
-        marginRight: 10,
-    }
 })

@@ -262,14 +262,16 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     }, received: {
         alignSelf: 'flex-start',
-        backgroundColor: '#e6faea'
+        backgroundColor: '#333333a0'
     }, receivedText: {
-        color: SECONDARY
+        color: '#f2f0f0',
+        fontFamily: 'Roboto'
     }, sent: {
         alignSelf: 'flex-end',
         backgroundColor: PRIMARY
     }, sentText: {
-        color: '#f2f0f0'
+        color: '#f2f0f0',
+        fontFamily: 'Roboto'
     }, system: {
         alignSelf: 'center',
         backgroundColor: 'gray'

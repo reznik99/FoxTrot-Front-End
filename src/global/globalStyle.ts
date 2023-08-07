@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { SECONDARY } from './variables'
+import { PRIMARY, SECONDARY } from './variables'
 
 const globalStyle = StyleSheet.create({
     wrapper: {
@@ -21,6 +21,7 @@ const globalStyle = StyleSheet.create({
         margin: 20,
         right: 0,
         bottom: 0,
+        backgroundColor: PRIMARY
     },
 });
 

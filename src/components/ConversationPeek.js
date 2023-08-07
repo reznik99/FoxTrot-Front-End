@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { humanTime } from '~/global/helper'
 import globalStyle from "~/global/globalStyle"
 import { addContact } from '~/store/actions/user'
+import { DARKHEADER } from '~/global/variables'
 
 export default function ConversationPeek(props) {
 
@@ -15,14 +16,14 @@ export default function ConversationPeek(props) {
     const user_phone_no = useSelector(state => state.userReducer.user_data?.phone_no)
     const contacts = useSelector(state => state.userReducer.contacts)
     const [loading, setLoading] = useState(undefined)
-    
+
     const { data, navigation } = props
     const lastMessage = data.messages[0] ?? {}
-    
+
     const isNew = lastMessage.sender !== user_phone_no && !lastMessage.seen
-    const boldIfUnseen = isNew ? styles.unseenMessage : null 
+    const boldIfUnseen = isNew ? styles.unseenMessage : null
     const isMessageRequest = !contacts.some(con => con.phone_no === data.other_user.phone_no)
-    
+
     const acceptMessageRequest = async () => {
         setLoading("accept")
         await dispatch(addContact(data.other_user))
@@ -31,17 +32,17 @@ export default function ConversationPeek(props) {
     const showError = () => {
         Alert.alert("Unable to reject message request",
             "This functionality isn't yet implemented. Simply ignore the message request for now",
-            [{ text: "OK", onPress: () => {} }]
+            [{ text: "OK", onPress: () => { } }]
         );
     }
     return (
         <>
-            <TouchableOpacity style={styles.conversationPeek} onPress={() => { navigation.navigate('Conversation', { data: {peer_user: data.other_user} }) }}>
+            <TouchableOpacity style={styles.conversationPeek} onPress={() => { navigation.navigate('Conversation', { data: { peer_user: data.other_user } }) }}>
                 <Avatar.Image size={55} style={styles.profilePicContainer}
                     source={{ uri: `${data.other_user.pic}?size=100x100` }}
                     PlaceholderContent={<ActivityIndicator />} />
 
-                <View style={{ flex: 1}}>
+                <View style={{ flex: 1 }}>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}>{data.other_user.phone_no}</Text>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}>{lastMessage.message?.substring(0, 50)}</Text>
                 </View>
@@ -50,11 +51,11 @@ export default function ConversationPeek(props) {
                     <Text>{isNew && <FontAwesomeIcon icon={faCircle} size={10} style={{ color: '#34eb46' }} ></FontAwesomeIcon>}</Text>
                 </View>
             </TouchableOpacity>
-            { isMessageRequest &&
-                <View style={[styles.messageRequestContainer, {justifyContent: 'space-evenly'}]}>
+            {isMessageRequest &&
+                <View style={[styles.messageRequestContainer, { justifyContent: 'space-evenly' }]}>
                     <Button mode="contained" icon="check" labelStyle={{ fontSize: 12 }} style={[styles.button]}
                         loading={loading === "accept"} disabled={loading === "accept"} onPress={acceptMessageRequest}>Accept</Button>
-                    <Button mode="contained" icon="close" labelStyle={{ fontSize: 12 }} style={[styles.button, {backgroundColor: "red"}]} 
+                    <Button mode="contained" icon="close" labelStyle={{ fontSize: 12 }} style={[styles.button, { backgroundColor: "red" }]}
                         loading={loading === "reject"} disabled={loading === "reject"} onPress={showError}>Reject</Button>
                 </View>
             }
@@ -76,7 +77,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 5
     }, profilePicContainer: {
-        marginRight: 20
+        marginRight: 20,
+        backgroundColor: DARKHEADER
     }, unseenMessage: {
         fontWeight: "bold"
     }, button: {
