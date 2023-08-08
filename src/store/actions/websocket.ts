@@ -5,6 +5,7 @@ import RNNotificationCall from "react-native-full-screen-notification-incoming-c
 import Toast from 'react-native-toast-message'
 
 import { AppDispatch, GetState } from '../store'
+import { getAvatar } from '~/global/helper'
 
 export interface SocketData {
     cmd: 'MSG' | 'CALL_OFFER' | 'CALL_ICE_CANDIDATE' | 'CALL_ANSWER';
@@ -113,7 +114,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                     message: parsedData.data?.message || '',
                     when: parsedData.data.sent_at,
                     visibility: "public",
-                    picture: `https://robohash.org/${parsedData.data.sender_id}`,
+                    picture: getAvatar(parsedData.data.sender),
                     largeIcon: 'foxtrot',
                     smallIcon: 'foxtrot',
                 })

@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { ThunkDispatch } from 'redux-thunk'
 import { Buffer } from 'buffer'
 
-import globalStyle from "~/global/globalStyle"
+import globalStyle from "~/global/style"
 import { RootState } from '~/store/store'
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto'
 import { DARKHEADER, KeychainOpts } from '~/global/variables'

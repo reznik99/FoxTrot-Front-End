@@ -9,7 +9,7 @@ import { AnyAction } from "redux";
 
 import { searchUsers, addContact } from '~/store/actions/user'
 import { ContactPeek } from '~/components'
-import globalStyle from "~/global/globalStyle"
+import globalStyle from "~/global/style"
 import { RootState } from "~/store/store"
 import { UserData } from "~/store/reducers/user"
 

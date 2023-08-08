@@ -6,7 +6,7 @@ import { faUserPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
 
 import { ContactPeek } from '~/components'
-import globalStyle from "~/global/globalStyle"
+import globalStyle from "~/global/style"
 import { RootState } from "~/store/store"
 import { UserData } from "~/store/reducers/user"
 import { ACCENT } from "~/global/variables"

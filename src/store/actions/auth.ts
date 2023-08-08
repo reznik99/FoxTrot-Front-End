@@ -5,6 +5,7 @@ import Toast from 'react-native-toast-message'
 
 import { API_URL } from '~/global/variables'
 import { AppDispatch } from '../store'
+import { getAvatar } from '~/global/helper'
 
 export function logIn(username: string, password: string) {
     return async (dispatch: AppDispatch) => {
@@ -20,7 +21,7 @@ export function logIn(username: string, password: string) {
                 password: password
             })
 
-            const user_data = { pic: `https://robohash.org/${res.data.user_data?.id}`, ...res.data.user_data }
+            const user_data = { pic: getAvatar(res.data.user_data?.phone_no), ...res.data.user_data }
 
             console.debug('Saving user in storage')
             // Save data in phone storage

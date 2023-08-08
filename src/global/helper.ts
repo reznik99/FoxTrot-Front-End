@@ -1,3 +1,4 @@
+import { PRIMARY } from "./variables";
 
 export function humanTime(lastTime: string) {
     if (!lastTime)
@@ -13,4 +14,14 @@ export function humanTime(lastTime: string) {
                 : `${~~(diff / 1000 / 60 / 60)} h ago`
             : `${~~(diff / 1000 / 60)} m ago`
         : 'just now';
+}
+
+
+export function getAvatar(identifier: string) {
+    let value = identifier
+    if(identifier?.length >= 2) value = `${identifier[0]}+${identifier[1]}`
+
+    return `https://ui-avatars.com/api/?background=random&name=${value}`
+
+    // return `https://robohash.org/${identifier}`
 }

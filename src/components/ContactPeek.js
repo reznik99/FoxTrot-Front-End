@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import { Avatar, IconButton, Colors, ActivityIndicator } from 'react-native-paper'
 
 import { humanTime } from '../global/helper'
-import globalStyle from "../global/globalStyle"
+import globalStyle from "../global/style"
 import { DARKHEADER, PRIMARY } from '~/global/variables'
 
 const styles = StyleSheet.create({
