@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, View, ToastAndroid } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { ActivityIndicator, Avatar, Button, Chip, Dialog, Paragraph, Portal } from 'react-native-paper';
+import { Avatar, Button, Chip, Dialog, Paragraph, Portal } from 'react-native-paper';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faLock, faSignOut, faSliders } from '@fortawesome/free-solid-svg-icons';
@@ -32,9 +32,7 @@ export default function Drawer(props) {
             <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
 
                 <View style={[styles.profileContainer]}>
-                    <Avatar.Image size={150} style={{ backgroundColor: DARKHEADER, marginBottom: 25 }}
-                        source={{ uri: state.user_data?.pic }}
-                        PlaceholderContent={<ActivityIndicator />} />
+                    <Avatar.Image size={120} source={{ uri: state.user_data.pic }} style={{ backgroundColor: DARKHEADER, marginBottom: 25 }} />
                     <View style={{ backgroundColor: DARKHEADER, width: '100%' }}>
                         <View style={styles.profileInfo}>
                             <Chip icon="phone-forward" style={{ backgroundColor: DARKHEADER }}>{state.user_data?.phone_no}</Chip>

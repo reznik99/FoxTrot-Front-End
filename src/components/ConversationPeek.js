@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native'
-import { Avatar, ActivityIndicator, Button } from 'react-native-paper'
+import { Avatar, Button } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
@@ -38,9 +38,7 @@ export default function ConversationPeek(props) {
     return (
         <>
             <TouchableOpacity style={styles.conversationPeek} onPress={() => { navigation.navigate('Conversation', { data: { peer_user: data.other_user } }) }}>
-                <Avatar.Image size={55} style={styles.profilePicContainer}
-                    source={{ uri: `${data.other_user.pic}?size=100x100` }}
-                    PlaceholderContent={<ActivityIndicator />} />
+                <Avatar.Image size={55} source={{ uri: data.other_user.pic }} style={styles.profilePicContainer} />
 
                 <View style={{ flex: 1 }}>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}>{data.other_user.phone_no}</Text>

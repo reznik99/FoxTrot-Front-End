@@ -47,7 +47,7 @@ export default function HeaderConversation(props) {
                 }
                 <TouchableOpacity style={styles.profileBtn} onPress={showSecurityCode}>
                     <View style={styles.profilePicContainer}>
-                        <Image source={{ uri: `${data?.peer_user?.pic}?size=50x50` }}
+                        <Image source={{ uri: `${data?.peer_user?.pic}` }}
                             style={styles.profilePic}
                             PlaceholderContent={<ActivityIndicator />} />
                     </View>

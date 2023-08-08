@@ -29,8 +29,7 @@ export default class ContactPeek extends Component {
         const { data, onSelect, loading, isContact } = this.props
         return (
             <TouchableOpacity style={styles.profilePeek} onPress={isContact ? null : onSelect}>
-                <Avatar.Image size={55} style={styles.profilePicContainer}
-                    source={{ uri: data.pic }} PlaceholderContent={<ActivityIndicator />} />
+                <Avatar.Image size={55} source={{ uri: data.pic }} style={styles.profilePicContainer} />
 
                 <View style={{ flex: 1 }}>
                     <Text style={globalStyle.textInfo}>{data.identifier || data.phone_no}</Text>

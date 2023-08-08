@@ -1,4 +1,4 @@
-import { PRIMARY } from "./variables";
+// import { PRIMARY } from "./variables";
 
 export function humanTime(lastTime: string) {
     if (!lastTime)
@@ -22,6 +22,5 @@ export function getAvatar(identifier: string) {
     if(identifier?.length >= 2) value = `${identifier[0]}+${identifier[1]}`
 
     return `https://ui-avatars.com/api/?background=random&name=${value}`
-
     // return `https://robohash.org/${identifier}`
 }
