@@ -47,7 +47,7 @@ export function logIn(username: string, password: string) {
         }
         catch (err: any) {
             console.error("Error logging in:", err)
-            dispatch({ type: "LOGIN_ERROR_MSG", payload: err?.response?.data?.message || err.message })
+            dispatch({ type: "LOGIN_ERROR_MSG", payload: err.response?.data?.message || err.message })
             return false
         }
         finally {
@@ -90,7 +90,7 @@ export function signUp(username: string, password: string, re_password: string) 
         }
         catch (err: any) {
             console.error("Error signing up:", err)
-            dispatch({ type: "SIGNUP_ERROR_MSG", payload: err.response?.data || err.message })
+            dispatch({ type: "SIGNUP_ERROR_MSG", payload: err.response?.data?.message || err.message })
             return false
         }
         finally {
