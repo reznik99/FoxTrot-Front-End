@@ -21,7 +21,7 @@ export function logIn(username: string, password: string) {
                 password: password
             })
 
-            const user_data = { pic: getAvatar(res.data.user_data?.phone_no), ...res.data.user_data }
+            const user_data = { pic: getAvatar(res.data.user_data?.id), ...res.data.user_data }
 
             console.debug('Saving user in storage')
             // Save data in phone storage

@@ -18,9 +18,8 @@ export function humanTime(lastTime: string) {
 
 
 export function getAvatar(identifier: string) {
-    let value = identifier
-    if(identifier?.length >= 2) value = `${identifier[0]}+${identifier[1]}`
-
-    return `https://ui-avatars.com/api/?background=random&name=${value}`
-    // return `https://robohash.org/${identifier}`
+    return `https://robohash.org/${identifier}`
+    // let value = identifier
+    // if(identifier?.length >= 2) value = `${identifier[0]}+${identifier[1]}`
+    // return `https://ui-avatars.com/api/?background=random&name=${value}`
 }

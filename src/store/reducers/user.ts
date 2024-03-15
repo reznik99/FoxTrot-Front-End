@@ -102,7 +102,12 @@ function userReducer(state = initialState, action: Action) {
             if (conversationR) conversationR.messages = [data, ...conversationR.messages]
             else {
                 newState.conversations.set(data.sender, {
-                    other_user: { id: data.sender_id, phone_no: data.sender, ...newState.contacts.find(con => con.phone_no === data.sender), pic: getAvatar(data.sender) },
+                    other_user: { 
+                        id: data.sender_id, 
+                        phone_no: data.sender,
+                        ...newState.contacts.find(con => con.phone_no === data.sender), 
+                        pic: getAvatar(data.sender_id) 
+                    },
                     messages: [data]
                 })
             }

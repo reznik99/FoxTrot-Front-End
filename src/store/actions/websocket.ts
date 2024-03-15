@@ -114,7 +114,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                     message: parsedData.data?.message || '',
                     when: parsedData.data.sent_at,
                     visibility: "public",
-                    picture: getAvatar(parsedData.data.sender),
+                    picture: getAvatar(parsedData.data.sender_id),
                     largeIcon: 'foxtrot',
                     smallIcon: 'foxtrot',
                 })

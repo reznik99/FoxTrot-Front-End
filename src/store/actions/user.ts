@@ -126,8 +126,8 @@ export function loadMessages() {
 
             response.data.forEach((message: any) => {
                 let other = message.sender === state.user_data.phone_no
-                    ? { phone_no: message.reciever, id: message.reciever_id, pic: getAvatar(message.reciever) }
-                    : { phone_no: message.sender, id: message.sender_id, pic: getAvatar(message.sender) }
+                    ? { phone_no: message.reciever, id: message.reciever_id, pic: getAvatar(message.reciever_id) }
+                    : { phone_no: message.sender, id: message.sender_id, pic: getAvatar(message.sender_id) }
                 if (conversations.has(other.phone_no)) {
                     conversations.get(other.phone_no)?.messages.unshift(message)
                 } else {
@@ -172,10 +172,10 @@ export function loadContacts(atomic = true) {
             const contacts = await Promise.all(response.data.map(async (contact: any) => {
                 try {
                     const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey)
-                    return { ...contact, pic: getAvatar(contact.phone_no), session_key }
+                    return { ...contact, pic: getAvatar(contact.id), session_key }
                 } catch (err: any) {
                     console.warn("Failed to generate session key:", contact.phone_no, err.message || err)
-                    return { ...contact, pic: getAvatar(contact.phone_no) }
+                    return { ...contact, pic: getAvatar(contact.id) }
                 }
             }))
 
@@ -202,7 +202,7 @@ export function addContact(user: UserData) {
             const { data } = await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token))
             const session_key = await generateSessionKeyECDH(data.public_key || '', state.keys?.privateKey)
 
-            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: { ...data, pic: getAvatar(data.phone_no), session_key } })
+            dispatch({ type: "ADD_CONTACT_SUCCESS", payload: { ...data, pic: getAvatar(user.id), session_key } })
             return true
         } catch (err: any) {
             console.error('Error adding contact:', err)
@@ -226,7 +226,7 @@ export function searchUsers(prefix: string) {
             const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token))
 
             // Append robot picture to users
-            const results = response.data.map((user: any) => ({ ...user, pic: getAvatar(user.phone_no), isContact: state.contacts.some(contact => contact.id === user.id) }))
+            const results = response.data.map((user: any) => ({ ...user, pic: getAvatar(user.id), isContact: state.contacts.some(contact => contact.id === user.id) }))
 
             return results
 
