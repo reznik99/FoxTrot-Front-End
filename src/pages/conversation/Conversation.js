@@ -1,19 +1,20 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
 import {
-    StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, ImageBackground,
-    Image, Keyboard, Linking, Platform, KeyboardAvoidingView, ToastAndroid
+    StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Image, Keyboard,
+    Linking, Platform, KeyboardAvoidingView, ToastAndroid, ImageBackground, PermissionsAndroid
 } from "react-native";
-import { ActivityIndicator, Modal, Portal } from 'react-native-paper';
+import { ActivityIndicator, Divider, IconButton, Menu, Modal, Portal, Surface } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
 import { FlashList } from "@shopify/flash-list";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCamera, faLock, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import Clipboard from '@react-native-clipboard/clipboard';
+import RNFS from 'react-native-fs'
 
 import { sendMessage } from '~/store/actions/user';
 import { decrypt } from "~/global/crypto";
-import { PRIMARY, SECONDARY } from "~/global/variables";
+import { DARKHEADER, PRIMARY, SECONDARY } from "~/global/variables";
 
 const todaysDate = new Date().toLocaleDateString()
 
@@ -57,7 +58,6 @@ export default function Conversation(props) {
     }, [message])
 
     return (
-        // <ImageBackground source={require('~/res/background2.jpg')} style={styles.container}>
         <View style={styles.container}>
             <FlashList
                 removeClippedSubviews={false}
@@ -102,15 +102,11 @@ export default function Conversation(props) {
             </View>
 
             <Portal>
-                <Modal visible={zoomMedia} onDismiss={() => setZoomMedia("")}>
-                    <Image source={{ uri: `data:image/jpeg;base64,${zoomMedia}` }}
-                        resizeMode={'cover'}
-                        style={{ width: "90%", height: "90%", alignSelf: 'center', alignContent: 'center' }}
-                    />
+                <Modal visible={zoomMedia} onDismiss={() => setZoomMedia("")} >
+                    {zoomMedia && <FullScreenImage media={zoomMedia} onDismiss={() => setZoomMedia("")} />}
                 </Modal>
             </Portal>
         </View>
-        // </ImageBackground >
     )
 }
 
@@ -160,7 +156,7 @@ class Message extends PureComponent {
             }
             // Check if message contains URL, if so, open browser.
             if (this.state.decryptedMessage?.type === "MSG") {
-                const messageChunks = this.state.decryptedMessage?.message?.split(" ")
+                const messageChunks = this.state.decryptedMessage?.message?.split(" ") || []
                 const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
                 if (link) Linking.openURL(link)
             }
@@ -181,9 +177,7 @@ class Message extends PureComponent {
             // TODO: Add VIDEO, GIF and AUDIO message types
             case "IMG":
                 return (
-                    <Image source={{ uri: `data:image/jpeg;base64,${item.message}` }}
-                        style={{ width: 160, height: 220 }}
-                    />
+                    <Image source={{ uri: `data:image/jpeg;base64,${item.message}` }} style={{ width: 160, height: 220 }} />
                 )
             case "MSG":
             default:
@@ -240,6 +234,39 @@ class Message extends PureComponent {
             </Pressable>
         )
     }
+}
+
+const FullScreenImage = (props) => {
+
+    const [showMenu, setShowMenu] = useState(false)
+
+    const download = useCallback(async () => {
+        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return
+
+        const fullPath = RNFS.DownloadDirectoryPath + `/foxtrot-${Date.now()}.jpeg`
+        await RNFS.writeFile(fullPath, props.media, 'base64')
+
+        setShowMenu(false)
+        ToastAndroid.show('Image saved', ToastAndroid.SHORT);
+    }, [props.media])
+
+    return (
+        <ImageBackground source={{ uri: `data:image/jpeg;base64,${props.media}` }} resizeMode={'cover'}
+            style={{ width: "100%", height: "100%", alignSelf: 'center', alignContent: 'center' }}>
+            <View style={styles.surface}>
+                <IconButton icon='close' onPress={props.onDismiss} />
+                <Menu
+                    visible={showMenu}
+                    onDismiss={() => setShowMenu(false)}
+                    anchor={<IconButton icon='dots-vertical' onPress={() => setShowMenu(true)} />}>
+                    <Menu.Item title="Report" icon='information'/>
+                    <Divider />
+                    <Menu.Item onPress={download} title="Download" icon='download' />
+                </Menu>
+            </View>
+        </ImageBackground>
+    )
 }
 
 const styles = StyleSheet.create({
@@ -303,5 +330,13 @@ const styles = StyleSheet.create({
         color: PRIMARY
     }, button: {
         padding: 10
-    }
+    }, surface: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        padding: 8,
+        backgroundColor: DARKHEADER + '7f'
+    },
 });
