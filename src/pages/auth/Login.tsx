@@ -156,8 +156,9 @@ class Login extends Component<IProps, IState> {
         if (this.props.loading) return
 
         Keyboard.dismiss()
-        let loggedIn = await this.props.logIn(username, password)
+        const loggedIn = await this.props.logIn(username, password)
         if (loggedIn) {
+            console.debug("Routing to home page")
             this.props.navigation.replace('App', { screen: 'Home' })
         }
     }

@@ -11,7 +11,7 @@ export function logIn(username: string, password: string) {
     return async (dispatch: AppDispatch) => {
         if (username === '' || password === '') {
             dispatch({ type: "LOGIN_ERROR_MSG", payload: "Textfields cannot be blank!" })
-            return;
+            return false;
         }
         try {
             dispatch({ type: "SET_LOADING", payload: true })
@@ -47,7 +47,7 @@ export function logIn(username: string, password: string) {
         }
         catch (err: any) {
             console.error("Error logging in:", err)
-            dispatch({ type: "LOGIN_ERROR_MSG", payload: err?.response?.data || err.message })
+            dispatch({ type: "LOGIN_ERROR_MSG", payload: err?.response?.data?.message || err.message })
             return false
         }
         finally {
