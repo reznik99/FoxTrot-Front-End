@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, ScrollView, Alert, PermissionsAndroid } from 'react-native'
-import { Button, Title, Paragraph, Dialog, Portal, Chip, Text, TextInput, Divider } from 'react-native-paper'
+import { Button, Title, Paragraph, Dialog, Portal, Chip, Text, TextInput, Divider, Switch } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faExclamationTriangle, faDownload, faUpload } from "@fortawesome/free-solid-svg-icons"
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -16,9 +16,10 @@ import { Buffer } from 'buffer'
 import globalStyle from "~/global/style"
 import { RootState } from '~/store/store'
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto'
-import { DARKHEADER, KeychainOpts } from '~/global/variables'
+import { ACCENT, DARKHEADER, KeychainOpts } from '~/global/variables'
 import { loadContacts, loadKeys } from '~/store/actions/user'
 import { logOut } from '~/store/actions/auth'
+import { deleteFromStorage } from '~/global/storage'
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
@@ -33,30 +34,39 @@ export default function Settings(props: any) {
     const [hasPassword, setHasPassword] = useState(false)
     const [visibleDialog, setVisibleDialog] = useState('')
     const [encPassword, setEncPassword] = useState('')
+    const [showAllKeys, setShowAllKeys] = useState(false)
 
     useEffect(() => {
+        loadAllDeviceData()
+    }, [showAllKeys])
+
+    const loadAllDeviceData = useCallback(() => {
         AsyncStorage.getAllKeys()
-            .then(keys => setKeys([...keys]))
-            .catch(err => console.error("Error loading AsyncStorage items:", err))
-        Keychain.hasInternetCredentials(`${user_data.phone_no}-keys`)
-            .then(hasKeys => setHasIdentityKeys(Boolean(hasKeys)))
-            .catch(err => console.error("Error checking TPM for keys:", err))
-        Keychain.getGenericPassword({ service: `${user_data.phone_no}-password` })
-            .then(hasPassword => setHasPassword(Boolean(hasPassword)))
-            .catch(err => console.error("Error checking TPM for password:", err))
-    }, [])
+        .then(keys => keys.filter(key => showAllKeys || !key.includes("-chunk")))
+        .then(keys => setKeys([...keys]))
+        .catch(err => console.error("Error loading AsyncStorage items:", err))
+    Keychain.hasInternetCredentials(`${user_data.phone_no}-keys`)
+        .then(hasKeys => setHasIdentityKeys(Boolean(hasKeys)))
+        .catch(err => console.error("Error checking TPM for keys:", err))
+    Keychain.getGenericPassword({ service: `${user_data.phone_no}-password` })
+        .then(hasPassword => setHasPassword(Boolean(hasPassword)))
+        .catch(err => console.error("Error checking TPM for password:", err))
+    }, [showAllKeys, user_data])
 
     const resetApp = useCallback(() => {
         setVisibleDialog('')
-        AsyncStorage.multiRemove(keys)
-        Keychain.resetInternetCredentials(`${user_data?.phone_no}-keys`)
-        Keychain.resetGenericPassword({ service: `${user_data?.phone_no}-password` })
-        dispatch(logOut)
-    }, [keys, user_data])
+        // Delete everything from the device
+        Promise.all([
+            deleteFromStorage(''),
+            Keychain.resetInternetCredentials(`${user_data?.phone_no}-keys`),
+            Keychain.resetGenericPassword({ service: `${user_data?.phone_no}-password` }),
+            dispatch(logOut)
+        ])
+    }, [user_data])
 
     const resetValue = useCallback(async (key: string) => {
         console.debug("Deleting:", key)
-        await AsyncStorage.removeItem(key)
+        await deleteFromStorage(key)
         setKeys(keys.filter(k => k !== key))
     }, [keys])
 
@@ -117,6 +127,7 @@ export default function Settings(props: any) {
         } finally {
             setVisibleDialog('')
             setEncPassword('')
+            loadAllDeviceData()
         }
     }
 
@@ -182,16 +193,33 @@ export default function Settings(props: any) {
                     {/* Storage values */}
                     {keys.map((key, idx) => <Chip icon="account" style={{ backgroundColor: DARKHEADER }} key={idx} onPress={() => resetValue(key)}>{key}</Chip>)}
 
-                    <Button mode='contained' onPress={() => setVisibleDialog('reset')} loading={visibleDialog === 'reset'} style={{ marginTop: 10 }}>
+                    <Button mode='contained'
+                        icon="alert"
+                        color={ACCENT}
+                        style={{ marginTop: 10 }}
+                        onPress={() => setVisibleDialog('reset')}
+                        loading={visibleDialog === 'reset'}>
                         Factory Reset App
                     </Button>
                 </View>
 
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                    <Text>Show all db keys in storage</Text>
+                    <Switch value={showAllKeys} onValueChange={() => setShowAllKeys(!showAllKeys)} />
+                </View>
+
                 <Divider style={{ marginVertical: 15 }} />
+
                 <Title>User Identity Keys</Title>
-                <View style={{ marginBottom: 15, flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Button icon="upload" mode='contained' onPress={() => setVisibleDialog('import')} loading={visibleDialog === 'import'}>Import</Button>
-                    <Button icon="download" mode='contained' onPress={() => setVisibleDialog('export')} loading={visibleDialog === 'export'}>Export</Button>
+                <View style={{ marginVertical: 15, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Button icon="upload" mode='contained'
+                        onPress={() => setVisibleDialog('import')} loading={visibleDialog === 'import'}>
+                        Import
+                    </Button>
+                    <Button icon="download" mode='contained'
+                        onPress={() => setVisibleDialog('export')} loading={visibleDialog === 'export'}>
+                        Export
+                    </Button>
                 </View>
             </ScrollView>
 
