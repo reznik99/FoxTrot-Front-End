@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RTCIceCandidate } from "react-native-webrtc";
 import { getAvatar } from "~/global/helper";
+import { writeToStorage } from "~/global/storage";
 
 export interface State {
     tokenValid: boolean;
@@ -128,8 +128,8 @@ function userReducer(state = initialState, action: Action) {
                 })
             }
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
-            AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(newState.conversations.entries())))
+            writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
+            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(newState.conversations.entries())))
             return newState
         case "RECV_CALL_OFFER":
             return { ...state, callOffer: action.payload?.offer as RTCSessionDescription, caller: action.payload?.caller as UserData }

@@ -1,11 +1,11 @@
 import axios, { AxiosError } from 'axios'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Keychain from 'react-native-keychain'
 import Toast from 'react-native-toast-message'
 
 import { API_URL } from '~/global/variables'
 import { AppDispatch } from '../store'
 import { getAvatar } from '~/global/helper'
+import { deleteFromStorage, writeToStorage } from '~/global/storage'
 
 export function logIn(username: string, password: string) {
     return async (dispatch: AppDispatch) => {
@@ -25,8 +25,8 @@ export function logIn(username: string, password: string) {
 
             console.debug('Saving user in storage')
             // Save data in phone storage
-            await AsyncStorage.setItem('user_data', JSON.stringify(user_data))
-            await AsyncStorage.setItem('auth_token', res.data.token)
+            await writeToStorage('user_data', JSON.stringify(user_data))
+            await writeToStorage('auth_token', res.data.token)
 
             // Save password in secure storage
             await Keychain.setGenericPassword(`${username}-password`, password, {
@@ -77,7 +77,7 @@ export function signUp(username: string, password: string, re_password: string) 
                 password: password
             })
             // Save data in phone storage
-            await AsyncStorage.setItem('user_data', JSON.stringify(response.data?.user_data || { phone_no: username }))
+            await writeToStorage('user_data', JSON.stringify(response.data?.user_data || { phone_no: username }))
             dispatch({ type: "SIGNED_UP", payload: response.data?.user_data || { phone_no: username } })
 
             Toast.show({
@@ -105,8 +105,8 @@ export function logOut(navigation: any) {
         // Clear redux state
         dispatch({ type: "LOGOUT", payload: undefined })
         // Clear storage
-        await AsyncStorage.removeItem('user_data')
-        await AsyncStorage.removeItem('auth_token')
+        await deleteFromStorage('user_data')
+        await deleteFromStorage('auth_token')
 
         navigation.replace('Login', { data: { loggedOut: true } })
     }

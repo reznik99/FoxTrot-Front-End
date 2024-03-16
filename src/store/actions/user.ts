@@ -1,5 +1,4 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Storage
 import * as Keychain from 'react-native-keychain';
 import messaging from '@react-native-firebase/messaging'; // Push Notifications
 import Toast from 'react-native-toast-message';
@@ -9,6 +8,7 @@ import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generate
 import { AppDispatch, GetState } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
 import { getAvatar } from '~/global/helper';
+import { readFromStorage, writeToStorage } from '~/global/storage';
 
 export function loadKeys() {
     return async (dispatch: AppDispatch, getState: GetState) => {
@@ -25,7 +25,7 @@ export function loadKeys() {
                 console.debug('Warn: No keys found. First time login on device')
                 return false
             }
-            
+
             const keys = await importKeypair(JSON.parse(credentials.password))
 
             // Store keypair in memory
@@ -96,15 +96,15 @@ export function loadMessages() {
             let state = getState().userReducer
 
             // Check last time we hit the API for messages
-            const cachedLastChecked = (await AsyncStorage.getItem(`messages-${state.user_data.id}-last-checked`)) || '0'
-            let lastChecked = parseInt(cachedLastChecked)
+            const cachedLastChecked = (await readFromStorage(`messages-${state.user_data.id}-last-checked`)) || '0'
 
+            let lastChecked = parseInt(cachedLastChecked)
             let previousConversations = new Map<string, Conversation>()
 
             // Load bulk messages from storage if there aren't any in the redux state
             if (!state.conversations.size) {
                 try {
-                    const cachedConversations = await AsyncStorage.getItem(`messages-${state.user_data.id}`)
+                    const cachedConversations = await readFromStorage(`messages-${state.user_data.id}`)
                     if (!cachedConversations) throw new Error("No cached messages")
 
                     previousConversations = new Map(JSON.parse(cachedConversations))
@@ -143,8 +143,10 @@ export function loadMessages() {
             dispatch({ type: "LOAD_CONVERSATIONS", payload: conversations })
 
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries())))
-            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
+            await Promise.all([
+                writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries()))),
+                writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
+            ])
 
         } catch (err: any) {
             console.error('Error loading messages:', err)
@@ -267,8 +269,8 @@ export function sendMessage(message: string, to_user: UserData) {
             dispatch({ type: "SEND_MESSAGE", payload: msg })
 
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(getState().userReducer.conversations.entries())))
-            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
+            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(getState().userReducer.conversations.entries())))
+            writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
             return true
         } catch (err: any) {
             console.error('Error sending message:', err)
@@ -311,8 +313,8 @@ export function syncFromStorage() {
             dispatch({ type: "SET_LOADING", payload: true })
 
             console.debug('Loading user from local storage')
-            const user_data = await AsyncStorage.getItem('user_data')
-            const token = await AsyncStorage.getItem('auth_token')
+            const user_data = await readFromStorage('user_data')
+            const token = await readFromStorage('auth_token')
             // TODO: Load existing contacts from async storage
 
             if (!user_data || !token) return false
