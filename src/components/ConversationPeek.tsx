@@ -4,18 +4,28 @@ import { Avatar, Button } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 import { useSelector, useDispatch } from 'react-redux'
+import { ThunkDispatch } from 'redux-thunk'
+import { AnyAction } from "redux"
 
 import { humanTime } from '~/global/helper'
 import globalStyle from "~/global/style"
 import { addContact } from '~/store/actions/user'
 import { DARKHEADER } from '~/global/variables'
+import { Conversation } from '~/store/reducers/user'
+import { RootState } from '~/store/store'
 
-export default function ConversationPeek(props) {
+interface IProps {
+    navigation: any;
+    data: Conversation;
+}
+type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
-    const dispatch = useDispatch()
-    const user_phone_no = useSelector(state => state.userReducer.user_data?.phone_no)
-    const contacts = useSelector(state => state.userReducer.contacts)
-    const [loading, setLoading] = useState(undefined)
+export default function ConversationPeek(props: IProps) {
+
+    const dispatch = useDispatch<AppDispatch>()
+    const user_phone_no = useSelector((state: RootState) => state.userReducer.user_data?.phone_no)
+    const contacts = useSelector((state: RootState) => state.userReducer.contacts)
+    const [loading, setLoading] = useState<string | undefined>(undefined)
 
     const { data, navigation } = props
     const lastMessage = data.messages[0] ?? {}

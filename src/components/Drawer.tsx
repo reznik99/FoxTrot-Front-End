@@ -6,15 +6,23 @@ import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faLock, faSignOut, faSliders } from '@fortawesome/free-solid-svg-icons';
 import Clipboard from '@react-native-clipboard/clipboard';
+import { ThunkDispatch } from 'redux-thunk'
+import { AnyAction } from "redux"
 
 import { SECONDARY, KeypairAlgorithm, DARKHEADER, PRIMARY } from '~/global/variables';
 import { logOut } from '~/store/actions/auth';
 import { publicKeyFingerprint } from '~/global/crypto';
+import { RootState } from '~/store/store';
 
-export default function Drawer(props) {
+interface IProps {
+    navigation: any;
+}
+type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
-    const state = useSelector(state => state.userReducer)
-    const dispatch = useDispatch()
+export default function Drawer(props: IProps) {
+
+    const state = useSelector((state: RootState) => state.userReducer)
+    const dispatch = useDispatch<AppDispatch>()
     const [showSecurityCode, setShowSecurityCode] = useState(false)
     const [securityCode, setSecurityCode] = useState('')
 
@@ -25,7 +33,7 @@ export default function Drawer(props) {
             'Security Code Copied',
             ToastAndroid.SHORT
         );
-    })
+    }, [securityCode])
 
     return (
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: SECONDARY }} {...props}>
@@ -51,8 +59,8 @@ export default function Drawer(props) {
                         inactiveTintColor='#fff'
                         label="Security Code"
                         style={{ backgroundColor: PRIMARY }}
-                        onPress={() => { setShowSecurityCode(true), publicKeyFingerprint(state.user_data.public_key).then(setSecurityCode).catch(err => console.error(err)) }}
-                        icon={({ _, size, color }) => (
+                        onPress={() => { setShowSecurityCode(true), publicKeyFingerprint(state.user_data.public_key || '').then(setSecurityCode).catch(err => console.error(err)) }}
+                        icon={({ size, color }) => (
                             <FontAwesomeIcon size={size} icon={faLock} style={{ color: color }} />
                         )}
                     />
@@ -61,7 +69,7 @@ export default function Drawer(props) {
                         label="Settings"
                         style={{ backgroundColor: PRIMARY }}
                         onPress={() => props.navigation.navigate('Settings')}
-                        icon={({ _, size, color }) => (
+                        icon={({ size, color }) => (
                             <FontAwesomeIcon size={size} icon={faSliders} style={{ color: color }} />
                         )}
                     />
@@ -70,7 +78,7 @@ export default function Drawer(props) {
                         label="Logout"
                         style={{ borderTopWidth: 1, borderTopColor: "#e3e1e1", backgroundColor: DARKHEADER }}
                         onPress={() => dispatch(logOut(props.navigation))}
-                        icon={({ _, size, color }) => (
+                        icon={({ size, color }) => (
                             <FontAwesomeIcon size={size} icon={faSignOut} style={{ color: color }} />
                         )}
                     />

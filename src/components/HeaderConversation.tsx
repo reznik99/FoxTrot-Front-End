@@ -1,29 +1,40 @@
 import React, { useState, useCallback } from 'react'
 import { View, TouchableOpacity, ToastAndroid } from 'react-native'
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faVideo, faPhone, faBars, faArrowLeft, faLock } from '@fortawesome/free-solid-svg-icons'
-import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal } from 'react-native-paper'
+import { useSelector } from 'react-redux'
 import { Image } from "react-native-elements"
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
+import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal } from 'react-native-paper'
+import { faVideo, faPhone, faBars, faArrowLeft, faLock } from '@fortawesome/free-solid-svg-icons'
 import Clipboard from '@react-native-clipboard/clipboard'
 
-import styles from "./HeaderStyles"
-import { useSelector } from 'react-redux'
 import { publicKeyFingerprint } from '~/global/crypto'
+import { RootState } from '~/store/store'
+import { UserData } from '~/store/reducers/user'
+import styles from "./HeaderStyles"
 
-export default function HeaderConversation(props) {
+interface IProps {
+    navigation: any;
+    data: {
+        peer_user: UserData;
+    };
+    allowBack: boolean;
+}
+
+export default function HeaderConversation(props: IProps) {
 
     const { navigation, allowBack, data } = props;
     const [visibleDialog, setVisibleDialog] = useState('')
     const [securityCode, setSecurityCode] = useState('')
-    const contacts = useSelector((store) => store.userReducer.contacts)
+    const contacts = useSelector((store: RootState) => store.userReducer.contacts)
 
     const showSecurityCode = useCallback(async () => {
         const contact = contacts.find(contact => contact.phone_no === data.peer_user.phone_no)
-        if (!contact) return
+        if (!contact || !contact.public_key) return
+
         setVisibleDialog('SecurityCode')
         const digest = await publicKeyFingerprint(contact.public_key)
         setSecurityCode(digest)
-    })
+    }, [contacts])
 
     const copySecurityCode = useCallback(() => {
         setVisibleDialog('')
@@ -32,7 +43,7 @@ export default function HeaderConversation(props) {
             'Security Code Copied',
             ToastAndroid.SHORT
         );
-    })
+    }, [securityCode])
 
     return (
         <View style={styles.topBar}>
