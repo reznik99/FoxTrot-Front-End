@@ -18,6 +18,7 @@ export interface State {
     loading: boolean;
     refreshing: boolean;
     loginErr: string;
+    signupErr: string;
 }
 
 export interface UserData {
@@ -46,38 +47,41 @@ const initialState: State = {
     },
     contacts: [],
     conversations: new Map(),
-    iceCandidates: [],
-    caller: undefined,
     socketErr: '',
     socketConn: undefined,
+    caller: undefined,
+    callOffer: undefined,
+    callAnswer: undefined,
+    iceCandidates: [],
     loading: false,
     refreshing: false,
-    loginErr: ''
+    loginErr: '',
+    signupErr: ''
 }
 
 function userReducer(state = initialState, action: Action) {
     let newState = { ...state }
     switch (action.type) {
         case "ADD_CONTACT_SUCCESS":
-            return { ...state, contacts: [...state.contacts, action.payload] as UserData[] }
+            return { ...state, contacts: [...state.contacts, action.payload as UserData] }
         case "LOAD_CONTACTS":
             return { ...state, contacts: action.payload as UserData[] }
         case "LOAD_CONVERSATIONS":
             return { ...state, conversations: action.payload as Map<string, Conversation> }
         case "SYNC_FROM_STORAGE":
-            return { ...state, token: action.payload.token, user_data: action.payload.user_data as UserData }
+            return { ...state, token: action.payload.token as string, user_data: action.payload.user_data as UserData }
         case "KEY_LOAD":
             return { ...state, keys: action.payload as CryptoKeyPair }
         case "TOKEN_VALID":
-            return { ...state, tokenValid: action.payload }
+            return { ...state, tokenValid: action.payload as boolean }
         case "LOGGED_IN":
-            return { ...state, token: action.payload.token, user_data: action.payload.user_data as UserData, loginErr: "" }
+            return { ...state, token: action.payload.token as string, user_data: action.payload.user_data as UserData, loginErr: "" }
         case "SIGNED_UP":
             return { ...state, user_data: action.payload as UserData }
         case "LOGIN_ERROR_MSG":
-            return { ...state, loginErr: action.payload }
+            return { ...state, loginErr: action.payload as string }
         case "SIGNUP_ERROR_MSG":
-            return { ...state, signupErr: action.payload }
+            return { ...state, signupErr: action.payload as string }
         case "SET_LOADING":
             return { ...state, loading: action.payload as boolean }
         case "SET_REFRESHING":
@@ -102,17 +106,17 @@ function userReducer(state = initialState, action: Action) {
             if (conversationR) conversationR.messages = [data, ...conversationR.messages]
             else {
                 newState.conversations.set(data.sender, {
-                    other_user: { 
-                        id: data.sender_id, 
+                    other_user: {
+                        id: data.sender_id,
                         phone_no: data.sender,
-                        ...newState.contacts.find(con => con.phone_no === data.sender), 
-                        pic: getAvatar(data.sender_id) 
+                        ...newState.contacts.find(con => con.phone_no === data.sender),
+                        pic: getAvatar(data.sender_id)
                     },
                     messages: [data]
                 })
             }
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()) )
+            AsyncStorage.setItem(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
             AsyncStorage.setItem(`messages-${state.user_data.id}`, JSON.stringify(Array.from(newState.conversations.entries())))
             return newState
         case "RECV_CALL_OFFER":
@@ -120,7 +124,7 @@ function userReducer(state = initialState, action: Action) {
         case "RECV_CALL_ANSWER":
             return { ...state, callAnswer: action.payload as RTCSessionDescription }
         case "RECV_CALL_ICE_CANDIDATE":
-            return { ...state, iceCandidates: [...state.iceCandidates, action.payload] }
+            return { ...state, iceCandidates: [...state.iceCandidates, action.payload as RTCIceCandidate] }
         case "RESET_CALL_ICE_CANDIDATES":
             return { ...state, iceCandidates: [] }
         case "WEBSOCKET_CONNECT":

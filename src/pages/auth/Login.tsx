@@ -24,7 +24,6 @@ interface IProps extends PropsFromRedux {
     route: {
         params: {
             data: {
-                peer_user: UserData;
                 errorMsg: string;
                 loggedOut: boolean;
             }
