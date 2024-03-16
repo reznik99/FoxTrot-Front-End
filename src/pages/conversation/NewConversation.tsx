@@ -51,7 +51,10 @@ export default function NewConversation(props: { navigation: any }) {
                 <ScrollView>
                     {results?.length
                         ? results.map((contact, index) => {
-                            return <ContactPeek data={{ ...contact, isContact: true }} key={index} navigation={navigation}
+                            return <ContactPeek key={index}
+                                navigation={navigation}
+                                data={{ ...contact }}
+                                isContact={true}
                                 onSelect={() => navigation.navigate('Conversation', { data: { peer_user: contact } })} />
                         })
                         : <Text style={[globalStyle.errorMsg, { color: '#fff' }]}>No Contacts</Text>

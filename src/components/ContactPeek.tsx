@@ -9,7 +9,7 @@ import { UserData } from '~/store/reducers/user'
 interface IProps {
     navigation: any;
     data: UserData;
-    loading: boolean;
+    loading?: boolean;
     isContact?: boolean;
     onSelect: () => void;
 }

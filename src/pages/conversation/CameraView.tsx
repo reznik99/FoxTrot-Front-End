@@ -11,7 +11,6 @@ import RNFS from 'react-native-fs'
 import { sendMessage } from "~/store/actions/user"
 import { UserData } from "~/store/reducers/user"
 
-
 interface IProps {
     navigation: any;
     route: {

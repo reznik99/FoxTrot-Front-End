@@ -8,7 +8,7 @@ I have not programmed this app to collect any personally identifiable informatio
 This app stores the following information:
 
 - In-App contacts
-- In-App messages stored encrypted (by your device)
+- In-App messages (End-To-End Encrypted)
 - User's Public Key and FCM (Firebase token used for push-notifications) 
 
 This app does not store/retrieve any GPS/Location data.
@@ -16,6 +16,6 @@ This app does not store/retrieve any GPS/Location data.
 If you find any security vulnerability or have any question regarding how the app protectes your privacy, please send me an email and I will help you.
 
 Kind regards,  
-Francesco Gorini
-Wellington, New Zealand
-foxtrot.app.developer@gmail.com
+Francesco Gorini  
+Wellington, New Zealand  
+foxtrot.app.developer@gmail.com  

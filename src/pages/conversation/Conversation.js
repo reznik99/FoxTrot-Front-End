@@ -1,20 +1,21 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
 import {
     StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Image, Keyboard,
-    Linking, Platform, KeyboardAvoidingView, ToastAndroid, ImageBackground, PermissionsAndroid
+    Linking, KeyboardAvoidingView, ToastAndroid, ImageBackground, PermissionsAndroid
 } from "react-native";
-import { ActivityIndicator, Divider, IconButton, Menu, Modal, Portal, Surface } from 'react-native-paper';
+import { ActivityIndicator, Divider, IconButton, Menu, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import Toast from 'react-native-toast-message';
 import { FlashList } from "@shopify/flash-list";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faCamera, faLock, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { faCamera, faImage, faLock, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import Clipboard from '@react-native-clipboard/clipboard';
 import RNFS from 'react-native-fs'
 
 import { sendMessage } from '~/store/actions/user';
 import { decrypt } from "~/global/crypto";
 import { DARKHEADER, PRIMARY, SECONDARY } from "~/global/variables";
+import { launchImageLibrary } from "react-native-image-picker";
 
 const todaysDate = new Date().toLocaleDateString()
 
@@ -27,10 +28,11 @@ export default function Conversation(props) {
     const peer = useSelector(state => state.userReducer.contacts.find((contact) => contact.id === peer_user.id))
     const user_data = useSelector(state => state.userReducer.user_data)
 
+    const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState("")
-    const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
     const [zoomMedia, setZoomMedia] = useState("")
     const scrollView = useRef()
+    const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null)
 
     useEffect(() => {
         setkeyboardDidShowListener(Keyboard.addListener(
@@ -45,17 +47,43 @@ export default function Conversation(props) {
         scrollView.current?.scrollToOffset({ offset: 0, animated: true })
     }, [conversation.messages])
 
-    const handleSend = useCallback(() => {
+    const handleSend = useCallback(async () => {
         if (message.trim() === "") return
 
-        setMessage('')
+        try {
+            setLoading(true)
+            setMessage('')
 
-        const toSend = {
-            type: "MSG",
-            message: message.trim()
+            const toSend = JSON.stringify({
+                type: "MSG",
+                message: message.trim()
+            })
+            await dispatch(sendMessage(toSend, peer))
+        } catch (err) {
+            console.error("Error sending message:", err)
+        } finally {
+            setLoading(false)
         }
-        dispatch(sendMessage(JSON.stringify(toSend), peer))
     }, [message])
+
+    const handleImageSelect = useCallback(async () => {
+        try {
+            setLoading(true)
+            const { didCancel, assets } = await launchImageLibrary({ includeBase64: true, quality: 0.5 })
+            if (didCancel || !assets?.[0]?.base64) return
+
+            console.debug("Loaded picture:", assets[0].base64.length.toLocaleString(), 'bytes')
+            const toSend = JSON.stringify({
+                type: "IMG",
+                message: assets[0].base64
+            })
+            await dispatch(sendMessage(toSend, peer))
+        } catch (err) {
+            console.error("Error sending gallery image:", err)
+        } finally {
+            setLoading(false)
+        }
+    }, [])
 
     return (
         <View style={styles.container}>
@@ -87,7 +115,10 @@ export default function Conversation(props) {
                 <TouchableOpacity style={styles.button} onPress={() => props.navigation.navigate('CameraView', { data: { peer: peer } })}>
                     <FontAwesomeIcon icon={faCamera} size={20} style={styles.buttonIcon} />
                 </TouchableOpacity>
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+                <TouchableOpacity style={styles.button} onPress={handleImageSelect}>
+                    <FontAwesomeIcon icon={faImage} size={20} style={styles.buttonIcon} />
+                </TouchableOpacity>
+                <KeyboardAvoidingView behavior={'padding'} style={{ flex: 1 }}>
                     <TextInput placeholder="Type a message"
                         multiline={true}
                         value={message}
@@ -96,9 +127,14 @@ export default function Conversation(props) {
                         clearButtonMode="always"
                     />
                 </KeyboardAvoidingView>
-                <TouchableOpacity style={styles.button} onPress={handleSend}>
-                    <FontAwesomeIcon icon={faPaperPlane} size={20} style={styles.buttonIcon} />
-                </TouchableOpacity>
+
+                {loading
+                    ? <ActivityIndicator style={{ marginHorizontal: 5 }} />
+                    : <TouchableOpacity style={styles.button} onPress={handleSend}>
+                        <FontAwesomeIcon icon={faPaperPlane} size={20} style={styles.buttonIcon} />
+                    </TouchableOpacity>
+                }
+
             </View>
 
             <Portal>
@@ -141,38 +177,9 @@ class Message extends PureComponent {
         }
     }
 
-    handleClick = async (item) => {
-        try {
-            this.setState({ loading: true })
-
-            // Check if message is encrypted, if so, decrypt it
-            if (!this.state.decryptedMessage) {
-                const decryptedMessage = await this.decryptMessage(item)
-                return this.setState({ decryptedMessage: decryptedMessage })
-            }
-            // Check if Image is contained in message, if so toggle size.
-            if (this.state.decryptedMessage?.type === "IMG") {
-                return this.props.zoomMedia(this.state.decryptedMessage.message)
-            }
-            // Check if message contains URL, if so, open browser.
-            if (this.state.decryptedMessage?.type === "MSG") {
-                const messageChunks = this.state.decryptedMessage?.message?.split(" ") || []
-                const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
-                if (link) Linking.openURL(link)
-            }
-        } catch (err) {
-            console.error("Error on message click:", err)
-            Toast.show({
-                type: 'error',
-                text1: 'Failed to decrypt message',
-                text2: err?.message || 'Session Key might have been rotated since this message was sent'
-            });
-        } finally {
-            this.setState({ loading: false })
-        }
-    }
-
     renderMessage = (item, isSent) => {
+        if (!item?.message) return
+
         switch (item?.type) {
             // TODO: Add VIDEO, GIF and AUDIO message types
             case "IMG":
@@ -180,7 +187,6 @@ class Message extends PureComponent {
                     <Image source={{ uri: `data:image/jpeg;base64,${item.message}` }} style={{ width: 160, height: 220 }} />
                 )
             case "MSG":
-            default:
                 const messageChunks = item.message.split(" ")
                 const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
 
@@ -193,6 +199,47 @@ class Message extends PureComponent {
                         <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(" ")}</Text>
                     </Text>
                 )
+            default:
+                console.warn("Unrecognized message type:", item?.type)
+                return null
+        }
+    }
+
+    handleClick = async (item) => {
+        try {
+            this.setState({ loading: true })
+            const msgObject = this.state.decryptedMessage
+
+            // Check if message is encrypted, if so, decrypt it
+            if (!msgObject) {
+                const decryptedMessage = await this.decryptMessage(item)
+                return this.setState({ decryptedMessage: decryptedMessage })
+            }
+
+            switch (msgObject?.type) {
+                case "IMG":
+                    // Image is contained in message, then zoom in
+                    this.props.zoomMedia(this.state.decryptedMessage.message)
+                    break
+                case "MSG":
+                    // If message contains URL open it in browser
+                    const messageChunks = this.state.decryptedMessage?.message?.split(" ") || []
+                    const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'))
+                    if (link) Linking.openURL(link)
+                    break
+                default:
+                    console.warn("Unrecognized message type:", item?.type)
+                    break
+            }
+        } catch (err) {
+            console.error("Error on message click:", err)
+            Toast.show({
+                type: 'error',
+                text1: 'Failed to decrypt message',
+                text2: err?.message || 'Session Key might have been rotated since this message was sent'
+            });
+        } finally {
+            this.setState({ loading: false })
         }
     }
 
@@ -219,7 +266,7 @@ class Message extends PureComponent {
                         </>
                     }
                     {/* Message */}
-                    {!isEncrypted && this.renderMessage(this.state.decryptedMessage, isSent)}
+                    {this.renderMessage(this.state.decryptedMessage, isSent)}
                     {/* Footers of message */}
                     <View style={{ flexDirection: 'row', alignSelf: 'stretch', justifyContent: 'space-between' }}>
                         {isEncrypted && <Text style={[styles.messageTime, { alignSelf: 'flex-start' }]}> Message Encrypted </Text>}
@@ -260,7 +307,7 @@ const FullScreenImage = (props) => {
                     visible={showMenu}
                     onDismiss={() => setShowMenu(false)}
                     anchor={<IconButton icon='dots-vertical' onPress={() => setShowMenu(true)} />}>
-                    <Menu.Item title="Report" icon='information'/>
+                    <Menu.Item title="Report" icon='information' />
                     <Divider />
                     <Menu.Item onPress={download} title="Download" icon='download' />
                 </Menu>

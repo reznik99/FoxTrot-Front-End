@@ -8,7 +8,8 @@ export const KeypairAlgorithm = {
   name: 'ECDH',
   namedCurve: 'P-384'
 }
-
+// Chunk size for encrypting/decrypting large payloads. 
+// Required due to web-crypto bug: https://github.com/webview-crypto/react-native-webview-crypto/issues/26
 export const ChunkSize = 48 * 1024;
 
 export const KeychainOpts = {
@@ -28,4 +29,4 @@ export const ACCENT = '#6227e3';
 export const DARKHEADER = '#272a31';
 
 
-export const VibratePattern = [250, 500, 250, 500, 250, 500, 250, 500, 250, 500, 250, 500, 250, 500, 250, 500]
+export const VibratePattern = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]
