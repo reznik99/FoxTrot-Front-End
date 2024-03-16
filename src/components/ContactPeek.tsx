@@ -22,7 +22,7 @@ export default class ContactPeek extends Component<IProps, any> {
     render() {
         const { data, onSelect, loading, isContact } = this.props
         return (
-            <TouchableOpacity style={styles.profilePeek} disabled={isContact} onPress={onSelect}>
+            <TouchableOpacity style={styles.profilePeek} onPress={onSelect}>
                 <Avatar.Image size={55} source={{ uri: data.pic }} style={styles.profilePicContainer} />
 
                 <View style={{ flex: 1 }}>
