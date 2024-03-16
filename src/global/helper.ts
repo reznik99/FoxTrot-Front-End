@@ -17,7 +17,7 @@ export function humanTime(lastTime: string) {
 }
 
 
-export function getAvatar(identifier: string) {
+export function getAvatar(identifier: string | number) {
     return `https://robohash.org/${identifier}`
     // let value = identifier
     // if(identifier?.length >= 2) value = `${identifier[0]}+${identifier[1]}`

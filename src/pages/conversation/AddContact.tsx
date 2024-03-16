@@ -72,7 +72,10 @@ export default function AddContact(props: { navigation: any }) {
                         ? results.map((user, index) => {
                             return (
                                 <View key={index}>
-                                    <ContactPeek data={user} navigation={navigation} loading={addingContact?.phone_no === user.phone_no}
+                                    <ContactPeek 
+                                        data={user} 
+                                        navigation={navigation} 
+                                        loading={addingContact?.phone_no === user.phone_no}
                                         onSelect={() => handleAddContact(user)}
                                     />
                                     <Divider />

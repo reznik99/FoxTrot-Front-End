@@ -14,9 +14,9 @@ export interface SocketData {
 
 export interface SocketMessage {
     sender: string;
-    sender_id: string;
+    sender_id: string | number;
     reciever: string;
-    reciever_id: string;
+    reciever_id: string | number;
     message?: string;
     sent_at?: number;
     seen?: boolean;
@@ -35,7 +35,7 @@ export function initializeWebsocket() {
 
             // Already opened so return early
             if (state.socketConn) state.socketConn.close()
-            
+
             // Enstablish websocket
             const socketConn = new WebSocket(`${WEBSOCKET_URL}?token=${state.token}`)
             socketConn.onopen = () => {
@@ -105,8 +105,8 @@ export function resetCallState() {
 function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetState) {
     try {
         const parsedData: SocketData = JSON.parse(data)
-        switch(parsedData.cmd) {
-            case "MSG": 
+        switch (parsedData.cmd) {
+            case "MSG":
                 dispatch({ type: "RECV_MESSAGE", payload: parsedData.data })
                 PushNotification.localNotification({
                     channelId: 'Messages',
@@ -121,10 +121,10 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 break;
             case "CALL_OFFER":
                 console.debug("Websocket CALL_OFFER Recieved: ", parsedData.data?.sender)
-                
+
                 const state = getState().userReducer
                 const caller = state.contacts.find(con => con.phone_no === parsedData.data.sender)
-                dispatch({ type: "RECV_CALL_OFFER", payload: {offer: parsedData.data?.offer, caller: caller} })
+                dispatch({ type: "RECV_CALL_OFFER", payload: { offer: parsedData.data?.offer, caller: caller } })
 
                 // Ring and show notification
                 InCallManager.startRingtone('_DEFAULT_', VibratePattern, undefined, 20);

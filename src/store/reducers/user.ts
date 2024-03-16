@@ -22,7 +22,7 @@ export interface State {
 }
 
 export interface UserData {
-    id: string,
+    id: string | number,
     phone_no: string,
     pic?: string
     public_key?: string,
@@ -31,8 +31,20 @@ export interface UserData {
 
 export interface Conversation {
     other_user: UserData,
-    messages: string[]
+    messages: message[]
 }
+
+export interface message {
+    id: number;
+    message: string;
+    sent_at: string;
+    seen: boolean;
+    reciever: string;
+    reciever_id: number;
+    sender: string;
+    sender_id: number;
+}
+
 export interface Action {
     type: string,
     payload: any
@@ -89,7 +101,7 @@ function userReducer(state = initialState, action: Action) {
         case "SEND_MESSAGE":
             newState.conversations = new Map(state.conversations)
             const reciever = action.payload.reciever
-            const message = action.payload.rawMessage
+            const message = action.payload.rawMessage as message
             const converastionS = newState.conversations.get(reciever.phone_no)
             if (converastionS) converastionS.messages = [message, ...converastionS.messages]
             else {
@@ -101,7 +113,7 @@ function userReducer(state = initialState, action: Action) {
             return newState
         case "RECV_MESSAGE":
             newState.conversations = new Map(state.conversations)
-            const data = action.payload
+            const data = action.payload as message
             const conversationR = newState.conversations.get(data.sender)
             if (conversationR) conversationR.messages = [data, ...conversationR.messages]
             else {

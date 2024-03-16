@@ -105,6 +105,7 @@ export async function deriveKeyFromPassword(password: string, salt: Uint8Array, 
     );
 }
 
+/** Returns the SHA-256 fingerprint of the public key as an Uppercase HEX string with a space separator */
 export async function publicKeyFingerprint(peerPublic: string): Promise<string> {
     const digest = await crypto.subtle.digest(
         {name: "sha-256"},
