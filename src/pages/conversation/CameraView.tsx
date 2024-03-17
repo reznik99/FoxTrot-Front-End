@@ -1,21 +1,25 @@
-import React, { useEffect, useState, useCallback, useRef } from "react"
-import { View, Image, StyleSheet } from "react-native"
+import React, { useEffect, useState, useCallback, useRef } from 'react'
+import { View, Image, StyleSheet } from 'react-native'
 import { ActivityIndicator, Button } from 'react-native-paper'
-import { Camera, useCameraDevices } from "react-native-vision-camera"
-import { useDispatch } from "react-redux"
-import { ThunkDispatch } from "redux-thunk"
-import { AnyAction } from "redux";
+import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import Toast from 'react-native-toast-message'
 import RNFS from 'react-native-fs'
+import { ThunkDispatch } from 'redux-thunk'
+import { useDispatch } from 'react-redux'
+import { AnyAction } from 'redux'
 
-import { sendMessage } from "~/store/actions/user"
-import { UserData } from "~/store/reducers/user"
+import { sendMessage } from '~/store/actions/user'
+import { UserData } from '~/store/reducers/user'
+import { SECONDARY, SECONDARY_LITE } from '~/global/variables'
 
 interface IProps {
     navigation: any;
     route: {
         params: {
-            data: { peer: UserData }
+            data: {
+                peer: UserData;
+                picturePath?: string;
+            },
         }
     }
 }
@@ -30,10 +34,11 @@ export default function CameraView(props: IProps) {
     const [device, setDevice] = useState(devices.back)
     const [isFront, setIsFront] = useState(false)
     const [hasPermission, setHasPermission] = useState(false)
-    const [picture, setPicture] = useState('')
+    const [picture, setPicture] = useState(props.route.params?.data?.picturePath || '')
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
+        if (props.route.params?.data?.picturePath) return
         requestPermissions()
     }, [])
 
@@ -63,6 +68,11 @@ export default function CameraView(props: IProps) {
         }
     }, [devices])
 
+    const reset = useCallback(() => {
+        setPicture('')
+        if (!hasPermission) requestPermissions()
+    }, [])
+
     const swapCamera = useCallback(() => {
         setDevice(isFront ? devices.back : devices.front)
         setIsFront(!isFront)
@@ -71,17 +81,17 @@ export default function CameraView(props: IProps) {
     const takePic = useCallback(async () => {
         if (!camera.current) return
         const pic = await camera.current.takeSnapshot({ quality: 30 })
-        setPicture(pic.path)
-    }, [])
+        setPicture(`file://${pic.path}`)
+    }, [camera])
 
     const send = useCallback(async () => {
         setLoading(true)
         try {
             const rawPic = await RNFS.readFile(picture, 'base64')
-            console.debug("Took picture:", rawPic.length.toLocaleString(), 'bytes')
+            console.debug('Took picture:', rawPic.length.toLocaleString(), 'bytes')
 
             const toSend = JSON.stringify({
-                type: "IMG",
+                type: 'IMG',
                 message: rawPic
             })
 
@@ -96,25 +106,30 @@ export default function CameraView(props: IProps) {
 
     return (
         <View style={styles.container}>
-            <ActivityIndicator animating={!device || !hasPermission} style={{ position: "absolute" }} />
+            {(!device || !hasPermission) && !picture &&
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size='large' />
+                </View>
+            }
+
 
             {picture &&
                 <>
-                    <Image source={{ uri: `file://${picture}` }} style={{ width: '100%', height: '100%' }} />
+                    <Image source={{ uri: picture }} style={{ width: '100%', height: '100%' }} />
 
                     <View style={styles.buttonContainer}>
-                        <Button style={styles.button} icon='refresh' mode="contained" onPress={() => setPicture('')} color="white">
+                        <Button style={styles.button} color={SECONDARY_LITE} icon='refresh' mode='contained' onPress={reset}>
                             Take again
                         </Button>
-                        <Button style={styles.button} icon="send" mode="contained" onPress={send} loading={loading} disabled={loading}>
+                        <Button style={styles.button} icon='send' mode='contained' onPress={send} loading={loading} disabled={loading}>
                             Send
                         </Button>
                     </View>
                 </>
             }
 
-            {device && hasPermission && !picture
-                ? <>
+            {device && hasPermission && !picture &&
+                <>
                     <Camera style={{ flex: 1 }}
                         ref={camera}
                         device={device}
@@ -122,15 +137,14 @@ export default function CameraView(props: IProps) {
                         enableZoomGesture={true}
                     />
                     <View style={styles.buttonContainer}>
-                        <Button style={styles.button} icon='camera-party-mode' mode="contained" onPress={swapCamera}>
+                        <Button style={styles.button} color={SECONDARY_LITE} icon='camera-party-mode' mode='contained' onPress={swapCamera}>
                             Swap Camera
                         </Button>
-                        <Button style={styles.button} icon='camera' mode="contained" onPress={takePic}>
+                        <Button style={styles.button} icon='camera' mode='contained' onPress={takePic}>
                             Take pic
                         </Button>
                     </View>
                 </>
-                : undefined
             }
         </View>
     )
@@ -139,11 +153,18 @@ export default function CameraView(props: IProps) {
 
 const styles = StyleSheet.create({
     container: {
-        position: "absolute",
+        position: 'absolute',
         width: '100%',
-        height: '100%'
+        height: '100%',
+        justifyContent: 'center',
+        backgroundColor: SECONDARY
+    }, loaderContainer: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center'
     }, buttonContainer: {
-        position: "absolute",
+        position: 'absolute',
         bottom: 30,
         width: '100%',
         display: 'flex',

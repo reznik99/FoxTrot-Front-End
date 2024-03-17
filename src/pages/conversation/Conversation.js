@@ -64,26 +64,27 @@ export default function Conversation(props) {
         } finally {
             setLoading(false)
         }
-    }, [message])
+    }, [message, peer])
 
     const handleImageSelect = useCallback(async () => {
         try {
             setLoading(true)
-            const { didCancel, assets } = await launchImageLibrary({ mediaType: 'photo', includeBase64: true, quality: 0.3 })
-            if (didCancel || !assets?.[0]?.base64) return
+            const { didCancel, assets } = await launchImageLibrary({ mediaType: 'photo', quality: 0.3 })
+            if (didCancel || !assets?.length) return
 
-            console.debug("Loaded picture:", assets[0].base64.length.toLocaleString(), 'bytes')
-            const toSend = JSON.stringify({
-                type: "IMG",
-                message: assets[0].base64
-            })
-            await dispatch(sendMessage(toSend, peer))
+            // Render Camera page pre-filled with selected image
+            props.navigation.navigate('CameraView', { data: { peer: peer, picturePath: assets[0].uri } })
         } catch (err) {
             console.error("Error sending gallery image:", err)
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [props.navigation, peer])
+
+    const handleCameraSelect = useCallback(async () => {
+        // Render Camera page
+        props.navigation.navigate('CameraView', { data: { peer: peer } })
+    }, [props.navigation, peer])
 
     return (
         <View style={styles.container}>
@@ -112,11 +113,11 @@ export default function Conversation(props) {
             />
 
             <View style={styles.inputContainer}>
-                <TouchableOpacity style={styles.button} onPress={() => props.navigation.navigate('CameraView', { data: { peer: peer } })}>
-                    <FontAwesomeIcon icon={faCamera} size={20} style={styles.buttonIcon} />
+                <TouchableOpacity style={styles.button} onPress={handleCameraSelect}>
+                    <FontAwesomeIcon size={20} style={styles.buttonIcon} icon={faCamera} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={handleImageSelect}>
-                    <FontAwesomeIcon icon={faImage} size={20} style={styles.buttonIcon} />
+                    <FontAwesomeIcon size={20} style={styles.buttonIcon} icon={faImage} />
                 </TouchableOpacity>
                 <KeyboardAvoidingView behavior={'padding'} style={{ flex: 1 }}>
                     <TextInput placeholder="Type a message"
