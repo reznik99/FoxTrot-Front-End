@@ -69,7 +69,7 @@ export default function Conversation(props) {
     const handleImageSelect = useCallback(async () => {
         try {
             setLoading(true)
-            const { didCancel, assets } = await launchImageLibrary({ mediaType: 'photo', includeBase64: true, quality: 0.5 })
+            const { didCancel, assets } = await launchImageLibrary({ mediaType: 'photo', includeBase64: true, quality: 0.3 })
             if (didCancel || !assets?.[0]?.base64) return
 
             console.debug("Loaded picture:", assets[0].base64.length.toLocaleString(), 'bytes')

@@ -70,7 +70,7 @@ export default function CameraView(props: IProps) {
 
     const takePic = useCallback(async () => {
         if (!camera.current) return
-        const pic = await camera.current.takeSnapshot({ quality: 25 })
+        const pic = await camera.current.takeSnapshot({ quality: 30 })
         setPicture(pic.path)
     }, [])
 
