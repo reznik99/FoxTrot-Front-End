@@ -1,7 +1,7 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
 import {
-    StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Image, Keyboard,
-    Linking, KeyboardAvoidingView, ToastAndroid, Dimensions
+    StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Keyboard,
+    Linking, KeyboardAvoidingView, ToastAndroid, Dimensions, Image
 } from "react-native";
 import { ActivityIndicator, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';

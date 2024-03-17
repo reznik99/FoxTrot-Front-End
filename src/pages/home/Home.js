@@ -6,13 +6,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faComment } from '@fortawesome/free-solid-svg-icons'
 import RNNotificationCall from "react-native-full-screen-notification-incoming-call"
 
-import { ConversationPeek } from '~/components'
-import globalStyle from "~/global/style"
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user'
 import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket'
 import { setupInterceptors } from '~/store/actions/auth'
 import { PRIMARY } from '~/global/variables'
-
+import globalStyle from "~/global/style"
+import ConversationPeek from '~/components/ConversationPeek'
 
 export default function Home(props) {
 

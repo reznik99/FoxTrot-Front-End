@@ -8,10 +8,10 @@ import { ThunkDispatch } from "redux-thunk"
 import { AnyAction } from "redux";
 
 import { searchUsers, addContact } from '~/store/actions/user'
-import { ContactPeek } from '~/components'
 import globalStyle from "~/global/style"
 import { RootState } from "~/store/store"
 import { UserData } from "~/store/reducers/user"
+import ContactPeek from "~/components/ContactPeek"
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
 

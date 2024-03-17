@@ -5,11 +5,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faUserPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
 
-import { ContactPeek } from '~/components'
 import globalStyle from "~/global/style"
 import { RootState } from "~/store/store"
 import { UserData } from "~/store/reducers/user"
 import { ACCENT } from "~/global/variables"
+import ContactPeek from "~/components/ContactPeek"
 
 export default function NewConversation(props: { navigation: any }) {
 

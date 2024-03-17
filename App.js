@@ -18,8 +18,9 @@ window.crypto.getRandomValues = global.crypto.getRandomValues
 // App
 import { store } from './src/store/store'
 import { Login, Signup, Home, Conversation, NewConversation, AddContact, Call, CameraView, Settings } from './src'
-import { Drawer, HeaderConversation } from "./src/components"
 import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT, DARKHEADER } from './src/global/variables'
+import Drawer from '~/components/Drawer'
+import HeaderConversation from '~/components/HeaderConversation'
 
 
 const defaultHeaderOptions = {
