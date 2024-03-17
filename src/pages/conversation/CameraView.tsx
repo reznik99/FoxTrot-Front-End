@@ -66,12 +66,12 @@ export default function CameraView(props: IProps) {
             console.error('Error requesting camera permissions:', err)
             return false
         }
-    }, [devices])
+    }, [])
 
     const reset = useCallback(() => {
         setPicture('')
         if (!hasPermission) requestPermissions()
-    }, [])
+    }, [hasPermission])
 
     const swapCamera = useCallback(() => {
         setDevice(isFront ? devices.back : devices.front)
@@ -111,7 +111,6 @@ export default function CameraView(props: IProps) {
                     <ActivityIndicator size='large' />
                 </View>
             }
-
 
             {picture &&
                 <>
