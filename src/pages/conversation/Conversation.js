@@ -1,21 +1,21 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
 import {
     StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Image, Keyboard,
-    Linking, KeyboardAvoidingView, ToastAndroid, ImageBackground, PermissionsAndroid
+    Linking, KeyboardAvoidingView, ToastAndroid, Dimensions
 } from "react-native";
-import { ActivityIndicator, Divider, IconButton, Menu, Modal, Portal } from 'react-native-paper';
+import { ActivityIndicator, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
-import Toast from 'react-native-toast-message';
-import { FlashList } from "@shopify/flash-list";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCamera, faImage, faLock, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { launchImageLibrary } from "react-native-image-picker";
+import { FlashList } from "@shopify/flash-list";
 import Clipboard from '@react-native-clipboard/clipboard';
-import RNFS from 'react-native-fs'
+import Toast from 'react-native-toast-message';
 
 import { sendMessage } from '~/store/actions/user';
 import { decrypt } from "~/global/crypto";
-import { DARKHEADER, PRIMARY, SECONDARY } from "~/global/variables";
-import { launchImageLibrary } from "react-native-image-picker";
+import { PRIMARY, SECONDARY } from "~/global/variables";
+import FullScreenImage from "~/components/FullScreenImage";
 
 const todaysDate = new Date().toLocaleDateString()
 
@@ -69,7 +69,7 @@ export default function Conversation(props) {
     const handleImageSelect = useCallback(async () => {
         try {
             setLoading(true)
-            const { didCancel, assets } = await launchImageLibrary({ includeBase64: true, quality: 0.5 })
+            const { didCancel, assets } = await launchImageLibrary({ mediaType: 'photo', includeBase64: true, quality: 0.5 })
             if (didCancel || !assets?.[0]?.base64) return
 
             console.debug("Loaded picture:", assets[0].base64.length.toLocaleString(), 'bytes')
@@ -138,7 +138,7 @@ export default function Conversation(props) {
             </View>
 
             <Portal>
-                <Modal visible={zoomMedia} onDismiss={() => setZoomMedia("")} >
+                <Modal visible={zoomMedia} onDismiss={() => setZoomMedia("")} contentContainerStyle={{width: "100%", height: Dimensions.get("screen").height}}>
                     {zoomMedia && <FullScreenImage media={zoomMedia} onDismiss={() => setZoomMedia("")} />}
                 </Modal>
             </Portal>
@@ -283,39 +283,6 @@ class Message extends PureComponent {
     }
 }
 
-const FullScreenImage = (props) => {
-
-    const [showMenu, setShowMenu] = useState(false)
-
-    const download = useCallback(async () => {
-        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return
-
-        const fullPath = RNFS.DownloadDirectoryPath + `/foxtrot-${Date.now()}.jpeg`
-        await RNFS.writeFile(fullPath, props.media, 'base64')
-
-        setShowMenu(false)
-        ToastAndroid.show('Image saved', ToastAndroid.SHORT);
-    }, [props.media])
-
-    return (
-        <ImageBackground source={{ uri: `data:image/jpeg;base64,${props.media}` }} resizeMode={'cover'}
-            style={{ width: "100%", height: "100%", alignSelf: 'center', alignContent: 'center' }}>
-            <View style={styles.surface}>
-                <IconButton icon='close' onPress={props.onDismiss} />
-                <Menu
-                    visible={showMenu}
-                    onDismiss={() => setShowMenu(false)}
-                    anchor={<IconButton icon='dots-vertical' onPress={() => setShowMenu(true)} />}>
-                    <Menu.Item title="Report" icon='information' />
-                    <Divider />
-                    <Menu.Item onPress={download} title="Download" icon='download' />
-                </Menu>
-            </View>
-        </ImageBackground>
-    )
-}
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -377,13 +344,5 @@ const styles = StyleSheet.create({
         color: PRIMARY
     }, button: {
         padding: 10
-    }, surface: {
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        padding: 8,
-        backgroundColor: DARKHEADER + '7f'
     },
 });
