@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
-import { Dimensions, PermissionsAndroid, StyleSheet, ToastAndroid, View } from "react-native";
+import { PermissionsAndroid, StyleSheet, ToastAndroid, View } from "react-native";
 import { Divider, IconButton, Menu } from "react-native-paper";
 import { ImageZoom } from "@likashefqet/react-native-image-zoom";
 import RNFS from 'react-native-fs'
 
 import { DARKHEADER } from "~/global/variables";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 interface IProps {
     media: string;
@@ -27,20 +28,22 @@ const FullScreenImage = (props: IProps) => {
     }, [props.media])
 
     return (
-        <View style={{ width: "100%", height: '100%' }}>
+        <View style={styles.container}>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+                <ImageZoom uri={`data:image/jpeg;base64,${props.media}`}
+                    resizeMode="cover" resizeMethod="auto" />
+            </GestureHandlerRootView>
             <View style={styles.surface}>
-                <IconButton icon='close' onPress={props.onDismiss} />
+                <IconButton icon='arrow-left-circle' size={25} onPress={props.onDismiss} />
                 <Menu
                     visible={showMenu}
                     onDismiss={() => setShowMenu(false)}
-                    anchor={<IconButton icon='dots-vertical' onPress={() => setShowMenu(true)} />}>
+                    anchor={<IconButton icon='dots-vertical' size={25} onPress={() => setShowMenu(true)} />}>
                     <Menu.Item title="Report" icon='information' />
                     <Divider />
-                    <Menu.Item onPress={download} title="Download" icon='download' />
+                    <Menu.Item onPress={download} title="Download" icon='download'/>
                 </Menu>
             </View>
-            <ImageZoom uri={`data:image/jpeg;base64,${props.media}`} 
-                resizeMode="cover" resizeMethod="auto"/>
         </View>
     )
 }
@@ -48,17 +51,21 @@ const FullScreenImage = (props: IProps) => {
 export default FullScreenImage
 
 const styles = StyleSheet.create({
+    container: {
+        width: '100%',
+        height: '100%',
+    },
     surface: {
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'absolute',
-        top: 0,
+        bottom: 0,
         zIndex: 1,
         width: '100%',
         paddingHorizontal: 10,
         paddingVertical: 5,
-        backgroundColor: DARKHEADER + 'c0'
+        backgroundColor: DARKHEADER + 'f0'
     },
 });

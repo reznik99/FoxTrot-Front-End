@@ -1,7 +1,7 @@
 import React, { PureComponent, useState, useEffect, useRef, useCallback } from "react";
 import {
     StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Keyboard,
-    Linking, KeyboardAvoidingView, ToastAndroid, Dimensions, Image
+    Linking, KeyboardAvoidingView, ToastAndroid, Image
 } from "react-native";
 import { ActivityIndicator, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
@@ -138,7 +138,9 @@ export default function Conversation(props) {
             </View>
 
             <Portal>
-                <Modal visible={zoomMedia} onDismiss={() => setZoomMedia("")} contentContainerStyle={{width: "100%", height: Dimensions.get("screen").height}}>
+                <Modal visible={zoomMedia}
+                    onDismiss={() => setZoomMedia("")}
+                    contentContainerStyle={{ width: "100%", height: '100%' }}>
                     {zoomMedia && <FullScreenImage media={zoomMedia} onDismiss={() => setZoomMedia("")} />}
                 </Modal>
             </Portal>
