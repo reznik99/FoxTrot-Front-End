@@ -108,30 +108,31 @@ export async function deriveKeyFromPassword(password: string, salt: Uint8Array, 
 /** Returns the SHA-256 fingerprint of the public key as an Uppercase HEX string with a space separator */
 export async function publicKeyFingerprint(peerPublic: string): Promise<string> {
     const digest = await crypto.subtle.digest(
-        {name: "sha-256"},
+        { name: "sha-256" },
         Buffer.from(peerPublic, 'base64')
     )
 
-    return Buffer.from(digest).toString("hex").toUpperCase().split('').reduce((prev, curr, i)=> prev + curr + (i % 2 === 1 ? ' ' : ''), '');
+    return Buffer.from(digest).toString("hex").toUpperCase().split('').reduce((prev, curr, i) => prev + curr + (i % 2 === 1 ? ' ' : ''), '');
 }
 
 /** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
 export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
-
     if (!sessionKey) throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.")
 
-    const decryptedChunks: string[] = []
+    const startTime = performance.now()
     const chunks = encryptedMessage.split(":")
+    const promises = []
 
     for (let i = 0; i < chunks.length; i += 2) {
         const iv = Buffer.from(chunks[i], 'base64')
         const cipherText = Buffer.from(chunks[i + 1], 'base64')
-        const plainText = await crypto.subtle.decrypt({ name: "AES-CBC", iv: iv }, sessionKey, cipherText)
-        decryptedChunks.push(Buffer.from(plainText).toString())
+        promises.push(crypto.subtle.decrypt({ name: "AES-CBC", iv: iv }, sessionKey, cipherText))
     }
 
-    console.debug("decryptedChunks:", decryptedChunks.length)
-    return decryptedChunks.join("")
+    const decryptedChunks = await Promise.all(promises)
+
+    console.debug("decryptedChunks:", decryptedChunks.length, 'took:', (performance.now() - startTime).toLocaleString(), 'ms')
+    return decryptedChunks.map(chunk => Buffer.from(chunk).toString()).join("")
 }
 
 /** Encrypts a given message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a Base64 string. */
@@ -139,17 +140,26 @@ export async function encrypt(sessionKey: CryptoKey, message: string): Promise<s
 
     if (!sessionKey) throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.")
 
+    const startTime = performance.now()
     const encryptedChunks: string[] = []
     const messageBuf = Buffer.from(message)
+    const promises = []
 
     for (let i = 0; i < messageBuf.length; i += ChunkSize) {
-        const nextIndex = Math.min(messageBuf.length, i + ChunkSize)
-        const iv = crypto.getRandomValues(new Uint8Array(16));
-        const plainText = Buffer.from(messageBuf.subarray(i, nextIndex))
-        const cipherText = await crypto.subtle.encrypt({ name: "AES-CBC", iv: iv }, sessionKey, plainText)
-        encryptedChunks.push(Buffer.from(iv).toString("base64") + ":" + Buffer.from(cipherText).toString("base64"))
+        promises.push(new Promise((resolve) => {
+            const nextIndex = Math.min(messageBuf.length, i + ChunkSize)
+            const iv = crypto.getRandomValues(new Uint8Array(16));
+            const plainText = Buffer.from(messageBuf.subarray(i, nextIndex))
+            crypto.subtle.encrypt({ name: "AES-CBC", iv: iv }, sessionKey, plainText)
+                .then(cipherText => {
+                    encryptedChunks.push(Buffer.from(iv).toString("base64") + ":" + Buffer.from(cipherText).toString("base64"))
+                    resolve(null)
+                })
+        }))
     }
 
-    console.debug("encryptedChunks:", encryptedChunks.length)
+    await Promise.all(promises)
+
+    console.debug("encryptedChunks:", encryptedChunks.length, 'took:', (performance.now() - startTime).toLocaleString(), 'ms')
     return encryptedChunks.join(":")
 }
