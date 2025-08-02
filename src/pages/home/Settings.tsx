@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, ScrollView, Alert, PermissionsAndroid } from 'react-native'
+import { View, ScrollView, Alert, PermissionsAndroid, Platform } from 'react-native'
 import { Button, Title, Paragraph, Dialog, Portal, Chip, Text, TextInput, Divider, Switch } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faExclamationTriangle, faDownload, faUpload } from "@fortawesome/free-solid-svg-icons"
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Keychain from 'react-native-keychain'
-import DocumentPicker from 'react-native-document-picker'
+import { pick, types } from '@react-native-documents/picker'
 import Toast from 'react-native-toast-message'
 import RNFS from 'react-native-fs'
 import { AnyAction } from "redux"
@@ -22,6 +22,37 @@ import { logOut } from '~/store/actions/auth'
 import { deleteFromStorage } from '~/global/storage'
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
+
+async function hasWriteExtPermission() {
+  if (Number(Platform.Version) >= 33) {
+    return true;
+  }
+
+  const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
+
+  const hasPermission = await PermissionsAndroid.check(permission);
+  if (hasPermission) {
+    return true;
+  }
+
+  const status = await PermissionsAndroid.request(permission);
+  return status === PermissionsAndroid.RESULTS.GRANTED;
+}
+async function hasReadExtPermission() {
+  if (Number(Platform.Version) >= 33) {
+    return true;
+  }
+
+  const permission = PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+
+  const hasPermission = await PermissionsAndroid.check(permission);
+  if (hasPermission) {
+    return true;
+  }
+
+  const status = await PermissionsAndroid.request(permission);
+  return status === PermissionsAndroid.RESULTS.GRANTED;
+}
 
 export default function Settings(props: any) {
 
@@ -74,11 +105,16 @@ export default function Settings(props: any) {
         if (!encPassword?.trim()) return
 
         try {
+            const hasPermission = await hasReadExtPermission()
+            if (!hasPermission) {
+                throw new Error("Permission to read from external storage denied")
+            }
             // Read encrypted key file
             console.debug("Reading Encrypted keypair file...")
-            const path = await DocumentPicker.pickSingle({ copyTo: 'documentDirectory' })
-            if (!path.fileCopyUri) return
-            const file = await RNFS.readFile(decodeURIComponent(path.fileCopyUri))
+            const [fileSelected] = await pick({ type: types.plainText, mode: 'open' })
+            if (!fileSelected.uri) throw new Error("Failed to pick file:" + fileSelected.error || "unknown")
+
+            const file = await RNFS.readFile(fileSelected.uri)
 
             // Parse PBKDF2 no. of iterations, salt, IV and Ciphertext and re-generate encryption key
             console.debug("Deriving key encryption key from password...")
@@ -87,11 +123,16 @@ export default function Settings(props: any) {
 
             // Decrypt Keypair
             console.debug("Decrypting keypair file...")
-            const Ikeys = await crypto.subtle.decrypt(
-                { name: "AES-GCM", iv: Buffer.from(iv, 'base64') },
-                derivedKEK,
-                Buffer.from(ciphertext, 'base64'),
-            );
+            let Ikeys = new ArrayBuffer()
+            try {
+                Ikeys = await crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: Buffer.from(iv, 'base64') },
+                    derivedKEK,
+                    Buffer.from(ciphertext, 'base64'),
+                );
+            } catch (err) {
+                throw new Error("Decryption error: Invalid password or corrupted file")
+            }
 
             // Store on device
             console.debug("Saving keys into TPM...")
@@ -154,13 +195,17 @@ export default function Settings(props: any) {
                 + Buffer.from(salt).toString('base64') + '\n'
                 + Buffer.from(iv).toString('base64') + '\n'
                 + Buffer.from(encryptedIKeys).toString('base64')
-
             console.debug("File: \n", file)
 
-            const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
-            if (granted !== PermissionsAndroid.RESULTS.GRANTED) return
+            const hasPermission = await hasWriteExtPermission()
+            if (!hasPermission){
+                console.error("Permission to write to external storage denied")
+                return
+            }
 
             const fullPath = RNFS.DownloadDirectoryPath + `/${user_data.phone_no}-keys.txt`
+            // Delete file first, RNFS bug causes malformed writes if overwriting: https://github.com/itinance/react-native-fs/issues/700
+            await RNFS.unlink(fullPath)
             await RNFS.writeFile(fullPath, file)
 
             Toast.show({
