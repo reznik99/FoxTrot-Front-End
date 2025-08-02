@@ -1,16 +1,22 @@
 {
-    "extends": "@tsconfig/react-native/tsconfig.json",
-    "compilerOptions": {
-        "target": "esnext",
-        "baseUrl": ".",
-        "paths": {
-          "~/*": ["src/*"]
-        },
-        "types": ["react-native"],
-        "lib": [
-            "es2019",
-            "dom"
-        ]
-      },
-      "exclude": ["node_modules"]
+  "extends": "@react-native/typescript-config/tsconfig.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "baseUrl": "./src",
+    "paths": {
+      "~/*": [
+        "*"
+      ]
+    },
+    "types": [
+      "react-native"
+    ],
+    "lib": [
+      "es2019",
+      "dom"
+    ]
+  },
+  "exclude": [
+    "node_modules"
+  ]
 }

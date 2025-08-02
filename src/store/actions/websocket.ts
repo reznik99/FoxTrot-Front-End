@@ -56,7 +56,7 @@ export function initializeWebsocket() {
                 console.error("Websocket err:", err)
                 Toast.show({
                     type: 'error',
-                    text1: 'Connection to Servers Lost! Please restart Foxtrot',
+                    text1: 'Connection to Servers Lost! Please restart FoxTrot',
                     text2: err.message || err,
                     visibilityTime: 5000
                 });
@@ -127,7 +127,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 dispatch({ type: "RECV_CALL_OFFER", payload: { offer: parsedData.data?.offer, caller: caller } })
 
                 // Ring and show notification
-                InCallManager.startRingtone('_DEFAULT_', VibratePattern, undefined, 20);
+                InCallManager.startRingtone('_DEFAULT_', VibratePattern, "", 20);
                 RNNotificationCall.displayNotification(
                     "22221a97-8eb4-4ac2-b2cf-0a3c0b9100ad",
                     caller?.pic || "",

@@ -3,7 +3,7 @@ import { ConnectedProps, connect } from 'react-redux'
 import { View, ScrollView, Keyboard, Alert } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
-import * as LocalAuthentication from 'expo-local-authentication';
+// import * as LocalAuthentication from 'expo-local-authentication';
 import SplashScreen from 'react-native-splash-screen'
 
 import styles from './style';
@@ -142,13 +142,15 @@ class Login extends Component<IProps, IState> {
     }
 
     biometricAuth = async () => {
-        console.debug('Attempting biometric auth')
-        const biometricAuth = await LocalAuthentication.authenticateAsync()
-        if (!biometricAuth.success) {
-            console.error('Biometric auth failed:', biometricAuth.error)
-            return false
-        }
-        return true
+        console.debug('TODO: Fake biometric auth')
+        return false
+        // console.debug('Attempting biometric auth')
+        // const biometricAuth = await LocalAuthentication.authenticateAsync()
+        // if (!biometricAuth.success) {
+        //     console.error('Biometric auth failed:', biometricAuth.error)
+        //     return false
+        // }
+        // return true
     }
 
     handleLogin = async (username: string, password: string) => {

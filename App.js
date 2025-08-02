@@ -2,7 +2,7 @@ import 'react-native-gesture-handler'
 import React from 'react'
 import { StatusBar } from 'react-native'
 import { Provider } from 'react-redux'
-import { Provider as PaperProvider, DefaultTheme, DarkTheme } from 'react-native-paper'
+import { Provider as PaperProvider, DefaultTheme, MD2DarkTheme as DarkTheme } from 'react-native-paper'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack'
 import { createDrawerNavigator } from '@react-navigation/drawer'
@@ -16,12 +16,12 @@ import WebviewCrypto from 'react-native-webview-crypto'
 window.crypto.getRandomValues = global.crypto.getRandomValues
 
 // App
-import { store } from './src/store/store'
+import { store } from '~/store/store'
+
 import { Login, Signup, Home, Conversation, NewConversation, AddContact, Call, CameraView, Settings } from './src'
-import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT, DARKHEADER } from './src/global/variables'
+import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT, DARKHEADER } from '~/global/variables'
 import Drawer from '~/components/Drawer'
 import HeaderConversation from '~/components/HeaderConversation'
-
 
 const defaultHeaderOptions = {
     headerStyle: {

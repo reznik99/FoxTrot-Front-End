@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
-import { Avatar, IconButton, Colors, ActivityIndicator } from 'react-native-paper'
+import { Avatar, IconButton, MD2Colors as Colors, ActivityIndicator } from 'react-native-paper'
 
 import globalStyle from "../global/style"
 import { DARKHEADER, PRIMARY } from '~/global/variables'
@@ -30,8 +30,8 @@ export default class ContactPeek extends Component<IProps, any> {
                 </View>
                 {loading && <ActivityIndicator />}
                 {isContact
-                    ? <IconButton size={25} icon="account" color={PRIMARY} />
-                    : <IconButton size={25} icon="account-plus" color={Colors.lightGreen300} />
+                    ? <IconButton size={25} icon="account" iconColor={PRIMARY} />
+                    : <IconButton size={25} icon="account-plus" iconColor={Colors.lightGreen300} />
                 }
             </TouchableOpacity>
         );
