@@ -97,7 +97,7 @@ export default function Settings(_props: any) {
             // Parse PBKDF2 no. of iterations, salt, IV and Ciphertext and re-generate encryption key
             console.debug('Deriving key encryption key from password...');
             const [_, iter, salt, iv, ciphertext] = file.split('\n');
-            const derivedKEK = await deriveKeyFromPassword(encPassword, Buffer.from(salt, 'base64'), parseInt(iter));
+            const derivedKEK = await deriveKeyFromPassword(encPassword, Buffer.from(salt, 'base64'), parseInt(iter, 10));
 
             // Decrypt Keypair
             console.debug('Decrypting keypair file...');

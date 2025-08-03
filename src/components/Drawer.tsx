@@ -19,7 +19,7 @@ type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
 export default function Drawer(props: IProps) {
 
-    const state = useSelector((state: RootState) => state.userReducer);
+    const state = useSelector((_state: RootState) => _state.userReducer);
     const dispatch = useDispatch<AppDispatch>();
     const [showSecurityCode, setShowSecurityCode] = useState(false);
     const [securityCode, setSecurityCode] = useState('');
@@ -57,7 +57,7 @@ export default function Drawer(props: IProps) {
                         inactiveTintColor="#fff"
                         label="Security Code"
                         style={{ backgroundColor: PRIMARY }}
-                        onPress={() => { setShowSecurityCode(true), publicKeyFingerprint(state.user_data.public_key || '').then(setSecurityCode).catch(err => console.error(err)); }}
+                        onPress={() => { setShowSecurityCode(true); publicKeyFingerprint(state.user_data.public_key || '').then(setSecurityCode).catch(err => console.error(err)); }}
                         icon={({ size, color }) => (
                             <Icon source="lock" color={color} size={size}/>
                         )}

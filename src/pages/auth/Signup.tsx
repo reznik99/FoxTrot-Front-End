@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import { Button, TextInput, Text } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';

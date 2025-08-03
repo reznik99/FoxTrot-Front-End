@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, ScrollView } from 'react-native';
-import { Searchbar, FAB, ActivityIndicator, Icon } from 'react-native-paper';
+import { Searchbar, FAB, ActivityIndicator } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 
 import globalStyle from '~/global/style';
@@ -30,10 +30,7 @@ export default function NewConversation(props: { navigation: any }) {
         <View style={globalStyle.wrapper}>
             {/* Search */}
             <View style={globalStyle.searchContainer}>
-                <Searchbar
-                    icon={({ size, color }) => (
-                        <Icon source="magnify" color={color} size={size}/>
-                    )}
+                <Searchbar icon="magnify"
                     iconColor="white"
                     placeholderTextColor="white"
                     style={{ color: 'white', backgroundColor: ACCENT }}
@@ -60,12 +57,10 @@ export default function NewConversation(props: { navigation: any }) {
                 </ScrollView>
             }
 
-            <FAB
-                style={globalStyle.fab} color="#fff"
+            <FAB style={globalStyle.fab}
                 onPress={() => navigation.replace('AddContact')}
-                icon={({ size, color }) => (
-                    <Icon source="account-plus" color={color} size={size}/>
-                )}
+                icon="account-plus"
+                color="#fff"
             />
         </View>
     );

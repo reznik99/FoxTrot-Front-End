@@ -26,7 +26,7 @@ export default function HeaderConversation(props: IProps) {
     const contacts = useSelector((store: RootState) => store.userReducer.contacts);
 
     const showSecurityCode = useCallback(async () => {
-        const contact = contacts.find(contact => contact.phone_no === data.peer_user.phone_no);
+        const contact = contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
         if (!contact || !contact.public_key) {return;}
 
         setVisibleDialog('SecurityCode');
