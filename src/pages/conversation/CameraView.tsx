@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { View, Image, StyleSheet } from 'react-native'
-import { ActivityIndicator, Button } from 'react-native-paper'
+import { ActivityIndicator, Button, Text } from 'react-native-paper'
 import { Camera, useCameraDevices } from 'react-native-vision-camera'
 import Toast from 'react-native-toast-message'
 import RNFS from 'react-native-fs'
@@ -11,6 +11,7 @@ import { AnyAction } from 'redux'
 import { sendMessage } from '~/store/actions/user'
 import { UserData } from '~/store/reducers/user'
 import { SECONDARY, SECONDARY_LITE } from '~/global/variables'
+import { getCameraAndMicrophonePermissions } from '~/global/permissions'
 
 interface IProps {
     navigation: any;
@@ -31,7 +32,7 @@ export default function CameraView(props: IProps) {
     const dispatch = useDispatch<AppDispatch>()
     const camera = useRef<Camera>(null)
     const devices = useCameraDevices()
-    const [device, setDevice] = useState(devices.back)
+    const [device, setDevice] = useState(devices[0])
     const [isFront, setIsFront] = useState(false)
     const [hasPermission, setHasPermission] = useState(false)
     const [picture, setPicture] = useState(props.route.params?.data?.picturePath || '')
@@ -43,19 +44,17 @@ export default function CameraView(props: IProps) {
     }, [])
 
     useEffect(() => {
-        setDevice(devices.back)
+        setDevice(devices[0])
     }, [devices])
 
     const requestPermissions = useCallback(async () => {
         try {
             console.debug('Requesting camera permissions')
-            const newCameraPermission = await Camera.requestCameraPermission()
-            const newMicrophonePermission = await Camera.requestMicrophonePermission()
-
-            if (newCameraPermission !== 'authorized' || newMicrophonePermission !== 'authorized') {
+            const permission = await getCameraAndMicrophonePermissions()
+            if (!permission) {
                 Toast.show({
                     type: 'error',
-                    text1: 'Camera permissions rejected',
+                    text1: 'Camera permissions denied',
                     text2: 'Unable to use phone\'s camera'
                 })
                 return false
@@ -74,7 +73,7 @@ export default function CameraView(props: IProps) {
     }, [hasPermission])
 
     const swapCamera = useCallback(() => {
-        setDevice(isFront ? devices.back : devices.front)
+        setDevice(isFront ? devices[0] : devices[1])
         setIsFront(!isFront)
     }, [devices, isFront])
 
@@ -106,9 +105,14 @@ export default function CameraView(props: IProps) {
 
     return (
         <View style={styles.container}>
-            {(!device || !hasPermission) && !picture &&
+            {!device && !picture &&
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size='large' />
+                </View>
+            }
+            { !hasPermission && 
+                <View style={styles.loaderContainer}>
+                    <Text variant='titleLarge'>Permission to use camera denied</Text>
                 </View>
             }
 

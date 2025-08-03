@@ -266,7 +266,6 @@ class Message extends PureComponent {
                             <View style={{ position: 'absolute', zIndex: 10 }}>
                                 <Icon source="lock" color="#000" size={25} />
                             </View>
-                            {/* <FontAwesomeIcon style={{ position: 'absolute', zIndex: 10 }} color="#000" icon={faLock} size={25} /> */}
                         </>
                     }
                     {/* Message */}
