@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert, StyleSheet } from 'react-native';
 import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, Icon } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
@@ -22,7 +22,7 @@ import { getReadExtPermission, getWriteExtPermission } from '~/global/permission
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
-export default function Settings(props: any) {
+export default function Settings(_props: any) {
 
     const dispatch = useDispatch<AppDispatch>();
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
@@ -35,22 +35,22 @@ export default function Settings(props: any) {
     const [encPassword, setEncPassword] = useState('');
     const [showAllKeys, setShowAllKeys] = useState(false);
 
-    useEffect(() => {
-        loadAllDeviceData();
-    }, [showAllKeys]);
-
     const loadAllDeviceData = useCallback(() => {
         AsyncStorage.getAllKeys()
-        .then(keys => keys.filter(key => showAllKeys || !key.includes('-chunk')))
-        .then(keys => setKeys([...keys]))
-        .catch(err => console.error('Error loading AsyncStorage items:', err));
-    Keychain.hasInternetCredentials({ server: API_URL, service: `${user_data.phone_no}-keys` })
-        .then(hasKeys => setHasIdentityKeys(Boolean(hasKeys)))
-        .catch(err => console.error('Error checking TPM for keys:', err));
-    Keychain.hasGenericPassword({ server: API_URL, service: `${user_data.phone_no}-credentials` })
-        .then(hasPassword => setHasPassword(Boolean(hasPassword)))
-        .catch(err => console.error('Error checking TPM for password:', err));
+            .then(_keys => _keys.filter(key => showAllKeys || !key.includes('-chunk')))
+            .then(_keys => setKeys([..._keys]))
+            .catch(err => console.error('Error loading AsyncStorage items:', err));
+        Keychain.hasInternetCredentials({ server: API_URL, service: `${user_data.phone_no}-keys` })
+            .then(_hasKeys => setHasIdentityKeys(Boolean(_hasKeys)))
+            .catch(err => console.error('Error checking TPM for keys:', err));
+        Keychain.hasGenericPassword({ server: API_URL, service: `${user_data.phone_no}-credentials` })
+            .then(_hasPwd => setHasPassword(Boolean(_hasPwd)))
+            .catch(err => console.error('Error checking TPM for password:', err));
     }, [showAllKeys, user_data]);
+
+    useEffect(() => {
+        loadAllDeviceData();
+    }, [showAllKeys, loadAllDeviceData]);
 
     const resetApp = useCallback(async () => {
         // Require authentication before allowing deletion
@@ -61,17 +61,17 @@ export default function Settings(props: any) {
                 title: 'Authentication required',
             },
         });
-        if (!res || !res.password) {return;}
+        if (!res || !res.password) { return; }
 
         setVisibleDialog('');
         // Delete everything from the device
         Promise.all([
             deleteFromStorage(''),
-            Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys`}),
+            Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys` }),
             Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
             dispatch(logOut),
         ]);
-    }, [user_data]);
+    }, [user_data, dispatch]);
 
     const resetValue = useCallback(async (key: string) => {
         console.debug('Deleting:', key);
@@ -80,7 +80,7 @@ export default function Settings(props: any) {
     }, [keys]);
 
     const importKeys = async () => {
-        if (!encPassword?.trim()) {return;}
+        if (!encPassword?.trim()) { return; }
 
         try {
             const hasPermission = await getReadExtPermission();
@@ -90,7 +90,7 @@ export default function Settings(props: any) {
             // Read encrypted key file
             console.debug('Reading Encrypted keypair file...');
             const [fileSelected] = await pick({ type: types.plainText, mode: 'open' });
-            if (!fileSelected.uri) {throw new Error('Failed to pick file:' + fileSelected.error || 'unknown');}
+            if (!fileSelected.uri) { throw new Error('Failed to pick file:' + fileSelected.error || 'unknown'); }
 
             const file = await RNFS.readFile(fileSelected.uri);
 
@@ -123,7 +123,7 @@ export default function Settings(props: any) {
             // Load into redux store
             console.debug('Loading keys into App...');
             const success = await dispatch(loadKeys());
-            if (!success) {throw new Error('Failed to load imported keys into app');}
+            if (!success) { throw new Error('Failed to load imported keys into app'); }
 
             // TODO: Validate that public key locally matches public key on Key Server.
 
@@ -151,7 +151,7 @@ export default function Settings(props: any) {
     };
 
     const exportKeys = async () => {
-        if (!encPassword?.trim() || !keypair) {return;}
+        if (!encPassword?.trim() || !keypair) { return; }
 
         try {
             const IKeys = await exportKeypair(keypair);
@@ -176,7 +176,7 @@ export default function Settings(props: any) {
             console.debug('File: \n', file);
 
             const hasPermission = await getWriteExtPermission();
-            if (!hasPermission){
+            if (!hasPermission) {
                 console.error('Permission to write to external storage denied');
                 return;
             }
@@ -252,7 +252,7 @@ export default function Settings(props: any) {
                         <Text variant="bodyMedium">All message data will be lost.</Text>
                         <Text variant="bodyMedium">If you plan to login from another device. Ensure you have exported your Keys!</Text>
                     </Dialog.Content>
-                    <Dialog.Actions style={{ justifyContent: 'space-between' }}>
+                    <Dialog.Actions style={styles.spaceBetween}>
                         <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
                         <Button onPress={resetApp} mode="contained" color="yellow">Clear App Data</Button>
                     </Dialog.Actions>
@@ -266,7 +266,7 @@ export default function Settings(props: any) {
                             secureTextEntry={true}
                             value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
-                    <Dialog.Actions style={{ justifyContent: 'space-between' }}>
+                    <Dialog.Actions style={styles.spaceBetween}>
                         <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
                         <Button onPress={importKeys} icon="upload" mode="contained" disabled={!encPassword?.trim()}>Import</Button>
                     </Dialog.Actions>
@@ -280,7 +280,7 @@ export default function Settings(props: any) {
                             secureTextEntry={true}
                             value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
-                    <Dialog.Actions style={{ justifyContent: 'space-between' }}>
+                    <Dialog.Actions style={styles.spaceBetween}>
                         <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
                         <Button onPress={exportKeys} icon="download" mode="contained" disabled={!encPassword?.trim() || !keypair}>Export</Button>
                     </Dialog.Actions>
@@ -290,3 +290,9 @@ export default function Settings(props: any) {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    spaceBetween: {
+        justifyContent: 'space-between',
+    },
+});

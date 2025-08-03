@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import * as Keychain from 'react-native-keychain';
 import Toast from 'react-native-toast-message';
 
-import { API_URL, KeychainOpts } from '~/global/variables';
+import { API_URL } from '~/global/variables';
 import { AppDispatch } from '../store';
 import { getAvatar } from '~/global/helper';
 import { deleteFromStorage, writeToStorage } from '~/global/storage';
@@ -122,7 +122,7 @@ export function setupInterceptors(navigation: any) {
     axios.interceptors.response.use(
         (response) => response,
         (error: AxiosError) => {
-            if (error.response?.status == 403) {
+            if (error.response?.status === 403) {
                 // TODO: Re-authenticate instead of signing out
                 navigation.replace('Login');
             }

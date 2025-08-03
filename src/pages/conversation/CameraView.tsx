@@ -70,7 +70,7 @@ export default function CameraView(props: IProps) {
     const reset = useCallback(() => {
         setPicture('');
         if (!hasPermission) {requestPermissions();}
-    }, [hasPermission]);
+    }, [hasPermission, requestPermissions]);
 
     const swapCamera = useCallback(() => {
         setDevice(isFront ? devices[0] : devices[1]);

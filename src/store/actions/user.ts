@@ -96,7 +96,7 @@ export function generateAndSyncKeys() {
             return true;
 
         } catch (err: any) {
-            await Keychain.resetInternetCredentials({ server: API_URL, service: `${state.user_data?.phone_no}-keys`}),
+            await Keychain.resetInternetCredentials({ server: API_URL, service: `${state.user_data?.phone_no}-keys`});
             console.error('Error generating and syncing keys:', err);
             Toast.show({
                 type: 'error',
@@ -121,7 +121,7 @@ export function loadMessages() {
             // Check last time we hit the API for messages
             const cachedLastChecked = (await readFromStorage(`messages-${state.user_data.id}-last-checked`)) || '0';
 
-            let lastChecked = parseInt(cachedLastChecked);
+            let lastChecked = parseInt(cachedLastChecked, 10);
             let previousConversations = new Map<string, Conversation>();
 
             // Load bulk messages from storage if there aren't any in the redux state
@@ -310,7 +310,7 @@ export function sendMessage(message: string, to_user: UserData) {
 }
 
 export function validateToken(token: string) {
-    return async (dispatch: AppDispatch, getState: GetState) => {
+    return async (dispatch: AppDispatch, _getState: GetState) => {
         try {
             dispatch({ type: 'SET_LOADING', payload: true });
             if (!token) {return false;}

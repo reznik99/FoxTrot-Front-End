@@ -32,7 +32,7 @@ export default function HeaderConversation(props: IProps) {
         setVisibleDialog('SecurityCode');
         const digest = await publicKeyFingerprint(contact.public_key);
         setSecurityCode(digest);
-    }, [contacts]);
+    }, [contacts, data.peer_user.phone_no]);
 
     const copySecurityCode = useCallback(() => {
         setVisibleDialog('');

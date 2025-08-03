@@ -54,7 +54,7 @@ class Call extends React.Component<Props, State> {
         if (this.timer) {clearInterval(this.timer);}
     };
 
-    componentDidUpdate = async (prevProps: Readonly<Props>, prevState: Readonly<State>) => {
+    componentDidUpdate = async (prevProps: Readonly<Props>, _prevState: Readonly<State>) => {
         await this.checkCallStatus(prevProps);
     };
 
@@ -163,12 +163,12 @@ class Call extends React.Component<Props, State> {
                 };
                 this.props.socketConn?.send(JSON.stringify(message));
             });
-            newConnection.addEventListener('connectionstatechange', event => {
+            newConnection.addEventListener('connectionstatechange', _event => {
                 console.debug('WebRTC connection state change: ', newConnection?.connectionState);
                 this.setState({ callStatus: `${this.state.peer_user?.phone_no} : ${newConnection?.connectionState}` });
                 if (newConnection?.connectionState === 'disconnected') {this.endCall();}
             });
-            newConnection.addEventListener('iceconnectionstatechange', event => {
+            newConnection.addEventListener('iceconnectionstatechange', _event => {
                 console.debug('ICE connection state change: ', newConnection?.iceConnectionState);
             });
             newConnection.addEventListener('track', (event: any) => {
@@ -282,13 +282,13 @@ class Call extends React.Component<Props, State> {
                 <View style={styles.footer}>
                     <View style={{ flexDirection: 'row' }}>
                         {!this.state.stream &&
-                            <TouchableOpacity onPress={this.startStream} style={[styles.actionButton, { backgroundColor: 'green' }]}>
+                            <TouchableOpacity onPress={this.startStream} style={[styles.actionButton, styles.bgGreen]}>
                                 <Icon source="phone" size={20} />
                             </TouchableOpacity>
                         }
                         {this.state.stream &&
                             <>
-                                <TouchableOpacity onPress={this.toggleLoudSpeaker} style={[styles.actionButton, this.state.loudSpeaker && { backgroundColor: 'white' }]}>
+                                <TouchableOpacity onPress={this.toggleLoudSpeaker} style={[styles.actionButton, this.state.loudSpeaker && styles.bgWhite]}>
                                     <Icon source="volume-high" size={20} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={this.toggleVoiceEnabled} style={styles.actionButton}>
@@ -300,7 +300,7 @@ class Call extends React.Component<Props, State> {
                                 <TouchableOpacity onPress={this.toggleCamera} style={styles.actionButton}>
                                     <Icon source="camera-switch" size={20} />
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={this.endCall} style={[styles.actionButton, { backgroundColor: 'red' }]}>
+                                <TouchableOpacity onPress={this.endCall} style={[styles.actionButton, styles.bgRed]}>
                                     <Icon source="phone" size={20} />
                                 </TouchableOpacity>
                             </>
@@ -396,5 +396,11 @@ const styles = StyleSheet.create({
     }, cameraDisabledSmall: {
         height: 175,
         width: 125,
+    }, bgRed: {
+        backgroundColor: 'red',
+    }, bgGreen: {
+        backgroundColor: 'green',
+    }, bgWhite: {
+        backgroundColor: 'white',
     },
 });

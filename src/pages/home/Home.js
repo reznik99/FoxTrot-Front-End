@@ -3,6 +3,7 @@ import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { Divider, FAB, ActivityIndicator, Snackbar, Icon } from 'react-native-paper';
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
+import inCallManager from 'react-native-incall-manager';
 
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user';
 import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket';
@@ -36,7 +37,7 @@ export default function Home(props) {
             });
             RNNotificationCall.addEventListener('endCall', (payload) => {
                 console.debug('RNNotificationCall: User ended call', payload);
-                InCallManager.stopRingtone();
+                inCallManager.stopRingtone();
             });
 
             // Load keys from TPM

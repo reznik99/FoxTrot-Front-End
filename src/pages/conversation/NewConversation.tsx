@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, ScrollView } from 'react-native';
 import { Searchbar, FAB, ActivityIndicator, Icon } from 'react-native-paper';
 import { useSelector } from 'react-redux';
@@ -24,7 +24,7 @@ export default function NewConversation(props: { navigation: any }) {
         setResults(newResults.sort((r1, r2) => (r1.phone_no > r2.phone_no) ? 1 : -1));
 
         setLoading(false);
-    }, [prefix]);
+    }, [prefix, contacts]);
 
     return (
         <View style={globalStyle.wrapper}>

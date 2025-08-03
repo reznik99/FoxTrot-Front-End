@@ -24,12 +24,12 @@ export default function Signup(props: IProps) {
     const [password, setPassword] = useState('');
     const [rePassword, setRePassword] = useState('');
 
-    const signup = useCallback(async () => {
+    const signup = async () => {
         if (loading) {return;}
 
         const res = await dispatch(signUp(username, password, rePassword));
         if (res) {return props.navigation.navigate('Login');}
-    }, [username, password, rePassword, loading]);
+    };
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
