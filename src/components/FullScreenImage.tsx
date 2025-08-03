@@ -1,11 +1,12 @@
 import { useCallback, useState } from "react";
-import { PermissionsAndroid, StyleSheet, ToastAndroid, View } from "react-native";
+import { StyleSheet, ToastAndroid, View } from "react-native";
 import { Divider, IconButton, Menu } from "react-native-paper";
 import { ImageZoom } from "@likashefqet/react-native-image-zoom";
 import RNFS from 'react-native-fs'
 
 import { DARKHEADER } from "~/global/variables";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { getWriteExtPermission } from "~/global/permissions";
 
 interface IProps {
     media: string;
@@ -17,14 +18,14 @@ const FullScreenImage = (props: IProps) => {
     const [showMenu, setShowMenu] = useState(false)
 
     const download = useCallback(async () => {
-        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return
+        const granted = await getWriteExtPermission()
+        if (!granted) return
 
         const fullPath = RNFS.DownloadDirectoryPath + `/foxtrot-${Date.now()}.jpeg`
         await RNFS.writeFile(fullPath, props.media, 'base64')
 
         setShowMenu(false)
-        ToastAndroid.show('Image saved', ToastAndroid.SHORT);
+        ToastAndroid.show('Image saved to ' + fullPath, ToastAndroid.SHORT);
     }, [props.media])
 
     return (
@@ -39,9 +40,9 @@ const FullScreenImage = (props: IProps) => {
                     visible={showMenu}
                     onDismiss={() => setShowMenu(false)}
                     anchor={<IconButton icon='dots-vertical' size={25} onPress={() => setShowMenu(true)} />}>
-                    <Menu.Item title="Report" icon='information' />
+                    <Menu.Item title="Report" leadingIcon='information' />
                     <Divider />
-                    <Menu.Item onPress={download} title="Download" icon='download'/>
+                    <Menu.Item onPress={download} title="Download" leadingIcon='download'/>
                 </Menu>
             </View>
         </View>
