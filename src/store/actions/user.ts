@@ -11,6 +11,25 @@ import { getPushNotificationPermission } from '~/global/permissions';
 import { getAvatar } from '~/global/helper';
 import { readFromStorage, writeToStorage } from '~/global/storage';
 
+async function migrateKeysToNewStandard(username: string) {
+    const credentials = await Keychain.getInternetCredentials(`${username}-keys`)
+    // We are good
+    if (!credentials || credentials.username !== `${username}-keys`) {
+        return
+    }
+    console.debug("Migrating keypair in keychain ")
+    // Need to migrate
+    await Keychain.setInternetCredentials(API_URL, `${username}-keys`, credentials.password, {
+        storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+        server: API_URL,
+        service: `${username}-keys`
+    })
+    // Clear old one
+    await Keychain.resetInternetCredentials({
+        server: `${username}-keys`
+    })
+}
+
 export function loadKeys() {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
@@ -20,6 +39,7 @@ export function loadKeys() {
             if (state.keys) return true
 
             console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`)
+            await migrateKeysToNewStandard(state.user_data.phone_no)
             const credentials = await Keychain.getInternetCredentials(API_URL, {
                 server: API_URL,
                 service: `${state.user_data.phone_no}-keys`
