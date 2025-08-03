@@ -57,7 +57,7 @@ const HomeNavigator = () => {
             <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
             <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: "My Contacts" })} />
             <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: "Search New Users" })} />
-            <HomeStack.Screen name="Call" component={Call} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
+            <HomeStack.Screen name="Call" component={Call} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params?.data} allowBack={true} />) })} />
             <HomeStack.Screen name="CameraView" component={CameraView} options={({ route }) => ({ title: "Camera" })} />
             <HomeStack.Screen name="Settings" component={Settings} />
         </HomeStack.Navigator>

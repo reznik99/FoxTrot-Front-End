@@ -73,7 +73,6 @@ class Call extends React.Component<Props, State> {
         if (this.props.callOffer && !prevProps?.callOffer) {
             // Attempt to start local stream and answer the peer's call
             await this.startStream()
-            await this.answerCall()
         }
     }
 
@@ -185,9 +184,10 @@ class Call extends React.Component<Props, State> {
                 startTime: Date.now(),
                 stream: newStream,
                 peerConnection: newConnection
+            }, () => {
+                if (!this.props.callOffer) this.call()
+                else this.answerCall()
             })
-
-            if (!this.props.callOffer) await this.call()
         } catch (err: any) {
             console.error("startStream error:", err)
         }

@@ -24,6 +24,11 @@
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+    <!--Android 14+-->
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
 
     <application
       android:name=".MainApplication"
@@ -50,23 +55,24 @@
         android:theme="@style/incomingCall"
         android:launchMode="singleTask"
         android:excludeFromRecents="true"
-        android:exported="true"
+        android:exported="false"
         android:showWhenLocked="true"
         android:turnScreenOn="true"
         />
-        <activity android:name="com.reactnativefullscreennotificationincomingcall.NotificationReceiverActivity"
+      <activity android:name="com.reactnativefullscreennotificationincomingcall.NotificationReceiverActivity"
         android:theme="@style/incomingCall"
         android:launchMode="singleTask"
         android:excludeFromRecents="true"
-        android:exported="true"
+        android:exported="false"
         android:showWhenLocked="true"
         android:turnScreenOn="true"
         />
-         <service
-         android:name="com.reactnativefullscreennotificationincomingcall.IncomingCallService"
-         android:enabled="true"
-         android:stopWithTask="false"
-         android:exported="true" />
+      <service
+        android:name="com.reactnativefullscreennotificationincomingcall.IncomingCallService"
+        android:enabled="true"
+        android:stopWithTask="false"
+        android:foregroundServiceType="phoneCall"
+        android:exported="false" />
          
     </application>
 </manifest>
