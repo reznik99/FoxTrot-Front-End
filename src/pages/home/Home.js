@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native'
 import { useSelector, useDispatch } from 'react-redux'
-import { Divider, FAB, ActivityIndicator, Snackbar } from 'react-native-paper'
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faComment } from '@fortawesome/free-solid-svg-icons'
+import { Divider, FAB, ActivityIndicator, Snackbar, Icon } from 'react-native-paper'
 import RNNotificationCall from "react-native-full-screen-notification-incoming-call"
 
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user'
@@ -136,7 +134,7 @@ export default function Home(props) {
                             style={[globalStyle.fab, { backgroundColor: PRIMARY }]} color='#fff'
                             onPress={() => props.navigation.navigate('NewConversation')}
                             icon={({ size, color }) => (
-                                <FontAwesomeIcon size={size} icon={faComment} style={{ color: color }} />
+                                <Icon source="message" color={color} size={size}/>
                             )}
                         />
                     </>

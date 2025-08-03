@@ -2,9 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { View, TouchableOpacity, ToastAndroid, Platform, StyleSheet } from 'react-native'
 import { useSelector } from 'react-redux'
 import { Image } from "react-native-elements"
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal } from 'react-native-paper'
-import { faVideo, faPhone, faBars, faArrowLeft, faLock } from '@fortawesome/free-solid-svg-icons'
+import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal, Icon } from 'react-native-paper'
 import Clipboard from '@react-native-clipboard/clipboard'
 
 import { publicKeyFingerprint } from '~/global/crypto'
@@ -51,7 +49,7 @@ export default function HeaderConversation(props: IProps) {
                 {
                     allowBack ?
                         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
-                            <FontAwesomeIcon icon={faArrowLeft} size={20} style={styles.topBarText} />
+                            <Icon source="arrow-left" color={styles.topBarText.color} size={styles.topBarText.fontSize}/>
                         </TouchableOpacity>
                         :
                         null
@@ -67,20 +65,20 @@ export default function HeaderConversation(props: IProps) {
             </View>
             <View style={[styles.buttonContainer]}>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user } })}>
-                    <FontAwesomeIcon icon={faVideo} size={20} style={styles.topBarText} />
+                    <Icon source="video" color={styles.topBarText.color} size={styles.topBarText.fontSize}/>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user } })}>
-                    <FontAwesomeIcon icon={faPhone} size={20} style={styles.topBarText} />
+                    <Icon source="phone" color={styles.topBarText.color} size={styles.topBarText.fontSize}/>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button}>
-                    <FontAwesomeIcon icon={faBars} size={20} style={styles.topBarText} />
+                    <Icon source="menu" color={styles.topBarText.color} size={styles.topBarText.fontSize}/>
                 </TouchableOpacity>
             </View>
 
             <Portal>
                 <Dialog visible={visibleDialog === 'SecurityCode'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Title>
-                        <FontAwesomeIcon icon={faLock} color="#00ff00" /> Security Code
+                        <Icon source="lock" color={styles.topBarText.color} size={styles.topBarText.fontSize}/> Security Code
                     </Dialog.Title>
                     <Dialog.Content>
                         <Paragraph>Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code:</Paragraph>

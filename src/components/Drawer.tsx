@@ -1,10 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, View, ToastAndroid } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { Avatar, Button, Chip, Dialog, Paragraph, Portal } from 'react-native-paper';
+import { Avatar, Button, Chip, Dialog, Icon, Paragraph, Portal } from 'react-native-paper';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faLock, faSignOut, faSliders } from '@fortawesome/free-solid-svg-icons';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { ThunkDispatch } from 'redux-thunk'
 import { AnyAction } from "redux"
@@ -61,7 +59,7 @@ export default function Drawer(props: IProps) {
                         style={{ backgroundColor: PRIMARY }}
                         onPress={() => { setShowSecurityCode(true), publicKeyFingerprint(state.user_data.public_key || '').then(setSecurityCode).catch(err => console.error(err)) }}
                         icon={({ size, color }) => (
-                            <FontAwesomeIcon size={size} icon={faLock} style={{ color: color }} />
+                            <Icon source="lock" color={color} size={size}/>
                         )}
                     />
                     <DrawerItem
@@ -70,7 +68,7 @@ export default function Drawer(props: IProps) {
                         style={{ backgroundColor: PRIMARY }}
                         onPress={() => props.navigation.navigate('Settings')}
                         icon={({ size, color }) => (
-                            <FontAwesomeIcon size={size} icon={faSliders} style={{ color: color }} />
+                            <Icon source="cog" color={color} size={size}/>
                         )}
                     />
                     <DrawerItem
@@ -79,7 +77,7 @@ export default function Drawer(props: IProps) {
                         style={{ borderTopWidth: 1, borderTopColor: "#e3e1e1", backgroundColor: DARKHEADER }}
                         onPress={() => dispatch(logOut(props.navigation))}
                         icon={({ size, color }) => (
-                            <FontAwesomeIcon size={size} icon={faSignOut} style={{ color: color }} />
+                            <Icon source="logout" color={color} size={size}/>
                         )}
                     />
                 </View>
@@ -89,7 +87,7 @@ export default function Drawer(props: IProps) {
             <Portal>
                 <Dialog visible={showSecurityCode} onDismiss={() => setShowSecurityCode(false)}>
                     <Dialog.Title>
-                        <FontAwesomeIcon icon={faLock} color="#00ff00" /> Your Security Code
+                        <Icon source="lock" color="#00ff00" size={20}/> Your Security Code
                     </Dialog.Title>
                     <Dialog.Content>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (

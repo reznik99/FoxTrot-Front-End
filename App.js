@@ -2,12 +2,10 @@ import 'react-native-gesture-handler'
 import React from 'react'
 import { StatusBar } from 'react-native'
 import { Provider } from 'react-redux'
-import { Provider as PaperProvider, DefaultTheme, MD2DarkTheme as DarkTheme } from 'react-native-paper'
+import { Provider as PaperProvider, DefaultTheme, MD2DarkTheme as DarkTheme, Icon } from 'react-native-paper'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack'
 import { createDrawerNavigator } from '@react-navigation/drawer'
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faHome } from '@fortawesome/free-solid-svg-icons'
 import Toast from 'react-native-toast-message'
 
 // Crypto
@@ -32,7 +30,7 @@ const defaultHeaderOptions = {
         fontWeight: 'bold',
     },
     drawerIcon: ({ focused, size, color }) => (
-        <FontAwesomeIcon size={size} icon={faHome} style={{ color: color }} />
+        <Icon source="home" color={color} size={20} />
     )
 }
 const animationDefaults = {

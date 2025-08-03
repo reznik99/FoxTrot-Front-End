@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, ScrollView, Alert } from 'react-native'
-import { Button, Title, Paragraph, Dialog, Portal, Chip, Text, TextInput, Divider, Switch } from 'react-native-paper'
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faExclamationTriangle, faDownload, faUpload } from "@fortawesome/free-solid-svg-icons"
+import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, Icon } from 'react-native-paper'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Keychain from 'react-native-keychain'
 import { pick, types } from '@react-native-documents/picker'
@@ -199,7 +197,7 @@ export default function Settings(props: any) {
         <View style={globalStyle.wrapper}>
 
             <ScrollView style={{ paddingHorizontal: 40, paddingVertical: 15, marginBottom: 15, flex: 1 }}>
-                <Title>User Data</Title>
+                <Text variant='titleLarge'>User Data</Text>
                 <View style={{ marginVertical: 15 }}>
                     <Text>Stored on device:</Text>
                     {/* TPM values */}
@@ -209,8 +207,8 @@ export default function Settings(props: any) {
                     {keys.map((key, idx) => <Chip icon="account" style={{ backgroundColor: DARKHEADER }} key={idx} onPress={() => resetValue(key)}>{key}</Chip>)}
 
                     <Button mode='contained'
-                        icon="alert"
-                        color={ACCENT}
+                        icon="alert-circle"
+                        buttonColor={ACCENT}
                         style={{ marginTop: 10 }}
                         onPress={() => setVisibleDialog('reset')}
                         loading={visibleDialog === 'reset'}>
@@ -225,13 +223,13 @@ export default function Settings(props: any) {
 
                 <Divider style={{ marginVertical: 15 }} />
 
-                <Title>User Identity Keys</Title>
+                <Text variant='titleMedium'>User Identity Keys</Text>
                 <View style={{ marginVertical: 15, flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Button icon="upload" mode='contained'
+                    <Button icon="upload-circle" mode='contained'
                         onPress={() => setVisibleDialog('import')} loading={visibleDialog === 'import'}>
                         Import
                     </Button>
-                    <Button icon="download" mode='contained'
+                    <Button icon="download-circle" mode='contained'
                         onPress={() => setVisibleDialog('export')} loading={visibleDialog === 'export'}>
                         Export
                     </Button>
@@ -240,10 +238,10 @@ export default function Settings(props: any) {
 
             <Portal>
                 <Dialog visible={visibleDialog === 'reset'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title><FontAwesomeIcon icon={faExclamationTriangle} color="yellow" /> Warning</Dialog.Title>
+                    <Dialog.Title><Icon source="flash-triangle" color='yellow' size={20} /> Warning</Dialog.Title>
                     <Dialog.Content>
-                        <Paragraph>All message data will be lost.</Paragraph>
-                        <Paragraph>If you plan to login from another device. Ensure you have exported your Keys!</Paragraph>
+                        <Text variant='bodyMedium'>All message data will be lost.</Text>
+                        <Text variant='bodyMedium'>If you plan to login from another device. Ensure you have exported your Keys!</Text>
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-between' }}>
                         <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
@@ -252,7 +250,7 @@ export default function Settings(props: any) {
                 </Dialog>
 
                 <Dialog visible={visibleDialog === 'import'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title><FontAwesomeIcon icon={faUpload} color="white" /> Import User Identity Keys</Dialog.Title>
+                    <Dialog.Title><Icon source="file-document-alert" color='yellow' size={20} /> Import User Identity Keys</Dialog.Title>
                     <Dialog.Content>
                         <TextInput label="Keypair decryption password" secureTextEntry={true}
                             value={encPassword} onChangeText={setEncPassword} />
@@ -264,7 +262,7 @@ export default function Settings(props: any) {
                 </Dialog>
 
                 <Dialog visible={visibleDialog === 'export'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title><FontAwesomeIcon icon={faDownload} color="white" /> Export User Identity Keys</Dialog.Title>
+                    <Dialog.Title><Icon source="file-document-check" color='yellow' size={20} /> Export User Identity Keys</Dialog.Title>
                     <Dialog.Content>
                         <TextInput label="Keypair encryption password" secureTextEntry={true}
                             value={encPassword} onChangeText={setEncPassword} />
