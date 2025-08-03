@@ -1,13 +1,13 @@
-import React, { useState, useCallback } from 'react'
-import { View, ScrollView } from 'react-native'
-import { Button, TextInput, Text } from 'react-native-paper'
-import { useSelector, useDispatch } from 'react-redux'
-import { ThunkDispatch } from 'redux-thunk'
-import { AnyAction } from 'redux'
+import React, { useState, useCallback } from 'react';
+import { View, ScrollView } from 'react-native';
+import { Button, TextInput, Text } from 'react-native-paper';
+import { useSelector, useDispatch } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { AnyAction } from 'redux';
 
-import styles from './style'
-import { signUp } from '~/store/actions/auth'
-import { RootState } from '~/store/store'
+import styles from './style';
+import { signUp } from '~/store/actions/auth';
+import { RootState } from '~/store/store';
 
 interface IProps {
     navigation: any;
@@ -17,18 +17,18 @@ type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
 
 export default function Signup(props: IProps) {
-    const { signupErr, loading } = useSelector((state: RootState) => state.userReducer)
-    const dispatch = useDispatch<AppDispatch>()
+    const { signupErr, loading } = useSelector((state: RootState) => state.userReducer);
+    const dispatch = useDispatch<AppDispatch>();
 
-    const [username, setUsername] = useState('')
-    const [password, setPassword] = useState('')
-    const [rePassword, setRePassword] = useState('')
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [rePassword, setRePassword] = useState('');
 
     const signup = useCallback(async () => {
-        if (loading) return
+        if (loading) {return;}
 
-        const res = await dispatch(signUp(username, password, rePassword))
-        if (res) return props.navigation.navigate('Login')
+        const res = await dispatch(signUp(username, password, rePassword));
+        if (res) {return props.navigation.navigate('Login');}
     }, [username, password, rePassword, loading]);
 
     return (
@@ -44,21 +44,21 @@ export default function Signup(props: IProps) {
                     onChangeText={val => setUsername(val.trim())}
                     value={username}
                     label="Username"
-                    outlineColor={signupErr && !username ? "red" : undefined}
+                    outlineColor={signupErr && !username ? 'red' : undefined}
                 />
                 <TextInput mode="outlined"
                     onChangeText={val => setPassword(val.trim())}
                     value={password}
                     secureTextEntry={true}
                     label="Password"
-                    outlineColor={signupErr && !password ? "red" : undefined}
+                    outlineColor={signupErr && !password ? 'red' : undefined}
                 />
                 <TextInput mode="outlined"
                     onChangeText={val => setRePassword(val.trim())}
                     value={rePassword}
                     secureTextEntry={true}
                     label="Repeat Password"
-                    outlineColor={signupErr && (!rePassword || rePassword !== password) ? "red" : undefined}
+                    outlineColor={signupErr && (!rePassword || rePassword !== password) ? 'red' : undefined}
                 />
 
                 {/* Actions */}

@@ -1,5 +1,5 @@
-import { PermissionsAndroid, Platform } from "react-native";
-import { Camera } from "react-native-vision-camera";
+import { PermissionsAndroid, Platform } from 'react-native';
+import { Camera } from 'react-native-vision-camera';
 
 
 export async function getPushNotificationPermission() {
@@ -45,20 +45,20 @@ export async function getReadExtPermission() {
 }
 
 export async function getCameraAndMicrophonePermissions() {
-  const cameraPermission = Camera.getCameraPermissionStatus()
+  const cameraPermission = Camera.getCameraPermissionStatus();
   if (cameraPermission !== 'granted') {
-    const newCameraPermission = await Camera.requestCameraPermission()
+    const newCameraPermission = await Camera.requestCameraPermission();
     if (newCameraPermission !== 'granted') {
-      return false
+      return false;
     }
   }
-  const microphonePermission = Camera.getMicrophonePermissionStatus()
+  const microphonePermission = Camera.getMicrophonePermissionStatus();
   if (microphonePermission !== 'granted') {
-    const newMicrophonePermission = await Camera.requestMicrophonePermission()
+    const newMicrophonePermission = await Camera.requestMicrophonePermission();
     if (newMicrophonePermission !== 'granted') {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }

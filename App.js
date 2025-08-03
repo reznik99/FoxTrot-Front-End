@@ -1,25 +1,25 @@
-import 'react-native-gesture-handler'
-import React from 'react'
-import { StatusBar } from 'react-native'
-import { Provider } from 'react-redux'
-import { Provider as PaperProvider, DefaultTheme, MD2DarkTheme as DarkTheme, Icon } from 'react-native-paper'
-import { NavigationContainer } from '@react-navigation/native'
-import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack'
-import { createDrawerNavigator } from '@react-navigation/drawer'
-import Toast from 'react-native-toast-message'
+import 'react-native-gesture-handler';
+import React from 'react';
+import { StatusBar } from 'react-native';
+import { Provider } from 'react-redux';
+import { Provider as PaperProvider, DefaultTheme, MD2DarkTheme as DarkTheme, Icon } from 'react-native-paper';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import Toast from 'react-native-toast-message';
 
 // Crypto
-import 'react-native-get-random-values'
-import WebviewCrypto from 'react-native-webview-crypto'
-window.crypto.getRandomValues = global.crypto.getRandomValues
+import 'react-native-get-random-values';
+import WebviewCrypto from 'react-native-webview-crypto';
+window.crypto.getRandomValues = global.crypto.getRandomValues;
 
 // App
-import { store } from '~/store/store'
+import { store } from '~/store/store';
 
-import { Login, Signup, Home, Conversation, NewConversation, AddContact, Call, CameraView, Settings } from './src'
-import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT, DARKHEADER } from '~/global/variables'
-import Drawer from '~/components/Drawer'
-import HeaderConversation from '~/components/HeaderConversation'
+import { Login, Signup, Home, Conversation, NewConversation, AddContact, Call, CameraView, Settings } from './src';
+import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT, DARKHEADER } from '~/global/variables';
+import Drawer from '~/components/Drawer';
+import HeaderConversation from '~/components/HeaderConversation';
 
 const defaultHeaderOptions = {
     headerStyle: {
@@ -31,40 +31,40 @@ const defaultHeaderOptions = {
     },
     drawerIcon: ({ focused, size, color }) => (
         <Icon source="home" color={color} size={20} />
-    )
-}
+    ),
+};
 const animationDefaults = {
     cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
     gestureEnabled: true,
-    gestureDirection: 'horizontal'
-}
+    gestureDirection: 'horizontal',
+};
 
-const AppNavigator = createDrawerNavigator()
+const AppNavigator = createDrawerNavigator();
 const AppDrawer = () => {
     return (
         <AppNavigator.Navigator screenOptions={{ swipeEdgeWidth: 200 }}
             drawerContent={(props) => <Drawer {...props} />} >
             <AppNavigator.Screen name="Foxtrot" component={Home} options={defaultHeaderOptions} />
         </AppNavigator.Navigator>
-    )
-}
+    );
+};
 
-const HomeStack = createStackNavigator()
+const HomeStack = createStackNavigator();
 const HomeNavigator = () => {
     return (
-        <HomeStack.Navigator initialRouteName='Home' screenOptions={{ ...defaultHeaderOptions, ...animationDefaults }}>
+        <HomeStack.Navigator initialRouteName="Home" screenOptions={{ ...defaultHeaderOptions, ...animationDefaults }}>
             <HomeStack.Screen name="Home" component={AppDrawer} options={{ headerShown: false }} />
             <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
-            <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: "My Contacts" })} />
-            <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: "Search New Users" })} />
+            <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: 'My Contacts' })} />
+            <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: 'Search New Users' })} />
             <HomeStack.Screen name="Call" component={Call} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params?.data} allowBack={true} />) })} />
-            <HomeStack.Screen name="CameraView" component={CameraView} options={({ route }) => ({ title: "Camera" })} />
+            <HomeStack.Screen name="CameraView" component={CameraView} options={({ route }) => ({ title: 'Camera' })} />
             <HomeStack.Screen name="Settings" component={Settings} />
         </HomeStack.Navigator>
-    )
-}
+    );
+};
 
-const AuthStack = createStackNavigator()
+const AuthStack = createStackNavigator();
 const AuthNavigator = () => {
     return (
         <NavigationContainer>
@@ -74,8 +74,8 @@ const AuthNavigator = () => {
                 <AuthStack.Screen name="App" component={HomeNavigator} options={{ headerShown: false }} />
             </AuthStack.Navigator>
         </NavigationContainer>
-    )
-}
+    );
+};
 
 
 const darkTheme = {
@@ -112,5 +112,5 @@ export default function App() {
                 <Toast />
             </PaperProvider>
         </Provider>
-    )
+    );
 }

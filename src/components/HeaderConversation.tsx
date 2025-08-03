@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from 'react'
-import { View, TouchableOpacity, ToastAndroid, Platform, StyleSheet } from 'react-native'
-import { useSelector } from 'react-redux'
-import { Image } from "react-native-elements"
-import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal, Icon } from 'react-native-paper'
-import Clipboard from '@react-native-clipboard/clipboard'
+import React, { useState, useCallback } from 'react';
+import { View, TouchableOpacity, ToastAndroid, Platform, StyleSheet } from 'react-native';
+import { useSelector } from 'react-redux';
+import { Image } from 'react-native-elements';
+import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal, Icon } from 'react-native-paper';
+import Clipboard from '@react-native-clipboard/clipboard';
 
-import { publicKeyFingerprint } from '~/global/crypto'
-import { RootState } from '~/store/store'
-import { UserData } from '~/store/reducers/user'
-import { DARKHEADER } from '~/global/variables'
+import { publicKeyFingerprint } from '~/global/crypto';
+import { RootState } from '~/store/store';
+import { UserData } from '~/store/reducers/user';
+import { DARKHEADER } from '~/global/variables';
 
 interface IProps {
     navigation: any;
@@ -21,27 +21,27 @@ interface IProps {
 export default function HeaderConversation(props: IProps) {
 
     const { navigation, allowBack, data } = props;
-    const [visibleDialog, setVisibleDialog] = useState('')
-    const [securityCode, setSecurityCode] = useState('')
-    const contacts = useSelector((store: RootState) => store.userReducer.contacts)
+    const [visibleDialog, setVisibleDialog] = useState('');
+    const [securityCode, setSecurityCode] = useState('');
+    const contacts = useSelector((store: RootState) => store.userReducer.contacts);
 
     const showSecurityCode = useCallback(async () => {
-        const contact = contacts.find(contact => contact.phone_no === data.peer_user.phone_no)
-        if (!contact || !contact.public_key) return
+        const contact = contacts.find(contact => contact.phone_no === data.peer_user.phone_no);
+        if (!contact || !contact.public_key) {return;}
 
-        setVisibleDialog('SecurityCode')
-        const digest = await publicKeyFingerprint(contact.public_key)
-        setSecurityCode(digest)
-    }, [contacts])
+        setVisibleDialog('SecurityCode');
+        const digest = await publicKeyFingerprint(contact.public_key);
+        setSecurityCode(digest);
+    }, [contacts]);
 
     const copySecurityCode = useCallback(() => {
-        setVisibleDialog('')
-        Clipboard.setString(securityCode)
+        setVisibleDialog('');
+        Clipboard.setString(securityCode);
         ToastAndroid.show(
             'Security Code Copied',
             ToastAndroid.SHORT
         );
-    }, [securityCode])
+    }, [securityCode]);
 
     return (
         <View style={styles.topBar}>
@@ -87,55 +87,55 @@ export default function HeaderConversation(props: IProps) {
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button onPress={() => setVisibleDialog('')} mode='text' style={{ paddingHorizontal: 15 }}>Close</Button>
-                        <Button onPress={() => copySecurityCode()} mode='contained' style={{ paddingHorizontal: 15 }}>Copy Code</Button>
+                        <Button onPress={() => setVisibleDialog('')} mode="text" style={{ paddingHorizontal: 15 }}>Close</Button>
+                        <Button onPress={() => copySecurityCode()} mode="contained" style={{ paddingHorizontal: 15 }}>Copy Code</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
         </View>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
     topBar: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         backgroundColor: DARKHEADER,
         paddingVertical: 5,
     }, backAndTitle: {
         flexDirection: 'row',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        overflow: 'hidden'
+        overflow: 'hidden',
     }, topBarText: {
         color: '#fff',
         fontSize: 15,
     }, buttonContainer: {
-        flexDirection: "row",
-        alignItems: "center",
+        flexDirection: 'row',
+        alignItems: 'center',
     }, button: {
         height: 50,
         padding: 10,
         marginHorizontal: 5,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
     }, rightFloat: {
-        justifyContent: "flex-end",
+        justifyContent: 'flex-end',
     }, padded: {
-        paddingHorizontal: 15
+        paddingHorizontal: 15,
     }, wider: {
-        overflow: 'visible'
+        overflow: 'visible',
     }, profileBtn: {
         flexDirection: 'row',
-        alignItems: 'center'
+        alignItems: 'center',
     }, profilePicContainer: {
-        overflow: "hidden",
+        overflow: 'hidden',
         borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
-        marginRight: 8
+        marginRight: 8,
     }, profilePic: {
         width: 40,
         height: 40,
         borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
-    }
+    },
 });

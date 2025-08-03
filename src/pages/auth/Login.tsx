@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import { ConnectedProps, connect } from 'react-redux'
+import { ConnectedProps, connect } from 'react-redux';
 import { View, ScrollView, Keyboard, Alert } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
-import SplashScreen from 'react-native-splash-screen'
+import SplashScreen from 'react-native-splash-screen';
 
 import styles from './style';
 import { API_URL, DARKHEADER, KeychainOpts } from '~/global/variables';
@@ -39,91 +39,91 @@ interface IProps extends PropsFromRedux {
 class Login extends Component<IProps, IState> {
 
     constructor(props: IProps) {
-        super(props)
+        super(props);
         this.state = {
             gloablLoading: false,
             username: '',
             password: '',
-        }
+        };
     }
 
     async componentDidMount() {
-        SplashScreen.hide()
+        SplashScreen.hide();
 
         // Auto-fill username field from signup page
         if (!this.state.username && this.props.user_data?.phone_no) {
-            this.setState({ username: this.props.user_data?.phone_no })
+            this.setState({ username: this.props.user_data?.phone_no });
         }
 
         // If user manually logged out, don't try autologin
         if (this.props.route.params?.data?.loggedOut) {
             if (this.props.route.params?.data?.errorMsg) {
-                Alert.alert("Unable to Login",
+                Alert.alert('Unable to Login',
                     this.props.route.params?.data?.errorMsg,
-                    [{ text: "OK", onPress: () => { } }]
+                    [{ text: 'OK', onPress: () => { } }]
                 );
             }
-            return console.debug("User logged out")
+            return console.debug('User logged out');
         }
 
         try {
-            this.setState({ gloablLoading: true })
+            this.setState({ gloablLoading: true });
 
             // Load data from disk into redux store
             if (!this.props.user_data?.phone_no && !this.state.username) {
-                await this.props.syncFromStorage()
-                this.setState({ username: this.props.user_data?.phone_no || '' }, () => this.attemptAutoLogin())
+                await this.props.syncFromStorage();
+                this.setState({ username: this.props.user_data?.phone_no || '' }, () => this.attemptAutoLogin());
             }
         } catch (err) {
-            console.error('Error on auto-login:', err)
+            console.error('Error on auto-login:', err);
         } finally {
-            this.setState({ gloablLoading: false })
+            this.setState({ gloablLoading: false });
         }
     }
 
     attemptAutoLogin = async () => {
-        const creds = await this.loadCredentials(this.state.username)
-        if (!creds) return
+        const creds = await this.loadCredentials(this.state.username);
+        if (!creds) {return;}
 
         // If auth token is recent (<30min) then validate it
         if (Date.now() - creds.time < 1000 * 60 * 30) {
             // TODO: place token in store in store
             if (await this.props.validateToken(creds.auth_token)) {
-                console.debug('JWT auth token still valid, skipping login...')
-                this.props.navigation.replace('App', { screen: 'Home' })
-                return true
+                console.debug('JWT auth token still valid, skipping login...');
+                this.props.navigation.replace('App', { screen: 'Home' });
+                return true;
             }
         }
         // Auth token expired, use password
         await this.handleLogin(this.state.username, creds.password);
 
-        return true
-    }
+        return true;
+    };
 
     loadCredentials = async (username: string) => {
-        console.debug('Loading credentials from secure storage')
+        console.debug('Loading credentials from secure storage');
         const res = await Keychain.getGenericPassword({
             server: API_URL,
             service: `${username}-credentials`,
             authenticationPrompt: KeychainOpts.authenticationPrompt,
-        })
-        if (!res) return undefined
-        if (res.username !== this.state.username) return undefined
+        });
+        if (!res) {return undefined;}
+        if (res.username !== this.state.username) {return undefined;}
 
-        const creds = JSON.parse(res.password)
-        return { username: res.username, ...creds } as Credentials
-    }
+        const creds = JSON.parse(res.password);
+        return { username: res.username, ...creds } as Credentials;
+    };
 
     handleLogin = async (username: string, password: string) => {
-        if (this.props.loading) return
+        if (this.props.loading) {return;}
 
-        Keyboard.dismiss()
-        const loggedIn = await this.props.logIn(username, password)
+        Keyboard.dismiss();
+        const loggedIn = await this.props.logIn(username, password);
         if (loggedIn) {
-            console.debug("Routing to home page")
-            this.props.navigation.replace('App', { screen: 'Home' })
+            console.debug('Routing to home page');
+            this.props.navigation.replace('App', { screen: 'Home' });
         }
-    }
+    };
 
     render() {
         return (
@@ -137,20 +137,20 @@ class Login extends Component<IProps, IState> {
 
                     {this.state.gloablLoading ? <ActivityIndicator size="large" />
                         : <View>
-                            <TextInput mode="outlined" 
-                                autoCapitalize='none'
+                            <TextInput mode="outlined"
+                                autoCapitalize="none"
                                 onChangeText={val => this.setState({ username: val.trim() })}
                                 value={this.state.username}
                                 label="Username"
-                                outlineColor={this.props.loginErr ? "red" : undefined}
+                                outlineColor={this.props.loginErr ? 'red' : undefined}
                             />
-                            <TextInput mode="outlined" 
-                                autoCapitalize='none'
+                            <TextInput mode="outlined"
+                                autoCapitalize="none"
                                 onChangeText={val => this.setState({ password: val.trim() })}
                                 value={this.state.password}
                                 label="Password"
                                 secureTextEntry={true}
-                                outlineColor={this.props.loginErr ? "red" : undefined}
+                                outlineColor={this.props.loginErr ? 'red' : undefined}
                             />
 
                             {/* Actions */}
@@ -165,7 +165,7 @@ class Login extends Component<IProps, IState> {
                     }
                 </View>
             </ScrollView>
-        )
+        );
     }
 }
 
@@ -173,14 +173,14 @@ const mapStateToProps = (state: RootState) => ({
     user_data: state.userReducer.user_data,
     loading: state.userReducer.loading,
     loginErr: state.userReducer.loginErr,
-})
+});
 
 const mapDispatchToProps = {
     syncFromStorage,
     validateToken,
-    logIn
-}
+    logIn,
+};
 
-const connector = connect(mapStateToProps, mapDispatchToProps)
+const connector = connect(mapStateToProps, mapDispatchToProps);
 type PropsFromRedux = ConnectedProps<typeof connector>
-export default connector(Login)
+export default connector(Login);

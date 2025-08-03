@@ -1,10 +1,10 @@
-import React, { Component } from 'react'
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
-import { Avatar, IconButton, MD2Colors as Colors, ActivityIndicator } from 'react-native-paper'
+import React, { Component } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Avatar, IconButton, MD2Colors as Colors, ActivityIndicator } from 'react-native-paper';
 
-import globalStyle from "../global/style"
-import { DARKHEADER, PRIMARY } from '~/global/variables'
-import { UserData } from '~/store/reducers/user'
+import globalStyle from '../global/style';
+import { DARKHEADER, PRIMARY } from '~/global/variables';
+import { UserData } from '~/store/reducers/user';
 
 interface IProps {
     navigation: any;
@@ -20,7 +20,7 @@ export default class ContactPeek extends Component<IProps, any> {
     }
 
     render() {
-        const { data, onSelect, loading, isContact } = this.props
+        const { data, onSelect, loading, isContact } = this.props;
         return (
             <TouchableOpacity style={styles.profilePeek} onPress={onSelect}>
                 <Avatar.Image size={55} source={{ uri: data.pic }} style={styles.profilePicContainer} />
@@ -46,8 +46,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 10,
     }, profilePicContainer: {
-        overflow: "hidden",
+        overflow: 'hidden',
         backgroundColor: DARKHEADER,
-        marginRight: 20
-    }
+        marginRight: 20,
+    },
 });

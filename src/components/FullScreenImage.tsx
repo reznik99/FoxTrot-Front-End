@@ -1,12 +1,12 @@
-import { useCallback, useState } from "react";
-import { StyleSheet, ToastAndroid, View } from "react-native";
-import { Divider, IconButton, Menu } from "react-native-paper";
-import { ImageZoom } from "@likashefqet/react-native-image-zoom";
-import RNFS from 'react-native-fs'
+import { useCallback, useState } from 'react';
+import { StyleSheet, ToastAndroid, View } from 'react-native';
+import { Divider, IconButton, Menu } from 'react-native-paper';
+import { ImageZoom } from '@likashefqet/react-native-image-zoom';
+import RNFS from 'react-native-fs';
 
-import { DARKHEADER } from "~/global/variables";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { getWriteExtPermission } from "~/global/permissions";
+import { DARKHEADER } from '~/global/variables';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { getWriteExtPermission } from '~/global/permissions';
 
 interface IProps {
     media: string;
@@ -15,18 +15,18 @@ interface IProps {
 
 const FullScreenImage = (props: IProps) => {
 
-    const [showMenu, setShowMenu] = useState(false)
+    const [showMenu, setShowMenu] = useState(false);
 
     const download = useCallback(async () => {
-        const granted = await getWriteExtPermission()
-        if (!granted) return
+        const granted = await getWriteExtPermission();
+        if (!granted) {return;}
 
-        const fullPath = RNFS.DownloadDirectoryPath + `/foxtrot-${Date.now()}.jpeg`
-        await RNFS.writeFile(fullPath, props.media, 'base64')
+        const fullPath = RNFS.DownloadDirectoryPath + `/foxtrot-${Date.now()}.jpeg`;
+        await RNFS.writeFile(fullPath, props.media, 'base64');
 
-        setShowMenu(false)
+        setShowMenu(false);
         ToastAndroid.show('Image saved to ' + fullPath, ToastAndroid.SHORT);
-    }, [props.media])
+    }, [props.media]);
 
     return (
         <View style={styles.container}>
@@ -35,21 +35,21 @@ const FullScreenImage = (props: IProps) => {
                     resizeMode="contain" resizeMethod="auto" />
             </GestureHandlerRootView>
             <View style={styles.surface}>
-                <IconButton icon='arrow-left-circle' size={25} onPress={props.onDismiss} />
+                <IconButton icon="arrow-left-circle" size={25} onPress={props.onDismiss} />
                 <Menu
                     visible={showMenu}
                     onDismiss={() => setShowMenu(false)}
-                    anchor={<IconButton icon='dots-vertical' size={25} onPress={() => setShowMenu(true)} />}>
-                    <Menu.Item title="Report" leadingIcon='information' />
+                    anchor={<IconButton icon="dots-vertical" size={25} onPress={() => setShowMenu(true)} />}>
+                    <Menu.Item title="Report" leadingIcon="information" />
                     <Divider />
-                    <Menu.Item onPress={download} title="Download" leadingIcon='download'/>
+                    <Menu.Item onPress={download} title="Download" leadingIcon="download"/>
                 </Menu>
             </View>
         </View>
-    )
-}
+    );
+};
 
-export default FullScreenImage
+export default FullScreenImage;
 
 const styles = StyleSheet.create({
     container: {
@@ -67,6 +67,6 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingHorizontal: 10,
         paddingVertical: 5,
-        backgroundColor: DARKHEADER + 'f0'
+        backgroundColor: DARKHEADER + 'f0',
     },
 });
