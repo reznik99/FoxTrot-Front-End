@@ -20,8 +20,10 @@ export function loadKeys() {
             if (state.keys) return true
 
             console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`)
-
-            const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`, KeychainOpts)
+            const credentials = await Keychain.getInternetCredentials(API_URL, {
+                server: API_URL,
+                service: `${state.user_data.phone_no}-keys`
+            })
             if (!credentials || credentials.username !== `${state.user_data.phone_no}-keys`) {
                 console.debug('Warn: No keys found. First time login on device')
                 return false
@@ -60,10 +62,10 @@ export function generateAndSyncKeys() {
             console.debug(`Saving '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys to secure storage`)
 
             // Store on device
-            await Keychain.setInternetCredentials(`${state.user_data.phone_no}-keys`, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
-                accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
-                authenticationPrompt: KeychainOpts.authenticationPrompt,
-                storage: Keychain.STORAGE_TYPE.AES,
+            await Keychain.setInternetCredentials(API_URL, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
+                storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+                server: API_URL,
+                service: `${state.user_data.phone_no}-keys`
             })
 
             // Upload public key
@@ -74,7 +76,7 @@ export function generateAndSyncKeys() {
             return true
 
         } catch (err: any) {
-            Keychain.resetInternetCredentials(`${state.user_data.phone_no}-keys`)
+            await Keychain.resetInternetCredentials({ server: API_URL, service: `${state.user_data?.phone_no}-keys`}),
             console.error('Error generating and syncing keys:', err)
             Toast.show({
                 type: 'error',

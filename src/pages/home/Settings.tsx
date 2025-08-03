@@ -14,7 +14,7 @@ import { Buffer } from 'buffer'
 import globalStyle from "~/global/style"
 import { RootState } from '~/store/store'
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto'
-import { ACCENT, DARKHEADER, KeychainOpts } from '~/global/variables'
+import { ACCENT, API_URL, DARKHEADER } from '~/global/variables'
 import { loadContacts, loadKeys } from '~/store/actions/user'
 import { logOut } from '~/store/actions/auth'
 import { deleteFromStorage } from '~/global/storage'
@@ -44,10 +44,10 @@ export default function Settings(props: any) {
         .then(keys => keys.filter(key => showAllKeys || !key.includes("-chunk")))
         .then(keys => setKeys([...keys]))
         .catch(err => console.error("Error loading AsyncStorage items:", err))
-    Keychain.hasInternetCredentials(`${user_data.phone_no}-keys`)
+    Keychain.hasInternetCredentials({ server: API_URL, service: `${user_data.phone_no}-keys` })
         .then(hasKeys => setHasIdentityKeys(Boolean(hasKeys)))
         .catch(err => console.error("Error checking TPM for keys:", err))
-    Keychain.getGenericPassword({ service: `${user_data.phone_no}-password` })
+    Keychain.getGenericPassword({ server: API_URL, service: `${user_data.phone_no}-credentials` })
         .then(hasPassword => setHasPassword(Boolean(hasPassword)))
         .catch(err => console.error("Error checking TPM for password:", err))
     }, [showAllKeys, user_data])
@@ -57,8 +57,8 @@ export default function Settings(props: any) {
         // Delete everything from the device
         Promise.all([
             deleteFromStorage(''),
-            Keychain.resetInternetCredentials(`${user_data?.phone_no}-keys`),
-            Keychain.resetGenericPassword({ service: `${user_data?.phone_no}-password` }),
+            Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys`}),
+            Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
             dispatch(logOut)
         ])
     }, [user_data])
@@ -104,10 +104,10 @@ export default function Settings(props: any) {
 
             // Store on device
             console.debug("Saving keys into TPM...")
-            await Keychain.setInternetCredentials(`${user_data.phone_no}-keys`, `${user_data.phone_no}-keys`, Buffer.from(Ikeys).toString(), {
-                accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
-                authenticationPrompt: KeychainOpts.authenticationPrompt,
-                storage: Keychain.STORAGE_TYPE.AES,
+            await Keychain.setInternetCredentials(API_URL, `${user_data.phone_no}-keys`, Buffer.from(Ikeys).toString(), {
+                storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+                server: API_URL,
+                service: `${user_data.phone_no}-keys`
             })
 
             // Load into redux store

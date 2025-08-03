@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios'
 import * as Keychain from 'react-native-keychain'
 import Toast from 'react-native-toast-message'
 
-import { API_URL } from '~/global/variables'
+import { API_URL, KeychainOpts } from '~/global/variables'
 import { AppDispatch } from '../store'
 import { getAvatar } from '~/global/helper'
 import { deleteFromStorage, writeToStorage } from '~/global/storage'
@@ -21,19 +21,26 @@ export function logIn(username: string, password: string) {
                 password: password
             })
 
-            const user_data = { pic: getAvatar(res.data.user_data?.id), ...res.data.user_data }
 
             console.debug('Saving user in storage')
-            // Save data in phone storage
+            // Save user_data in phone storage
+            const user_data = { pic: getAvatar(res.data.user_data?.id), ...res.data.user_data }
             await writeToStorage('user_data', JSON.stringify(user_data))
-            await writeToStorage('auth_token', res.data.token)
 
-            // Save password in secure storage
-            await Keychain.setGenericPassword(`${username}-password`, password, {
-                storage: Keychain.STORAGE_TYPE.AES,
-                service: `${username}-password`
+            // Save password and JWT auth token in secure storage
+            const secrets = {
+                password: password,
+                auth_token: res.data.token,
+                time: Date.now()
+            }
+            await Keychain.setGenericPassword(username, JSON.stringify(secrets), {
+                storage: Keychain.STORAGE_TYPE.AES_GCM,
+                accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
+                authenticationPrompt: KeychainOpts.authenticationPrompt,
+                server: API_URL,
+                service: `${username}-credentials`
             })
-
+            
             // Save data in redux store
             dispatch({
                 type: "LOGGED_IN",
