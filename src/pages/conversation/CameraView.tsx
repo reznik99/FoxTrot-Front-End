@@ -110,7 +110,7 @@ export default function CameraView(props: IProps) {
                     <ActivityIndicator size='large' />
                 </View>
             }
-            { !hasPermission && 
+            { device && !picture && !hasPermission && 
                 <View style={styles.loaderContainer}>
                     <Text variant='titleLarge'>Permission to use camera denied</Text>
                 </View>
@@ -118,7 +118,7 @@ export default function CameraView(props: IProps) {
 
             {picture &&
                 <>
-                    <Image source={{ uri: picture }} style={{ width: '100%', height: '100%' }} />
+                    <Image source={{ uri: picture }} style={{ width: '100%', height: '100%' }} resizeMode='contain'/>
 
                     <View style={styles.buttonContainer}>
                         <Button style={styles.button} color={SECONDARY_LITE} icon='refresh' mode='contained' onPress={reset}>

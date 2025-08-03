@@ -31,7 +31,7 @@ const FullScreenImage = (props: IProps) => {
         <View style={styles.container}>
             <GestureHandlerRootView style={{ flex: 1 }}>
                 <ImageZoom uri={`data:image/jpeg;base64,${props.media}`}
-                    resizeMode="cover" resizeMethod="auto" />
+                    resizeMode="contain" resizeMethod="auto" />
             </GestureHandlerRootView>
             <View style={styles.surface}>
                 <IconButton icon='arrow-left-circle' size={25} onPress={props.onDismiss} />

@@ -185,7 +185,9 @@ class Message extends PureComponent {
             // TODO: Add VIDEO, GIF and AUDIO message types
             case "IMG":
                 return (
-                    <Image source={{ uri: `data:image/jpeg;base64,${item.message}` }} style={{ width: 160, height: 220 }} />
+                    <Image source={{ uri: `data:image/jpeg;base64,${item.message}` }}
+                        style={{ width: 200, height: "auto", aspectRatio: 1.5 }}
+                        resizeMode="contain" />
                 )
             case "MSG":
                 const messageChunks = item.message.split(" ")
