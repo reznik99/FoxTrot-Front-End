@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, ScrollView, Alert, PermissionsAndroid, Platform } from 'react-native'
+import { View, ScrollView, Alert } from 'react-native'
 import { Button, Title, Paragraph, Dialog, Portal, Chip, Text, TextInput, Divider, Switch } from 'react-native-paper'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faExclamationTriangle, faDownload, faUpload } from "@fortawesome/free-solid-svg-icons"
@@ -20,39 +20,9 @@ import { ACCENT, DARKHEADER, KeychainOpts } from '~/global/variables'
 import { loadContacts, loadKeys } from '~/store/actions/user'
 import { logOut } from '~/store/actions/auth'
 import { deleteFromStorage } from '~/global/storage'
+import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions'
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
-
-async function hasWriteExtPermission() {
-  if (Number(Platform.Version) >= 33) {
-    return true;
-  }
-
-  const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-
-  const hasPermission = await PermissionsAndroid.check(permission);
-  if (hasPermission) {
-    return true;
-  }
-
-  const status = await PermissionsAndroid.request(permission);
-  return status === PermissionsAndroid.RESULTS.GRANTED;
-}
-async function hasReadExtPermission() {
-  if (Number(Platform.Version) >= 33) {
-    return true;
-  }
-
-  const permission = PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-
-  const hasPermission = await PermissionsAndroid.check(permission);
-  if (hasPermission) {
-    return true;
-  }
-
-  const status = await PermissionsAndroid.request(permission);
-  return status === PermissionsAndroid.RESULTS.GRANTED;
-}
 
 export default function Settings(props: any) {
 
@@ -105,7 +75,7 @@ export default function Settings(props: any) {
         if (!encPassword?.trim()) return
 
         try {
-            const hasPermission = await hasReadExtPermission()
+            const hasPermission = await getReadExtPermission()
             if (!hasPermission) {
                 throw new Error("Permission to read from external storage denied")
             }
@@ -197,7 +167,7 @@ export default function Settings(props: any) {
                 + Buffer.from(encryptedIKeys).toString('base64')
             console.debug("File: \n", file)
 
-            const hasPermission = await hasWriteExtPermission()
+            const hasPermission = await getWriteExtPermission()
             if (!hasPermission){
                 console.error("Permission to write to external storage denied")
                 return

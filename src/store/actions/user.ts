@@ -1,12 +1,13 @@
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
-import messaging from '@react-native-firebase/messaging'; // Push Notifications
 import Toast from 'react-native-toast-message';
+import messaging from '@react-native-firebase/messaging'; // Push Notifications
 
 import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { AppDispatch, GetState } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
+import { getPushNotificationPermission } from '~/global/permissions';
 import { getAvatar } from '~/global/helper';
 import { readFromStorage, writeToStorage } from '~/global/storage';
 
@@ -346,12 +347,8 @@ export function registerPushNotifications() {
             let state = getState().userReducer
 
             console.debug('Registering for Push Notifications');
-            const authStatus = await messaging().requestPermission();
-            const enabled =
-                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-            if (enabled) {
+            const granted = await getPushNotificationPermission()
+            if (granted) {
                 await messaging().registerDeviceForRemoteMessages();
                 const token = await messaging().getToken();
                 await axios.post(`${API_URL}/registerPushNotifications`, { token }, axiosBearerConfig(state.token))
@@ -359,6 +356,8 @@ export function registerPushNotifications() {
                 // messaging().setBackgroundMessageHandler(async remoteMessage => {
                 //     console.log('Message handled in the background!', remoteMessage);
                 // });
+            } else {
+                console.error("Push notifications permission denied")
             }
 
         } catch (err: any) {
