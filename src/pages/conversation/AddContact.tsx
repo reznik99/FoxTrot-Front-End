@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { Text, View, ScrollView } from "react-native"
-import { Divider, Searchbar, ActivityIndicator } from 'react-native-paper'
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faSearch } from '@fortawesome/free-solid-svg-icons'
+import { Divider, Searchbar, ActivityIndicator, Icon } from 'react-native-paper'
 import { useSelector, useDispatch } from 'react-redux'
 import { ThunkDispatch } from "redux-thunk"
 import { AnyAction } from "redux";
@@ -24,8 +22,7 @@ export default function AddContact(props: { navigation: any }) {
     const [results, setResults] = useState<UserData[] | undefined>(undefined)
     const [addingContact, setAddingContact] = useState<UserData | undefined>(undefined)
     const [prefix, setPrefix] = useState("")
-    const [timer, setTimer] = useState(-1)
-
+    const [timer, setTimer] = useState<number | null>(null)
 
     useEffect(() => {
         if(timer) clearTimeout(timer)
@@ -51,7 +48,7 @@ export default function AddContact(props: { navigation: any }) {
             <View style={globalStyle.searchContainer}>
                 <Searchbar
                     icon={({ size, color }) => (
-                        <FontAwesomeIcon size={size} icon={faSearch} style={{ color: color }} />
+                        <Icon source="magnify" color={color} size={size}/>
                     )}
                     placeholder="Find new contacts"
                     onChangeText={val => setPrefix(val)}

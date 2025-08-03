@@ -2,12 +2,10 @@ import 'react-native-gesture-handler'
 import React from 'react'
 import { StatusBar } from 'react-native'
 import { Provider } from 'react-redux'
-import { Provider as PaperProvider, DefaultTheme, DarkTheme } from 'react-native-paper'
+import { Provider as PaperProvider, DefaultTheme, MD2DarkTheme as DarkTheme, Icon } from 'react-native-paper'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack'
 import { createDrawerNavigator } from '@react-navigation/drawer'
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faHome } from '@fortawesome/free-solid-svg-icons'
 import Toast from 'react-native-toast-message'
 
 // Crypto
@@ -16,12 +14,12 @@ import WebviewCrypto from 'react-native-webview-crypto'
 window.crypto.getRandomValues = global.crypto.getRandomValues
 
 // App
-import { store } from './src/store/store'
+import { store } from '~/store/store'
+
 import { Login, Signup, Home, Conversation, NewConversation, AddContact, Call, CameraView, Settings } from './src'
-import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT, DARKHEADER } from './src/global/variables'
+import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT, DARKHEADER } from '~/global/variables'
 import Drawer from '~/components/Drawer'
 import HeaderConversation from '~/components/HeaderConversation'
-
 
 const defaultHeaderOptions = {
     headerStyle: {
@@ -32,7 +30,7 @@ const defaultHeaderOptions = {
         fontWeight: 'bold',
     },
     drawerIcon: ({ focused, size, color }) => (
-        <FontAwesomeIcon size={size} icon={faHome} style={{ color: color }} />
+        <Icon source="home" color={color} size={20} />
     )
 }
 const animationDefaults = {
@@ -59,7 +57,7 @@ const HomeNavigator = () => {
             <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
             <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: "My Contacts" })} />
             <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: "Search New Users" })} />
-            <HomeStack.Screen name="Call" component={Call} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params.data} allowBack={true} />) })} />
+            <HomeStack.Screen name="Call" component={Call} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={props.route.params?.data} allowBack={true} />) })} />
             <HomeStack.Screen name="CameraView" component={CameraView} options={({ route }) => ({ title: "Camera" })} />
             <HomeStack.Screen name="Settings" component={Settings} />
         </HomeStack.Navigator>

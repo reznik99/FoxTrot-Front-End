@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
 import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native'
-import { Avatar, Button } from 'react-native-paper'
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faCircle } from '@fortawesome/free-solid-svg-icons'
+import { Avatar, Button, Icon } from 'react-native-paper'
 import { useSelector, useDispatch } from 'react-redux'
 import { ThunkDispatch } from 'redux-thunk'
 import { AnyAction } from "redux"
@@ -56,7 +54,7 @@ export default function ConversationPeek(props: IProps) {
                 </View>
                 <View style={{ alignSelf: "center", display: 'flex', flexDirection: 'row', alignItems: 'center', marginHorizontal: 5 }}>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}> {humanTime(lastMessage.sent_at)} </Text>
-                    <Text>{isNew && <FontAwesomeIcon icon={faCircle} size={10} style={{ color: '#34eb46' }} ></FontAwesomeIcon>}</Text>
+                    <Text>{isNew && <Icon source="circle" size={10} color='#34eb46'/>}</Text>
                 </View>
             </TouchableOpacity>
             {isMessageRequest &&

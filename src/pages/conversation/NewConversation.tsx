@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { Text, View, ScrollView } from "react-native"
-import { Searchbar, FAB, ActivityIndicator } from 'react-native-paper'
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faUserPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
+import { Searchbar, FAB, ActivityIndicator, Icon } from 'react-native-paper'
 import { useSelector } from 'react-redux'
 
 import globalStyle from "~/global/style"
@@ -34,7 +32,7 @@ export default function NewConversation(props: { navigation: any }) {
             <View style={globalStyle.searchContainer}>
                 <Searchbar
                     icon={({ size, color }) => (
-                        <FontAwesomeIcon size={size} icon={faSearch} style={{ color: color }} />
+                        <Icon source="magnify" color={color} size={size}/>
                     )}
                     iconColor="white"
                     placeholderTextColor="white"
@@ -66,7 +64,7 @@ export default function NewConversation(props: { navigation: any }) {
                 style={globalStyle.fab} color="#fff"
                 onPress={() => navigation.replace('AddContact')}
                 icon={({ size, color }) => (
-                    <FontAwesomeIcon size={size} icon={faUserPlus} style={{ color: color }} />
+                    <Icon source="account-plus" color={color} size={size}/>
                 )}
             />
         </View>

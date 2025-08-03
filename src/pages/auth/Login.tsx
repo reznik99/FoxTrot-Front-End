@@ -3,15 +3,20 @@ import { ConnectedProps, connect } from 'react-redux'
 import { View, ScrollView, Keyboard, Alert } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
-import * as LocalAuthentication from 'expo-local-authentication';
 import SplashScreen from 'react-native-splash-screen'
 
 import styles from './style';
-import { DARKHEADER, KeychainOpts } from '~/global/variables';
+import { API_URL, DARKHEADER, KeychainOpts } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
-import { UserData } from '~/store/reducers/user';
 import { RootState } from '~/store/store';
+
+type Credentials = {
+    username: string;
+    password: string;
+    auth_token: string;
+    time: number;
+}
 
 interface IState {
     gloablLoading: boolean;
@@ -45,7 +50,7 @@ class Login extends Component<IProps, IState> {
     async componentDidMount() {
         SplashScreen.hide()
 
-        // Auto-fill username field
+        // Auto-fill username field from signup page
         if (!this.state.username && this.props.user_data?.phone_no) {
             this.setState({ username: this.props.user_data?.phone_no })
         }
@@ -65,23 +70,10 @@ class Login extends Component<IProps, IState> {
             this.setState({ gloablLoading: true })
 
             // Load data from disk into redux store
-            if (!this.props.user_data?.phone_no) {
+            if (!this.props.user_data?.phone_no && !this.state.username) {
                 await this.props.syncFromStorage()
-                this.setState({ username: this.props.user_data?.phone_no || '' })
+                this.setState({ username: this.props.user_data?.phone_no || '' }, () => this.attemptAutoLogin())
             }
-
-            if (!this.state.username && !this.props.token) {
-                console.debug("No data for auto-login");
-                return
-            }
-
-            // Auto-login with JWT Token if still valid
-            const auth = await this.attemptAutoLoginToken();
-            if (auth.biometric && auth.success) return
-
-            // Auto-login with user password if it was previously saved to secure storage
-            await this.attemptAutoLogin(auth.biometric);
-
         } catch (err) {
             console.error('Error on auto-login:', err)
         } finally {
@@ -89,66 +81,37 @@ class Login extends Component<IProps, IState> {
         }
     }
 
-    attemptAutoLoginToken = async () => {
-        if (!this.props.token) {
-            console.debug('Token not present')
-            return { success: false, biometric: false }
+    attemptAutoLogin = async () => {
+        const creds = await this.loadCredentials(this.state.username)
+        if (!creds) return
+
+        // If auth token is recent (<30min) then validate it
+        if (Date.now() - creds.time < 1000 * 60 * 30) {
+            // TODO: place token in store in store
+            if (await this.props.validateToken(creds.auth_token)) {
+                console.debug('JWT auth token still valid, skipping login...')
+                this.props.navigation.replace('App', { screen: 'Home' })
+                return true
+            }
         }
+        // Auth token expired, use password
+        await this.handleLogin(this.state.username, creds.password);
 
-        // Saved JWT token is present. Auth user before login
-        const biometricSuccess = await this.biometricAuth()
-        if (!biometricSuccess) return { success: false, biometric: biometricSuccess }
-
-        let loggedIn = await this.props.validateToken()
-        if (!loggedIn) {
-            console.debug('Token expired')
-            return { success: false, biometric: biometricSuccess }
-        }
-
-        this.props.navigation.replace('App', { screen: 'Home' })
-        return { success: true, biometric: biometricSuccess }
+        return true
     }
 
-    attemptAutoLogin = async (biometricSuccess: boolean) => {
-        const serviceKey = `${this.state.username}-password`
-        const passwordsSaved = await Keychain.getAllGenericPasswordServices()
-
-        if (!this.state.username || !passwordsSaved.includes(serviceKey)) {
-            console.debug('No credentials found for password auto-login')
-            return false
-        }
-
-        // Saved password is present. Auth user before retrieving
-        if (!biometricSuccess) {
-            const biometricSuccess = await this.biometricAuth()
-            if (!biometricSuccess) return false
-        }
-
-        // User is auth'd. Load password from secure storage
-        console.debug('Loading password from secure storage')
+    loadCredentials = async (username: string) => {
+        console.debug('Loading credentials from secure storage')
         const res = await Keychain.getGenericPassword({
+            server: API_URL,
+            service: `${username}-credentials`,
             authenticationPrompt: KeychainOpts.authenticationPrompt,
-            service: serviceKey,
         })
-        if (!res || !res.password) {
-            console.debug('Failed to load password form secure storage')
-            return false
-        }
+        if (!res) return undefined
+        if (res.username !== this.state.username) return undefined
 
-        // We loaded password from Keychain. Now Auto-login
-        await this.handleLogin(this.state.username, res.password);
-
-        return true
-    }
-
-    biometricAuth = async () => {
-        console.debug('Attempting biometric auth')
-        const biometricAuth = await LocalAuthentication.authenticateAsync()
-        if (!biometricAuth.success) {
-            console.error('Biometric auth failed:', biometricAuth.error)
-            return false
-        }
-        return true
+        const creds = JSON.parse(res.password)
+        return { username: res.username, ...creds } as Credentials
     }
 
     handleLogin = async (username: string, password: string) => {
@@ -162,7 +125,6 @@ class Login extends Component<IProps, IState> {
         }
     }
 
-
     render() {
         return (
             <ScrollView contentContainerStyle={styles.container}>
@@ -175,13 +137,15 @@ class Login extends Component<IProps, IState> {
 
                     {this.state.gloablLoading ? <ActivityIndicator size="large" />
                         : <View>
-                            <TextInput mode="outlined"
+                            <TextInput mode="outlined" 
+                                autoCapitalize='none'
                                 onChangeText={val => this.setState({ username: val.trim() })}
                                 value={this.state.username}
                                 label="Username"
                                 outlineColor={this.props.loginErr ? "red" : undefined}
                             />
-                            <TextInput mode="outlined"
+                            <TextInput mode="outlined" 
+                                autoCapitalize='none'
                                 onChangeText={val => this.setState({ password: val.trim() })}
                                 value={this.state.password}
                                 label="Password"
@@ -207,7 +171,6 @@ class Login extends Component<IProps, IState> {
 
 const mapStateToProps = (state: RootState) => ({
     user_data: state.userReducer.user_data,
-    token: state.userReducer.token,
     loading: state.userReducer.loading,
     loginErr: state.userReducer.loginErr,
 })

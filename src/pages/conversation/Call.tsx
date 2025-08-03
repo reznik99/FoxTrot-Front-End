@@ -2,14 +2,14 @@ import React from "react";
 import { SafeAreaView, StyleSheet, View, Text, TouchableOpacity, Image } from "react-native";
 import { connect, ConnectedProps } from 'react-redux';
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCSessionDescription, RTCView } from 'react-native-webrtc';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPhone, faPhoneFlip, faVolumeHigh, faMicrophone, faMicrophoneSlash, faVideoCamera, faVideoSlash, faCameraRotate } from "@fortawesome/free-solid-svg-icons";
 import InCallManager from 'react-native-incall-manager';
 import Toast from 'react-native-toast-message'
 
 import { UserData } from "~/store/reducers/user";
 import { RootState } from "~/store/store";
 import { resetCallState, SocketData } from "~/store/actions/websocket";
+import { RTCOfferOptions } from "react-native-webrtc/lib/typescript/RTCUtil";
+import { Icon } from "react-native-paper";
 
 const peerConstraints = {
     iceServers: [
@@ -19,7 +19,7 @@ const peerConstraints = {
 };
 
 class Call extends React.Component<Props, State> {
-    timer: undefined | number;
+    timer: number | undefined;
 
     constructor(props: Props) {
         super(props)
@@ -73,7 +73,6 @@ class Call extends React.Component<Props, State> {
         if (this.props.callOffer && !prevProps?.callOffer) {
             // Attempt to start local stream and answer the peer's call
             await this.startStream()
-            await this.answerCall()
         }
     }
 
@@ -108,10 +107,10 @@ class Call extends React.Component<Props, State> {
     call = async () => {
         if (!this.state.peerConnection) return console.error('call: Unable to initiate call with null peerConnection')
 
-        let sessionConstraints = {
-            OfferToReceiveAudio: true,
-            OfferToReceiveVideo: true,
-            VoiceActivityDetection: true
+        let sessionConstraints: RTCOfferOptions = {
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true,
+            voiceActivityDetection: true,
         };
         let offerDescription = await this.state.peerConnection.createOffer(sessionConstraints) as RTCSessionDescriptionInit;
         await this.state.peerConnection.setLocalDescription(offerDescription as RTCSessionDescription);
@@ -185,9 +184,10 @@ class Call extends React.Component<Props, State> {
                 startTime: Date.now(),
                 stream: newStream,
                 peerConnection: newConnection
+            }, () => {
+                if (!this.props.callOffer) this.call()
+                else this.answerCall()
             })
-
-            if (!this.props.callOffer) await this.call()
         } catch (err: any) {
             console.error("startStream error:", err)
         }
@@ -283,25 +283,25 @@ class Call extends React.Component<Props, State> {
                     <View style={{ flexDirection: "row" }}>
                         {!this.state.stream &&
                             <TouchableOpacity onPress={this.startStream} style={[styles.actionButton, { backgroundColor: 'green' }]}>
-                                <FontAwesomeIcon icon={faPhoneFlip} size={20} />
+                                <Icon source="phone" size={20} />
                             </TouchableOpacity>
                         }
                         {this.state.stream &&
                             <>
                                 <TouchableOpacity onPress={this.toggleLoudSpeaker} style={[styles.actionButton, this.state.loudSpeaker && { backgroundColor: 'white' }]}>
-                                    <FontAwesomeIcon icon={faVolumeHigh} size={20} />
+                                    <Icon source="volume-high" size={20} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={this.toggleVoiceEnabled} style={styles.actionButton}>
-                                    <FontAwesomeIcon icon={this.state.voiceEnabled ? faMicrophone : faMicrophoneSlash} size={20} />
+                                    <Icon source={this.state.voiceEnabled ? "microphone" : "microphone-off"} size={20} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={this.toggleVideoEnabled} style={styles.actionButton}>
-                                    <FontAwesomeIcon icon={this.state.videoEnabled ? faVideoCamera : faVideoSlash} size={20} />
+                                    <Icon source={this.state.videoEnabled ? "video" : "video-off"} size={20} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={this.toggleCamera} style={styles.actionButton}>
-                                    <FontAwesomeIcon icon={faCameraRotate} size={20} />
+                                    <Icon source="camera-switch" size={20} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={this.endCall} style={[styles.actionButton, { backgroundColor: 'red' }]}>
-                                    <FontAwesomeIcon icon={faPhone} size={20} />
+                                    <Icon source="phone" size={20} />
                                 </TouchableOpacity>
                             </>
                         }

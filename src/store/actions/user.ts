@@ -1,14 +1,34 @@
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
-import messaging from '@react-native-firebase/messaging'; // Push Notifications
 import Toast from 'react-native-toast-message';
+import messaging from '@react-native-firebase/messaging'; // Push Notifications
 
-import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
+import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { AppDispatch, GetState } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
+import { getPushNotificationPermission } from '~/global/permissions';
 import { getAvatar } from '~/global/helper';
 import { readFromStorage, writeToStorage } from '~/global/storage';
+
+async function migrateKeysToNewStandard(username: string) {
+    const credentials = await Keychain.getInternetCredentials(`${username}-keys`)
+    // We are good
+    if (!credentials || credentials.username !== `${username}-keys`) {
+        return
+    }
+    console.debug("Migrating keypair in keychain ")
+    // Need to migrate
+    await Keychain.setInternetCredentials(API_URL, `${username}-keys`, credentials.password, {
+        storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+        server: API_URL,
+        service: `${username}-keys`
+    })
+    // Clear old one
+    await Keychain.resetInternetCredentials({
+        server: `${username}-keys`
+    })
+}
 
 export function loadKeys() {
     return async (dispatch: AppDispatch, getState: GetState) => {
@@ -19,8 +39,11 @@ export function loadKeys() {
             if (state.keys) return true
 
             console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`)
-
-            const credentials = await Keychain.getInternetCredentials(`${state.user_data.phone_no}-keys`, KeychainOpts)
+            await migrateKeysToNewStandard(state.user_data.phone_no)
+            const credentials = await Keychain.getInternetCredentials(API_URL, {
+                server: API_URL,
+                service: `${state.user_data.phone_no}-keys`
+            })
             if (!credentials || credentials.username !== `${state.user_data.phone_no}-keys`) {
                 console.debug('Warn: No keys found. First time login on device')
                 return false
@@ -59,10 +82,10 @@ export function generateAndSyncKeys() {
             console.debug(`Saving '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys to secure storage`)
 
             // Store on device
-            await Keychain.setInternetCredentials(`${state.user_data.phone_no}-keys`, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
-                accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
-                authenticationPrompt: KeychainOpts.authenticationPrompt,
-                storage: Keychain.STORAGE_TYPE.AES,
+            await Keychain.setInternetCredentials(API_URL, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
+                storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+                server: API_URL,
+                service: `${state.user_data.phone_no}-keys`
             })
 
             // Upload public key
@@ -73,7 +96,7 @@ export function generateAndSyncKeys() {
             return true
 
         } catch (err: any) {
-            Keychain.resetInternetCredentials(`${state.user_data.phone_no}-keys`)
+            await Keychain.resetInternetCredentials({ server: API_URL, service: `${state.user_data?.phone_no}-keys`}),
             console.error('Error generating and syncing keys:', err)
             Toast.show({
                 type: 'error',
@@ -286,17 +309,15 @@ export function sendMessage(message: string, to_user: UserData) {
     }
 }
 
-export function validateToken() {
+export function validateToken(token: string) {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
-            let state = getState().userReducer
+            if (!token) return false
 
-            if (!state.token) return false
+            const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(token))
 
-            const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(state.token))
-
-            dispatch({ type: "TOKEN_VALID", payload: res.data?.valid })
+            dispatch({ type: "TOKEN_VALID", payload: { token: token, valid: res.data?.valid } })
             return res.data?.valid
         } catch (err: any) {
             dispatch({ type: "TOKEN_VALID", payload: false })
@@ -313,14 +334,12 @@ export function syncFromStorage() {
             dispatch({ type: "SET_LOADING", payload: true })
 
             console.debug('Loading user from local storage')
-            const user_data = await readFromStorage('user_data')
-            const token = await readFromStorage('auth_token')
             // TODO: Load existing contacts from async storage
-
-            if (!user_data || !token) return false
+            // const token = await readFromStorage('auth_token')
+            const user_data = await readFromStorage('user_data')
+            if (!user_data) return false
 
             const payload = {
-                token: token,
                 user_data: JSON.parse(user_data),
             }
             dispatch({ type: "SYNC_FROM_STORAGE", payload: payload })
@@ -346,12 +365,8 @@ export function registerPushNotifications() {
             let state = getState().userReducer
 
             console.debug('Registering for Push Notifications');
-            const authStatus = await messaging().requestPermission();
-            const enabled =
-                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-            if (enabled) {
+            const granted = await getPushNotificationPermission()
+            if (granted) {
                 await messaging().registerDeviceForRemoteMessages();
                 const token = await messaging().getToken();
                 await axios.post(`${API_URL}/registerPushNotifications`, { token }, axiosBearerConfig(state.token))
@@ -359,6 +374,8 @@ export function registerPushNotifications() {
                 // messaging().setBackgroundMessageHandler(async remoteMessage => {
                 //     console.log('Message handled in the background!', remoteMessage);
                 // });
+            } else {
+                console.error("Push notifications permission denied")
             }
 
         } catch (err: any) {

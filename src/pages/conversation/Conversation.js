@@ -3,10 +3,8 @@ import {
     StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Keyboard,
     Linking, KeyboardAvoidingView, ToastAndroid, Image
 } from "react-native";
-import { ActivityIndicator, Modal, Portal } from 'react-native-paper';
+import { ActivityIndicator, Icon, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faCamera, faImage, faLock, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { launchImageLibrary } from "react-native-image-picker";
 import { FlashList } from "@shopify/flash-list";
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -106,7 +104,7 @@ export default function Conversation(props) {
                 ListEmptyComponent={() => <View><Text style={[styles.message, styles.system]}> No messages </Text></View>}
                 ListHeaderComponent={() => (
                     <View style={styles.footer}>
-                        <FontAwesomeIcon color="#77f777" icon={faLock} />
+                        <Icon source="lock" color="#77f777" size={20} />
                         <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
                     </View>
                 )}
@@ -114,10 +112,10 @@ export default function Conversation(props) {
 
             <View style={styles.inputContainer}>
                 <TouchableOpacity style={styles.button} onPress={handleCameraSelect}>
-                    <FontAwesomeIcon size={20} style={styles.buttonIcon} icon={faCamera} />
+                    <Icon source="camera" color={styles.buttonIcon.color} size={20} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={handleImageSelect}>
-                    <FontAwesomeIcon size={20} style={styles.buttonIcon} icon={faImage} />
+                    <Icon source="image" color={styles.buttonIcon.color} size={20} />
                 </TouchableOpacity>
                 <KeyboardAvoidingView behavior={'padding'} style={{ flex: 1 }}>
                     <TextInput placeholder="Type a message"
@@ -132,7 +130,7 @@ export default function Conversation(props) {
                 {loading
                     ? <ActivityIndicator style={{ marginHorizontal: 5 }} />
                     : <TouchableOpacity style={styles.button} onPress={handleSend}>
-                        <FontAwesomeIcon icon={faPaperPlane} size={20} style={styles.buttonIcon} />
+                        <Icon source="send-lock" color={styles.buttonIcon.color} size={20} />
                     </TouchableOpacity>
                 }
 
@@ -265,7 +263,9 @@ class Message extends PureComponent {
                             <Text selectable style={[isSent ? styles.sentText : styles.receivedText]}>
                                 {item.message?.length < 200 ? item.message : item.message?.substring(0, 197).padEnd(200, '...')}
                             </Text>
-                            <FontAwesomeIcon style={{ position: 'absolute', zIndex: 10 }} color="#000" icon={faLock} size={25} />
+                            <View style={{ position: 'absolute', zIndex: 10 }}>
+                                <Icon source="lock" color="#000" size={25} />
+                            </View>
                         </>
                     }
                     {/* Message */}

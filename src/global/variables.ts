@@ -14,9 +14,7 @@ export const ChunkSize = 48 * 1024;
 
 export const KeychainOpts = {
     authenticationPrompt: {
-      title: 'Authentication required',
-      subtitle: 'Subtitle',
-      description: 'Some descriptive text',
+      title: 'Authentication required for Login',
       cancel: 'Cancel',
     },
 };
