@@ -6,7 +6,7 @@ import * as Keychain from 'react-native-keychain';
 import SplashScreen from 'react-native-splash-screen'
 
 import styles from './style';
-import { API_URL, DARKHEADER } from '~/global/variables';
+import { API_URL, DARKHEADER, KeychainOpts } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
 import { RootState } from '~/store/store';
@@ -104,7 +104,8 @@ class Login extends Component<IProps, IState> {
         console.debug('Loading credentials from secure storage')
         const res = await Keychain.getGenericPassword({
             server: API_URL,
-            service: `${username}-credentials`
+            service: `${username}-credentials`,
+            authenticationPrompt: KeychainOpts.authenticationPrompt,
         })
         if (!res) return undefined
         if (res.username !== this.state.username) return undefined

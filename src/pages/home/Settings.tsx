@@ -54,7 +54,13 @@ export default function Settings(props: any) {
 
     const resetApp = useCallback(async () => {
         // Require authentication before allowing deletion
-        const res = await Keychain.getGenericPassword({ server: API_URL, service: `${user_data.phone_no}-credentials` })
+        const res = await Keychain.getGenericPassword({ 
+            server: API_URL, 
+            service: `${user_data.phone_no}-credentials`,
+            authenticationPrompt: {
+                title: "Authentication required",
+            }
+        })
         if (!res || !res.password) return
 
         setVisibleDialog('')

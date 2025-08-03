@@ -36,7 +36,6 @@ export function logIn(username: string, password: string) {
             await Keychain.setGenericPassword(username, JSON.stringify(secrets), {
                 storage: Keychain.STORAGE_TYPE.AES_GCM,
                 accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
-                authenticationPrompt: KeychainOpts.authenticationPrompt,
                 server: API_URL,
                 service: `${username}-credentials`
             })
