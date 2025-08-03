@@ -38,7 +38,7 @@ export default function Conversation(props) {
             () => scrollView.current?.scrollToOffset({ offset: 0, animated: true }),
         ));
         return () => keyboardDidShowListener?.remove();
-    }, [keyboardDidShowListener]);
+    }, []);
 
     // Scroll to end when new messages appear (sent or recieved)
     useEffect(() => {
