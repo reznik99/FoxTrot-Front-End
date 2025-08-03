@@ -136,13 +136,15 @@ class Login extends Component<IProps, IState> {
 
                     {this.state.gloablLoading ? <ActivityIndicator size="large" />
                         : <View>
-                            <TextInput mode="outlined"
+                            <TextInput mode="outlined" 
+                                autoCapitalize='none'
                                 onChangeText={val => this.setState({ username: val.trim() })}
                                 value={this.state.username}
                                 label="Username"
                                 outlineColor={this.props.loginErr ? "red" : undefined}
                             />
-                            <TextInput mode="outlined"
+                            <TextInput mode="outlined" 
+                                autoCapitalize='none'
                                 onChangeText={val => this.setState({ password: val.trim() })}
                                 value={this.state.password}
                                 label="Password"

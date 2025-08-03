@@ -14,7 +14,7 @@ export const ChunkSize = 48 * 1024;
 
 export const KeychainOpts = {
     authenticationPrompt: {
-      title: 'Authentication required for saved credentials',
+      title: 'Authentication required for Login',
       cancel: 'Cancel',
     },
 };

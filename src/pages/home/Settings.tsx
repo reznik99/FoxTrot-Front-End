@@ -121,7 +121,7 @@ export default function Settings(props: any) {
 
             // TODO: Validate that public key locally matches public key on Key Server.
 
-            // Reload contacts to re-generate per-conversation encryption keys (ECDHE)
+            // Reload contacts to re-generate per-conversation encryption keys (ECDH)
             console.debug("Regenerating Conversation encryption keys...")
             await dispatch(loadContacts())
 
@@ -255,7 +255,9 @@ export default function Settings(props: any) {
                 <Dialog visible={visibleDialog === 'import'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Title><Icon source="file-document-alert" color='yellow' size={20} /> Import User Identity Keys</Dialog.Title>
                     <Dialog.Content>
-                        <TextInput label="Keypair decryption password" secureTextEntry={true}
+                        <TextInput label="Keypair decryption password" 
+                            autoCapitalize='none'
+                            secureTextEntry={true}
                             value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-between' }}>
@@ -267,7 +269,9 @@ export default function Settings(props: any) {
                 <Dialog visible={visibleDialog === 'export'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Title><Icon source="file-document-check" color='yellow' size={20} /> Export User Identity Keys</Dialog.Title>
                     <Dialog.Content>
-                        <TextInput label="Keypair encryption password" secureTextEntry={true}
+                        <TextInput label="Keypair encryption password" 
+                            autoCapitalize='none'
+                            secureTextEntry={true}
                             value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-between' }}>

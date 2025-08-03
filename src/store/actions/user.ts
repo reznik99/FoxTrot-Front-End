@@ -3,7 +3,7 @@ import * as Keychain from 'react-native-keychain';
 import Toast from 'react-native-toast-message';
 import messaging from '@react-native-firebase/messaging'; // Push Notifications
 
-import { API_URL, KeypairAlgorithm, KeychainOpts } from '~/global/variables';
+import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { AppDispatch, GetState } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
