@@ -22,8 +22,7 @@ export default function AddContact(props: { navigation: any }) {
     const [results, setResults] = useState<UserData[] | undefined>(undefined)
     const [addingContact, setAddingContact] = useState<UserData | undefined>(undefined)
     const [prefix, setPrefix] = useState("")
-    const [timer, setTimer] = useState<NodeJS.Timeout | null>(null)
-
+    const [timer, setTimer] = useState<number | null>(null)
 
     useEffect(() => {
         if(timer) clearTimeout(timer)

@@ -309,17 +309,15 @@ export function sendMessage(message: string, to_user: UserData) {
     }
 }
 
-export function validateToken() {
+export function validateToken(token: string) {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
             dispatch({ type: "SET_LOADING", payload: true })
-            let state = getState().userReducer
+            if (!token) return false
 
-            if (!state.token) return false
+            const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(token))
 
-            const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(state.token))
-
-            dispatch({ type: "TOKEN_VALID", payload: res.data?.valid })
+            dispatch({ type: "TOKEN_VALID", payload: { token: token, valid: res.data?.valid } })
             return res.data?.valid
         } catch (err: any) {
             dispatch({ type: "TOKEN_VALID", payload: false })
@@ -336,14 +334,12 @@ export function syncFromStorage() {
             dispatch({ type: "SET_LOADING", payload: true })
 
             console.debug('Loading user from local storage')
-            const user_data = await readFromStorage('user_data')
-            const token = await readFromStorage('auth_token')
             // TODO: Load existing contacts from async storage
-
-            if (!user_data || !token) return false
+            // const token = await readFromStorage('auth_token')
+            const user_data = await readFromStorage('user_data')
+            if (!user_data) return false
 
             const payload = {
-                token: token,
                 user_data: JSON.parse(user_data),
             }
             dispatch({ type: "SYNC_FROM_STORAGE", payload: payload })

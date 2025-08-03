@@ -81,11 +81,11 @@ function userReducer(state = initialState, action: Action) {
         case "LOAD_CONVERSATIONS":
             return { ...state, conversations: action.payload as Map<string, Conversation> }
         case "SYNC_FROM_STORAGE":
-            return { ...state, token: action.payload.token as string, user_data: action.payload.user_data as UserData }
+            return { ...state, user_data: action.payload.user_data as UserData }
         case "KEY_LOAD":
             return { ...state, keys: action.payload as CryptoKeyPair }
         case "TOKEN_VALID":
-            return { ...state, tokenValid: action.payload as boolean }
+            return { ...state, token: action.payload.token, tokenValid: action.payload.valid as boolean }
         case "LOGGED_IN":
             return { ...state, token: action.payload.token as string, user_data: action.payload.user_data as UserData, loginErr: "" }
         case "SIGNED_UP":

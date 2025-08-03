@@ -19,7 +19,7 @@ const peerConstraints = {
 };
 
 class Call extends React.Component<Props, State> {
-    timer: NodeJS.Timeout | undefined;
+    timer: number | undefined;
 
     constructor(props: Props) {
         super(props)

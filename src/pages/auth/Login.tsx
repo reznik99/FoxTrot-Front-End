@@ -50,7 +50,7 @@ class Login extends Component<IProps, IState> {
     async componentDidMount() {
         SplashScreen.hide()
 
-        // Auto-fill username field
+        // Auto-fill username field from signup page
         if (!this.state.username && this.props.user_data?.phone_no) {
             this.setState({ username: this.props.user_data?.phone_no })
         }
@@ -70,26 +70,14 @@ class Login extends Component<IProps, IState> {
             this.setState({ gloablLoading: true })
 
             // Load data from disk into redux store
-            if (!this.props.user_data?.phone_no) {
+            if (!this.props.user_data?.phone_no && !this.state.username) {
                 await this.props.syncFromStorage()
-                this.setState({ username: this.props.user_data?.phone_no || '' })
-            }
-            if (!this.state.username && !this.props.token) {
-                console.debug("No data for auto-login");
-                return
+                this.setState({ username: this.props.user_data?.phone_no || '' }, () => this.attemptAutoLogin())
             }
         } catch (err) {
             console.error('Error on auto-login:', err)
         } finally {
             this.setState({ gloablLoading: false })
-        }
-    }
-
-    async componentDidUpdate(prevProps: Readonly<IProps>, prevState: Readonly<IState>, snapshot?: any) {
-        // We loaded some cached data so attempt login
-        if (!prevState.username && this.state.username) {
-            // Auto-login with stored credentials
-            if (await this.attemptAutoLogin()) return
         }
     }
 
@@ -100,8 +88,8 @@ class Login extends Component<IProps, IState> {
         // If auth token is recent (<30min) then validate it
         if (Date.now() - creds.time < 1000 * 60 * 30) {
             // TODO: place token in store in store
-            if (await this.props.validateToken()) {
-                console.debug('Token still valid')
+            if (await this.props.validateToken(creds.auth_token)) {
+                console.debug('JWT auth token still valid, skipping login...')
                 this.props.navigation.replace('App', { screen: 'Home' })
                 return true
             }
@@ -180,7 +168,6 @@ class Login extends Component<IProps, IState> {
 
 const mapStateToProps = (state: RootState) => ({
     user_data: state.userReducer.user_data,
-    token: state.userReducer.token,
     loading: state.userReducer.loading,
     loginErr: state.userReducer.loginErr,
 })

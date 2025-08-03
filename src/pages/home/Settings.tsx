@@ -47,12 +47,16 @@ export default function Settings(props: any) {
     Keychain.hasInternetCredentials({ server: API_URL, service: `${user_data.phone_no}-keys` })
         .then(hasKeys => setHasIdentityKeys(Boolean(hasKeys)))
         .catch(err => console.error("Error checking TPM for keys:", err))
-    Keychain.getGenericPassword({ server: API_URL, service: `${user_data.phone_no}-credentials` })
+    Keychain.hasGenericPassword({ server: API_URL, service: `${user_data.phone_no}-credentials` })
         .then(hasPassword => setHasPassword(Boolean(hasPassword)))
         .catch(err => console.error("Error checking TPM for password:", err))
     }, [showAllKeys, user_data])
 
-    const resetApp = useCallback(() => {
+    const resetApp = useCallback(async () => {
+        // Require authentication before allowing deletion
+        const res = await Keychain.getGenericPassword({ server: API_URL, service: `${user_data.phone_no}-credentials` })
+        if (!res || !res.password) return
+
         setVisibleDialog('')
         // Delete everything from the device
         Promise.all([
@@ -171,9 +175,8 @@ export default function Settings(props: any) {
                 return
             }
 
-            const fullPath = RNFS.DownloadDirectoryPath + `/${user_data.phone_no}-keys.txt`
+            const fullPath = RNFS.DownloadDirectoryPath + `/${user_data.phone_no}-keys-${Date.now()}.txt`
             // Delete file first, RNFS bug causes malformed writes if overwriting: https://github.com/itinance/react-native-fs/issues/700
-            await RNFS.unlink(fullPath)
             await RNFS.writeFile(fullPath, file)
 
             Toast.show({
@@ -201,8 +204,8 @@ export default function Settings(props: any) {
                 <View style={{ marginVertical: 15 }}>
                     <Text>Stored on device:</Text>
                     {/* TPM values */}
-                    {hasIdentityKeys && <Chip icon="key" style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-keys</Chip>}
-                    {hasPassword && <Chip icon="account-key" style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-password</Chip>}
+                    {hasIdentityKeys && <Chip icon="key" selected style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-keys</Chip>}
+                    {hasPassword && <Chip icon="account-key" selected style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-credentials</Chip>}
                     {/* Storage values */}
                     {keys.map((key, idx) => <Chip icon="account" style={{ backgroundColor: DARKHEADER }} key={idx} onPress={() => resetValue(key)}>{key}</Chip>)}
 
