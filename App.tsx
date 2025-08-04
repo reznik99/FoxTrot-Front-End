@@ -95,7 +95,7 @@ const AuthNavigator = () => {
 
 const darkTheme = {
     ...DarkTheme,
-    roundness: 2,
+    // roundness: 2,
     colors: {
         ...DarkTheme.colors,
         primary: PRIMARY,

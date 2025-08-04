@@ -21,7 +21,6 @@ export function logIn(username: string, password: string) {
                 password: password,
             });
 
-
             console.debug('Saving user in storage');
             // Save user_data in phone storage
             const user_data = { pic: getAvatar(res.data.user_data?.id), ...res.data.user_data };
@@ -34,8 +33,8 @@ export function logIn(username: string, password: string) {
                 time: Date.now(),
             };
             await Keychain.setGenericPassword(username, JSON.stringify(secrets), {
-                storage: Keychain.STORAGE_TYPE.AES_GCM,
                 accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
+                storage: Keychain.STORAGE_TYPE.AES_GCM,
                 server: API_URL,
                 service: `${username}-credentials`,
             });
