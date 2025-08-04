@@ -10,6 +10,8 @@ import { API_URL, DARKHEADER, KeychainOpts } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
 import { RootState } from '~/store/store';
+import { AuthStackParamList } from '../../../App';
+import { StackScreenProps } from '@react-navigation/stack';
 
 type Credentials = {
     username: string;
@@ -24,17 +26,7 @@ interface IState {
     password: string;
 }
 
-interface IProps extends PropsFromRedux {
-    navigation: any;
-    route: {
-        params: {
-            data: {
-                errorMsg: string;
-                loggedOut: boolean;
-            }
-        }
-    },
-}
+type IProps = StackScreenProps<AuthStackParamList, 'Login'> & PropsFromRedux
 
 class Login extends Component<IProps, IState> {
 
@@ -90,7 +82,7 @@ class Login extends Component<IProps, IState> {
             // TODO: place token in store in store
             if (await this.props.validateToken(creds.auth_token)) {
                 console.debug('JWT auth token still valid, skipping login...');
-                this.props.navigation.replace('App', { screen: 'Home' });
+                this.props.navigation.replace('App');
                 return true;
             }
         }
@@ -121,7 +113,7 @@ class Login extends Component<IProps, IState> {
         const loggedIn = await this.props.logIn(username, password);
         if (loggedIn) {
             console.debug('Routing to home page');
-            this.props.navigation.replace('App', { screen: 'Home' });
+            this.props.navigation.replace('App');
         }
     };
 

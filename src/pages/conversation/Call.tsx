@@ -4,12 +4,14 @@ import { connect, ConnectedProps } from 'react-redux';
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCSessionDescription, RTCView } from 'react-native-webrtc';
 import InCallManager from 'react-native-incall-manager';
 import Toast from 'react-native-toast-message';
+import { StackScreenProps } from '@react-navigation/stack';
 
 import { UserData } from '~/store/reducers/user';
 import { RootState } from '~/store/store';
 import { resetCallState, SocketData } from '~/store/actions/websocket';
 import { RTCOfferOptions } from 'react-native-webrtc/lib/typescript/RTCUtil';
 import { Icon } from 'react-native-paper';
+import { HomeStackParamList } from '../../../App';
 
 const peerConstraints = {
     iceServers: [
@@ -325,16 +327,6 @@ const connector = connect(mapStateToProps, mapDispatchToProps);
 type PropsFromRedux = ConnectedProps<typeof connector>
 export default connector(Call);
 
-interface IProps {
-    route: {
-        params: {
-            data: {
-                peer_user: UserData
-            }
-        }
-    }
-}
-
 interface State {
     peer_user: UserData;
     peerConnection: RTCPeerConnection | undefined;
@@ -350,7 +342,7 @@ interface State {
     startTime: number;
 }
 
-type Props = IProps & PropsFromRedux
+type Props = PropsFromRedux & StackScreenProps<HomeStackParamList, 'Call'>
 
 const styles = StyleSheet.create({
     header: {

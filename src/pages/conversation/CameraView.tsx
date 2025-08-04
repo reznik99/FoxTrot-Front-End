@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import { ActivityIndicator, Button, Text } from 'react-native-paper';
 import { Camera, useCameraDevices } from 'react-native-vision-camera';
+import { StackScreenProps } from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
 import RNFS from 'react-native-fs';
 import { ThunkDispatch } from 'redux-thunk';
@@ -9,25 +10,13 @@ import { useDispatch } from 'react-redux';
 import { AnyAction } from 'redux';
 
 import { sendMessage } from '~/store/actions/user';
-import { UserData } from '~/store/reducers/user';
 import { SECONDARY, SECONDARY_LITE } from '~/global/variables';
 import { getCameraAndMicrophonePermissions } from '~/global/permissions';
-
-interface IProps {
-    navigation: any;
-    route: {
-        params: {
-            data: {
-                peer: UserData;
-                picturePath?: string;
-            },
-        }
-    }
-}
+import { HomeStackParamList } from '../../../App';
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
-export default function CameraView(props: IProps) {
+export default function CameraView(props: StackScreenProps<HomeStackParamList, 'CameraView'>) {
 
     const dispatch = useDispatch<AppDispatch>();
     const camera = useRef<Camera>(null);
@@ -94,7 +83,7 @@ export default function CameraView(props: IProps) {
                 message: rawPic,
             });
 
-            const success = await dispatch(sendMessage(toSend, props?.route?.params?.data?.peer));
+            const success = await dispatch(sendMessage(toSend, props.route.params?.data?.peer));
             if (success) {props.navigation.goBack();}
         } catch (err) {
             console.error('Error sending image:', err);

@@ -4,16 +4,18 @@ import { Divider, Searchbar, ActivityIndicator, Icon } from 'react-native-paper'
 import { useSelector, useDispatch } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { AnyAction } from 'redux';
+import { StackScreenProps } from '@react-navigation/stack';
 
 import { searchUsers, addContact } from '~/store/actions/user';
 import globalStyle from '~/global/style';
 import { RootState } from '~/store/store';
 import { UserData } from '~/store/reducers/user';
 import ContactPeek from '~/components/ContactPeek';
+import { HomeStackParamList } from '../../../App';
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
-export default function AddContact(props: { navigation: any }) {
+export default function AddContact(props: StackScreenProps<HomeStackParamList, 'AddContact'>) {
 
     const { navigation } = props;
     const loading = useSelector((state: RootState) => state.userReducer.loading);

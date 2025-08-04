@@ -4,6 +4,7 @@ import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, Icon } 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 import { pick, types } from '@react-native-documents/picker';
+import { StackScreenProps } from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
 import RNFS from 'react-native-fs';
 import { AnyAction } from 'redux';
@@ -19,10 +20,11 @@ import { loadContacts, loadKeys } from '~/store/actions/user';
 import { logOut } from '~/store/actions/auth';
 import { deleteFromStorage } from '~/global/storage';
 import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions';
+import { HomeStackParamList } from '../../../App';
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
-export default function Settings(_props: any) {
+export default function Settings(_props: StackScreenProps<HomeStackParamList, 'Settings'>) {
 
     const dispatch = useDispatch<AppDispatch>();
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);

@@ -4,19 +4,17 @@ import { Button, TextInput, Text } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { AnyAction } from 'redux';
+import { StackScreenProps } from '@react-navigation/stack';
 
 import styles from './style';
 import { signUp } from '~/store/actions/auth';
 import { RootState } from '~/store/store';
+import { AuthStackParamList } from '../../../App';
 
-interface IProps {
-    navigation: any;
-}
 
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
-
-export default function Signup(props: IProps) {
+export default function Signup(props: StackScreenProps<AuthStackParamList, 'Signup'>) {
     const { signupErr, loading } = useSelector((state: RootState) => state.userReducer);
     const dispatch = useDispatch<AppDispatch>();
 
@@ -25,10 +23,10 @@ export default function Signup(props: IProps) {
     const [rePassword, setRePassword] = useState('');
 
     const signup = async () => {
-        if (loading) {return;}
+        if (loading) { return; }
 
         const res = await dispatch(signUp(username, password, rePassword));
-        if (res) {return props.navigation.navigate('Login');}
+        if (res) { return props.navigation.navigate('Login', { data: { errorMsg: "", loggedOut: false } }); }
     };
 
     return (

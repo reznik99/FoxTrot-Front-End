@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView, View, ToastAndroid } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Avatar, Button, Chip, Dialog, Icon, Paragraph, Portal } from 'react-native-paper';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import { DrawerContentComponentProps } from '@react-navigation/drawer/lib/typescript/src/types';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { ThunkDispatch } from 'redux-thunk';
 import { AnyAction } from 'redux';
@@ -12,12 +13,9 @@ import { logOut } from '~/store/actions/auth';
 import { publicKeyFingerprint } from '~/global/crypto';
 import { RootState } from '~/store/store';
 
-interface IProps {
-    navigation: any;
-}
 type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
-export default function Drawer(props: IProps) {
+export default function Drawer(props: DrawerContentComponentProps) {
 
     const state = useSelector((_state: RootState) => _state.userReducer);
     const dispatch = useDispatch<AppDispatch>();
@@ -66,9 +64,9 @@ export default function Drawer(props: IProps) {
                         inactiveTintColor="#fff"
                         label="Settings"
                         style={{ backgroundColor: PRIMARY }}
-                        onPress={() => props.navigation.navigate('Settings')}
+                        onPress={() => { props.navigation.navigate('Settings'); props.navigation.closeDrawer(); }}
                         icon={({ size, color }) => (
-                            <Icon source="cog" color={color} size={size}/>
+                            <Icon source="cog" color={color} size={size} />
                         )}
                     />
                     <DrawerItem

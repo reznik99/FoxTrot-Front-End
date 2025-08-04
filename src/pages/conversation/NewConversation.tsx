@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, ScrollView } from 'react-native';
 import { Searchbar, FAB, ActivityIndicator } from 'react-native-paper';
 import { useSelector } from 'react-redux';
+import { StackScreenProps } from '@react-navigation/stack';
 
 import globalStyle from '~/global/style';
 import { RootState } from '~/store/store';
 import { UserData } from '~/store/reducers/user';
 import { ACCENT } from '~/global/variables';
 import ContactPeek from '~/components/ContactPeek';
+import { HomeStackParamList } from '../../../App';
 
-export default function NewConversation(props: { navigation: any }) {
+export default function NewConversation(props: StackScreenProps<HomeStackParamList, 'NewConversation'>) {
 
     const { navigation } = props;
     const contacts = useSelector((state: RootState) => state.userReducer.contacts);
