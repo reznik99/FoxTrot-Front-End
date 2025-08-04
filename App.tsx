@@ -2,7 +2,7 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import { StatusBar } from 'react-native';
 import { Provider } from 'react-redux';
-import { Provider as PaperProvider, DefaultTheme, MD2DarkTheme as DarkTheme, Icon } from 'react-native-paper';
+import { Provider as PaperProvider, MD2DarkTheme as DarkTheme, Icon } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions } from '@react-navigation/stack';
 import { createDrawerNavigator, DrawerNavigationOptions } from '@react-navigation/drawer';
@@ -17,7 +17,7 @@ window.crypto.getRandomValues = globalThis.crypto.getRandomValues;
 import { store } from '~/store/store';
 
 import { Login, Signup, Home, Conversation, NewConversation, AddContact, Call, CameraView, Settings } from './src';
-import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT, DARKHEADER } from '~/global/variables';
+import { PRIMARY, SECONDARY, ACCENT, DARKHEADER } from '~/global/variables';
 import Drawer from '~/components/Drawer';
 import HeaderConversation from '~/components/HeaderConversation';
 import { UserData } from '~/store/reducers/user';
@@ -65,11 +65,11 @@ const HomeNavigator = () => {
         <HomeStack.Navigator initialRouteName="Home" screenOptions={{ ...defaultHeaderOptions, ...animationDefaults }}>
             <HomeStack.Screen name="Home" component={AppDrawer} options={{ headerShown: false }} />
             <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={route.params?.data} allowBack={true} />) })} />
-            <HomeStack.Screen name="NewConversation" component={NewConversation} options={({ route }) => ({ title: 'My Contacts' })} />
-            <HomeStack.Screen name="AddContact" component={AddContact} options={({ route }) => ({ title: 'Search New Users' })} />
+            <HomeStack.Screen name="NewConversation" component={NewConversation} options={() => ({ title: 'My Contacts' })} />
+            <HomeStack.Screen name="AddContact" component={AddContact} options={() => ({ title: 'Search New Users' })} />
             <HomeStack.Screen name="Call" component={Call} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={route.params?.data} allowBack={true} />) })} />
-            <HomeStack.Screen name="CameraView" component={CameraView} options={({ route }) => ({ title: 'Camera' })} />
-            <HomeStack.Screen name="Settings" component={Settings} options={({ route }) => ({ title: 'Settings' })} />
+            <HomeStack.Screen name="CameraView" component={CameraView} options={() => ({ title: 'Camera' })} />
+            <HomeStack.Screen name="Settings" component={Settings} options={() => ({ title: 'Settings' })} />
         </HomeStack.Navigator>
     );
 };
@@ -105,17 +105,17 @@ const darkTheme = {
     dark: true,
 };
 
-const defaultTheme = {
-    ...DefaultTheme,
-    roundness: 2,
-    colors: {
-        ...DefaultTheme.colors,
-        primary: PRIMARY,
-        background: SECONDARY_LITE,
-        accent: ACCENT,
-    },
-    dark: false,
-};
+// const defaultTheme = {
+//     ...DefaultTheme,
+//     roundness: 2,
+//     colors: {
+//         ...DefaultTheme.colors,
+//         primary: PRIMARY,
+//         background: SECONDARY_LITE,
+//         accent: ACCENT,
+//     },
+//     dark: false,
+// };
 
 export default function App() {
     return (

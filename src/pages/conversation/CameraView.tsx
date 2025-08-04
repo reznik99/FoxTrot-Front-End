@@ -90,7 +90,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
         } finally {
             setLoading(false);
         }
-    }, [picture]);
+    }, [picture, props.navigation, props.route.params?.data?.peer, dispatch]);
 
     return (
         <View style={styles.container}>

@@ -62,7 +62,7 @@ export default function Conversation(props) {
         } finally {
             setLoading(false);
         }
-    }, [message, peer]);
+    }, [message, peer, dispatch]);
 
     const handleImageSelect = useCallback(async () => {
         try {

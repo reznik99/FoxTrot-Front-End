@@ -93,13 +93,13 @@ export default function Home(props) {
         setLoadingMsg('Loading messages...');
         await dispatch(loadMessages());
         setLoadingMsg('');
-    }, []);
+    }, [dispatch]);
 
     const configureWebsocket = useCallback(async () => {
         setLoadingMsg('Initializing websocket...');
         await dispatch(initializeWebsocket());
         setLoadingMsg('');
-    }, []);
+    }, [dispatch]);
 
     return (
         <View style={globalStyle.wrapper}>
