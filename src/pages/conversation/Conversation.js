@@ -46,7 +46,7 @@ export default function Conversation(props) {
     }, [conversation.messages]);
 
     const handleSend = useCallback(async () => {
-        if (message.trim() === '') {return;}
+        if (message.trim() === '') { return; }
 
         try {
             setLoading(true);
@@ -68,7 +68,7 @@ export default function Conversation(props) {
         try {
             setLoading(true);
             const { didCancel, assets } = await launchImageLibrary({ mediaType: 'photo', quality: 0.3 });
-            if (didCancel || !assets?.length) {return;}
+            if (didCancel || !assets?.length) { return; }
 
             // Render Camera page pre-filled with selected image
             props.navigation.navigate('CameraView', { data: { peer: peer, picturePath: assets[0].uri } });
@@ -83,6 +83,17 @@ export default function Conversation(props) {
         // Render Camera page
         props.navigation.navigate('CameraView', { data: { peer: peer } });
     }, [props.navigation, peer]);
+
+    const renderListEmpty = useCallback(() => (
+        <View><Text style={[styles.message, styles.system]}> No messages </Text></View>
+    ), []);
+
+    const renderListFooter = useCallback(() => (
+        <View style={styles.footer}>
+            <Icon source="lock" color="#77f777" size={20} />
+            <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
+        </View>
+    ), []);
 
     return (
         <View style={styles.container}>
@@ -101,13 +112,8 @@ export default function Conversation(props) {
                         isSent={item.sender === user_data.phone_no}
                         zoomMedia={(data) => setZoomMedia(data)} />
                 )}
-                ListEmptyComponent={() => <View><Text style={[styles.message, styles.system]}> No messages </Text></View>}
-                ListHeaderComponent={() => (
-                    <View style={styles.footer}>
-                        <Icon source="lock" color="#77f777" size={20} />
-                        <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
-                    </View>
-                )}
+                ListEmptyComponent={renderListEmpty}
+                ListHeaderComponent={renderListFooter}
             />
 
             <View style={styles.inputContainer}>
@@ -157,8 +163,8 @@ class Message extends PureComponent {
     }
 
     copyMessage = () => {
-        if (!this.state.decryptedMessage) {return;}
-        if (this.state.decryptedMessage?.type !== 'MSG') {return;}
+        if (!this.state.decryptedMessage) { return; }
+        if (this.state.decryptedMessage?.type !== 'MSG') { return; }
 
         Clipboard.setString(this.state.decryptedMessage.message);
         ToastAndroid.show(
@@ -179,7 +185,7 @@ class Message extends PureComponent {
     };
 
     renderMessage = (item, isSent) => {
-        if (!item?.message) {return;}
+        if (!item?.message) { return; }
 
         switch (item?.type) {
             // TODO: Add VIDEO, GIF and AUDIO message types
@@ -193,7 +199,7 @@ class Message extends PureComponent {
                 const messageChunks = item.message.split(' ');
                 const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'));
 
-                if (linkIndex < 0) {return <Text style={[isSent ? styles.sentText : styles.receivedText]} selectable>{item.message}</Text>;}
+                if (linkIndex < 0) { return <Text style={[isSent ? styles.sentText : styles.receivedText]} selectable>{item.message}</Text>; }
 
                 return (
                     <Text style={[isSent ? styles.sentText : styles.receivedText]}>
@@ -228,7 +234,7 @@ class Message extends PureComponent {
                     // If message contains URL open it in browser
                     const messageChunks = this.state.decryptedMessage?.message?.split(' ') || [];
                     const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'));
-                    if (link) {Linking.openURL(link);}
+                    if (link) { Linking.openURL(link); }
                     break;
                 default:
                     console.warn('Unrecognized message type:', item?.type);

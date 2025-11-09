@@ -3,9 +3,9 @@ import React from 'react';
 import { StatusBar } from 'react-native';
 import { Provider } from 'react-redux';
 import { Provider as PaperProvider, MD2DarkTheme as DarkTheme, Icon } from 'react-native-paper';
-import { NavigationContainer, DarkTheme as NavDarkTheme } from '@react-navigation/native';
-import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions } from '@react-navigation/stack';
-import { createDrawerNavigator, DrawerNavigationOptions } from '@react-navigation/drawer';
+import { NavigationContainer, DarkTheme as NavDarkTheme, RouteProp } from '@react-navigation/native';
+import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions, StackHeaderProps } from '@react-navigation/stack';
+import { createDrawerNavigator, DrawerContentComponentProps, DrawerNavigationOptions } from '@react-navigation/drawer';
 import Toast from 'react-native-toast-message';
 
 // Crypto
@@ -44,11 +44,14 @@ const AppNavigator = createDrawerNavigator();
 const AppDrawer = () => {
     return (
         <AppNavigator.Navigator screenOptions={{ swipeEdgeWidth: 200 }}
-            drawerContent={(props) => <Drawer {...props} />} >
+            drawerContent={renderDrawerContent} >
             <AppNavigator.Screen name="Foxtrot" component={Home} options={defaultHeaderOptions} />
         </AppNavigator.Navigator>
     );
 };
+const renderDrawerContent = (props: DrawerContentComponentProps) => (
+    <Drawer {...props} />
+);
 
 export type HomeStackParamList = {
     Home: undefined;
@@ -64,15 +67,18 @@ const HomeNavigator = () => {
     return (
         <HomeStack.Navigator initialRouteName="Home" screenOptions={{ ...defaultHeaderOptions, ...animationDefaults }}>
             <HomeStack.Screen name="Home" component={AppDrawer} options={{ headerShown: false }} />
-            <HomeStack.Screen name="Conversation" component={Conversation} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={route.params?.data} allowBack={true} />) })} />
+            <HomeStack.Screen name="Conversation" component={Conversation} options={renderHeaderConversation} />
             <HomeStack.Screen name="NewConversation" component={NewConversation} options={() => ({ title: 'My Contacts' })} />
             <HomeStack.Screen name="AddContact" component={AddContact} options={() => ({ title: 'Search New Users' })} />
-            <HomeStack.Screen name="Call" component={Call} options={({ route }) => ({ header: (props) => (<HeaderConversation navigation={props.navigation} data={route.params?.data} allowBack={true} />) })} />
+            <HomeStack.Screen name="Call" component={Call} options={renderHeaderConversation} />
             <HomeStack.Screen name="CameraView" component={CameraView} options={() => ({ title: 'Camera' })} />
             <HomeStack.Screen name="Settings" component={Settings} options={() => ({ title: 'Settings' })} />
         </HomeStack.Navigator>
     );
 };
+const renderHeaderConversation = ({ route }: { route: RouteProp<HomeStackParamList, 'Call' | 'Conversation'> }) => (
+    { header: (props: StackHeaderProps) => (<HeaderConversation navigation={props.navigation} data={route.params?.data} allowBack={true} />) }
+);
 
 export type AuthStackParamList = {
     Login: { data: { errorMsg: string; loggedOut: boolean; } };
@@ -95,7 +101,6 @@ const AuthNavigator = () => {
 
 const darkTheme = {
     ...DarkTheme,
-    // roundness: 2,
     colors: {
         ...DarkTheme.colors,
         primary: PRIMARY,
@@ -104,18 +109,6 @@ const darkTheme = {
     },
     dark: true,
 };
-
-// const defaultTheme = {
-//     ...DefaultTheme,
-//     roundness: 2,
-//     colors: {
-//         ...DefaultTheme.colors,
-//         primary: PRIMARY,
-//         background: SECONDARY_LITE,
-//         accent: ACCENT,
-//     },
-//     dark: false,
-// };
 
 export default function App() {
     return (

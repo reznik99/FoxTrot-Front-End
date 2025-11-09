@@ -134,9 +134,7 @@ export default function Home(props) {
                         <FAB
                             style={[globalStyle.fab, { backgroundColor: PRIMARY }]} color="#fff"
                             onPress={() => props.navigation.navigate('NewConversation')}
-                            icon={({ size, color }) => (
-                                <Icon source="message" color={color} size={size}/>
-                            )}
+                            icon={renderFABIcon}
                         />
                     </>
             }
@@ -144,3 +142,6 @@ export default function Home(props) {
     );
 }
 
+const renderFABIcon = ({ size, color }) => {
+    return <Icon source="message" color={color} size={size} />;
+};

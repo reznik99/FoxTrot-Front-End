@@ -24,24 +24,28 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
     const [results, setResults] = useState<UserData[] | undefined>(undefined);
     const [addingContact, setAddingContact] = useState<UserData | undefined>(undefined);
     const [prefix, setPrefix] = useState('');
-    const [timer, setTimer] = useState<number | null>(null);
-
-    useEffect(() => {
-        if(timer) {clearTimeout(timer);}
-        if (prefix.length > 2) {setTimer(setTimeout(handleSearch, 250));}
-    }, [prefix]);
+    const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
     const handleSearch = async () => {
         const users: UserData[] = await dispatch(searchUsers(prefix)) as any;
         setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no) ? 1 : -1));
     };
 
+    useEffect(() => {
+        if (timer) { clearTimeout(timer); }
+        if (prefix.length > 2) { setTimer(setTimeout(handleSearch, 250)); }
+    }, [prefix]);
+
     const handleAddContact = async (user: UserData) => {
         setAddingContact(user);
         const success = await dispatch(addContact(user));
-        if (success) {navigation.replace('Conversation', { data: { peer_user: user } });}
+        if (success) { navigation.replace('Conversation', { data: { peer_user: user } }); }
 
         setAddingContact(undefined);
+    };
+
+    const renderSearchIcon = ({ size, color }: { size: number, color: string }) => {
+        return <Icon source="magnify" color={color} size={size} />;
     };
 
     return (
@@ -49,25 +53,23 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
             {/* Search */}
             <View style={globalStyle.searchContainer}>
                 <Searchbar
-                    icon={({ size, color }) => (
-                        <Icon source="magnify" color={color} size={size}/>
-                    )}
+                    icon={renderSearchIcon}
                     placeholder="Find new contacts"
                     onChangeText={val => setPrefix(val)}
                     value={prefix}
                 />
             </View>
 
-            { loading &&
+            {loading &&
                 <View style={{ flex: 1, justifyContent: 'center' }}>
                     <ActivityIndicator size="large" />
                 </View>
             }
 
-            { /* Contact List */ }
-            { !loading &&
+            { /* Contact List */}
+            {!loading &&
                 <ScrollView>
-                    { results?.length
+                    {results?.length
                         ? results.map((user, index) => {
                             return (
                                 <View key={index}>
@@ -81,7 +83,7 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
                                 </View>
                             );
                         })
-                        : <Text style={[globalStyle.errorMsg, {color: '#fff'}]}>No results</Text>
+                        : <Text style={[globalStyle.errorMsg, { color: '#fff' }]}>No results</Text>
                     }
                 </ScrollView>
             }

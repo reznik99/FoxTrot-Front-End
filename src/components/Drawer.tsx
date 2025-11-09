@@ -56,27 +56,21 @@ export default function Drawer(props: DrawerContentComponentProps) {
                         label="Security Code"
                         style={{ backgroundColor: PRIMARY }}
                         onPress={() => { setShowSecurityCode(true); publicKeyFingerprint(state.user_data.public_key || '').then(setSecurityCode).catch(err => console.error(err)); }}
-                        icon={({ size, color }) => (
-                            <Icon source="lock" color={color} size={size}/>
-                        )}
+                        icon={renderLockIcon}
                     />
                     <DrawerItem
                         inactiveTintColor="#fff"
                         label="Settings"
                         style={{ backgroundColor: PRIMARY }}
                         onPress={() => { props.navigation.navigate('Settings'); props.navigation.closeDrawer(); }}
-                        icon={({ size, color }) => (
-                            <Icon source="cog" color={color} size={size} />
-                        )}
+                        icon={renderCogIcon}
                     />
                     <DrawerItem
                         inactiveTintColor="#fff"
                         label="Logout"
                         style={{ borderTopWidth: 1, borderTopColor: '#e3e1e1', backgroundColor: DARKHEADER }}
                         onPress={() => dispatch(logOut(props.navigation))}
-                        icon={({ size, color }) => (
-                            <Icon source="logout" color={color} size={size}/>
-                        )}
+                        icon={renderLogoutIcon}
                     />
                 </View>
 
@@ -85,7 +79,7 @@ export default function Drawer(props: DrawerContentComponentProps) {
             <Portal>
                 <Dialog visible={showSecurityCode} onDismiss={() => setShowSecurityCode(false)}>
                     <Dialog.Title>
-                        <Icon source="lock" color="#00ff00" size={20}/> Your Security Code
+                        <Icon source="lock" color="#00ff00" size={20} /> Your Security Code
                     </Dialog.Title>
                     <Dialog.Content>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
@@ -114,3 +108,15 @@ const styles = StyleSheet.create({
         marginVertical: 5,
     },
 });
+
+const renderLockIcon = ({ size, color }: { size: number, color: string }) => {
+    return <Icon source="lock" color={color} size={size} />;
+};
+
+const renderCogIcon = ({ size, color }: { size: number, color: string }) => {
+    return <Icon source="cog" color={color} size={size} />;
+};
+
+const renderLogoutIcon = ({ size, color }: { size: number, color: string }) => {
+    return <Icon source="logout" color={color} size={size} />;
+};
