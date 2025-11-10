@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
 import Toast from 'react-native-toast-message';
-import messaging from '@react-native-firebase/messaging'; // Push Notifications
+import { getMessaging, getToken, registerDeviceForRemoteMessages } from '@react-native-firebase/messaging'; // Push Notifications
 
 import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
@@ -367,8 +367,8 @@ export function registerPushNotifications() {
             console.debug('Registering for Push Notifications');
             const granted = await getPushNotificationPermission();
             if (granted) {
-                await messaging().registerDeviceForRemoteMessages();
-                const token = await messaging().getToken();
+                await registerDeviceForRemoteMessages(getMessaging());
+                const token = await getToken(getMessaging());
                 await axios.post(`${API_URL}/registerPushNotifications`, { token }, axiosBearerConfig(state.token));
                 // Register background handler
                 // messaging().setBackgroundMessageHandler(async remoteMessage => {
