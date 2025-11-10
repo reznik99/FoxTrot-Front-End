@@ -56,7 +56,7 @@ export default function Conversation(props) {
                 type: 'MSG',
                 message: message.trim(),
             });
-            await dispatch(sendMessage(toSend, peer));
+            await dispatch(sendMessage({ message: toSend, to_user: peer }));
         } catch (err) {
             console.error('Error sending message:', err);
         } finally {

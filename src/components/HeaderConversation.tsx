@@ -17,7 +17,7 @@ interface IProps {
     };
     allowBack: boolean;
 }
-
+// TODO: props are null when getting called!
 export default function HeaderConversation(props: IProps) {
 
     const { navigation, allowBack, data } = props;
@@ -26,13 +26,13 @@ export default function HeaderConversation(props: IProps) {
     const contacts = useSelector((store: RootState) => store.userReducer.contacts);
 
     const showSecurityCode = useCallback(async () => {
-        const contact = contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
+        const contact = contacts.find(_contact => _contact.phone_no === data?.peer_user?.phone_no);
         if (!contact || !contact.public_key) {return;}
 
         setVisibleDialog('SecurityCode');
         const digest = await publicKeyFingerprint(contact.public_key);
         setSecurityCode(digest);
-    }, [contacts, data.peer_user.phone_no]);
+    }, [contacts, data?.peer_user?.phone_no]);
 
     const copySecurityCode = useCallback(() => {
         setVisibleDialog('');

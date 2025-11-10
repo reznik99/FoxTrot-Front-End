@@ -28,7 +28,7 @@ export interface SocketMessage {
 export function initializeWebsocket() {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
-            dispatch({ type: 'SET_LOADING', payload: true });
+            dispatch({ type: 'user/SET_LOADING', payload: true });
 
             let state = getState().userReducer;
             if (!state.token) {throw new Error('Token is not present. Re-auth required');}
@@ -60,16 +60,16 @@ export function initializeWebsocket() {
                     text2: err.message || err,
                     visibilityTime: 5000,
                 });
-                dispatch({ type: 'WEBSOCKET_ERROR', payload: err });
+                dispatch({ type: 'user/WEBSOCKET_ERROR', payload: err });
             };
             socketConn.onmessage = (event) => {
                 handleSocketMessage(event.data, dispatch, getState);
             };
-            dispatch({ type: 'WEBSOCKET_CONNECT', payload: socketConn });
+            dispatch({ type: 'user/WEBSOCKET_CONNECT', payload: socketConn });
         } catch (err) {
             console.error('Error establishing websocket:', err);
         } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
+            dispatch({ type: 'user/SET_LOADING', payload: false });
         }
     };
 }
@@ -82,7 +82,7 @@ export function destroyWebsocket() {
             // Close existing socket
             if (state.socketConn) {state.socketConn.close();}
 
-            dispatch({ type: 'WEBSOCKET_CONNECT', payload: null });
+            dispatch({ type: 'user/WEBSOCKET_CONNECT', payload: null });
         } catch (err) {
             console.warn('Error destroying websocket: ', err);
         }
@@ -93,9 +93,9 @@ export function resetCallState() {
     return async (dispatch: AppDispatch) => {
         try {
 
-            dispatch({ type: 'RESET_CALL_ICE_CANDIDATES', payload: undefined });
-            dispatch({ type: 'RECV_CALL_ANSWER', payload: undefined });
-            dispatch({ type: 'RECV_CALL_OFFER', payload: undefined });
+            dispatch({ type: 'user/RESET_CALL_ICE_CANDIDATES', payload: undefined });
+            dispatch({ type: 'user/RECV_CALL_ANSWER', payload: undefined });
+            dispatch({ type: 'user/RECV_CALL_OFFER', payload: undefined });
         } catch (err) {
             console.warn('Error resetCallState: ', err);
         }
@@ -107,7 +107,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
         const parsedData: SocketData = JSON.parse(data);
         switch (parsedData.cmd) {
             case 'MSG':
-                dispatch({ type: 'RECV_MESSAGE', payload: parsedData.data });
+                dispatch({ type: 'user/RECV_MESSAGE', payload: parsedData.data });
                 PushNotification.localNotification({
                     channelId: 'Messages',
                     title: `Message from ${parsedData.data.sender}`,
@@ -124,7 +124,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
 
                 const state = getState().userReducer;
                 const caller = state.contacts.find(con => con.phone_no === parsedData.data.sender);
-                dispatch({ type: 'RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
+                dispatch({ type: 'user/RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
 
                 // Ring and show notification
                 InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
@@ -148,11 +148,11 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 break;
             case 'CALL_ANSWER':
                 console.debug('Websocket CALL_ANSWER Recieved: ', parsedData.data?.sender);
-                dispatch({ type: 'RECV_CALL_ANSWER', payload: parsedData.data?.answer });
+                dispatch({ type: 'user/RECV_CALL_ANSWER', payload: parsedData.data?.answer });
                 break;
             case 'CALL_ICE_CANDIDATE':
                 console.debug('Websocket RECV_CALL_ICE_CANDIDATE Recieved: ', parsedData.data?.sender);
-                dispatch({ type: 'RECV_CALL_ICE_CANDIDATE', payload: parsedData.data?.candidate });
+                dispatch({ type: 'user/RECV_CALL_ICE_CANDIDATE', payload: parsedData.data?.candidate });
                 break;
             default:
                 console.debug('Websocket RECV unknown command from: ', parsedData.data?.sender, parsedData.cmd);

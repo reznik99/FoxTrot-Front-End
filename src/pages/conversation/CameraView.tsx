@@ -28,7 +28,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (props.route.params?.data?.picturePath) {return;}
+        if (props.route.params?.data?.picturePath) { return; }
         requestPermissions();
     }, []);
 
@@ -58,7 +58,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
 
     const reset = useCallback(() => {
         setPicture('');
-        if (!hasPermission) {requestPermissions();}
+        if (!hasPermission) { requestPermissions(); }
     }, [hasPermission, requestPermissions]);
 
     const swapCamera = useCallback(() => {
@@ -67,7 +67,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     }, [devices, isFront]);
 
     const takePic = useCallback(async () => {
-        if (!camera.current) {return;}
+        if (!camera.current) { return; }
         const pic = await camera.current.takeSnapshot({ quality: 30 });
         setPicture(`file://${pic.path}`);
     }, [camera]);
@@ -83,8 +83,8 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                 message: rawPic,
             });
 
-            const success = await dispatch(sendMessage(toSend, props.route.params?.data?.peer));
-            if (success) {props.navigation.goBack();}
+            const success = await dispatch(sendMessage({ message: toSend, to_user: props.route.params?.data?.peer }));
+            if (success) { props.navigation.goBack(); }
         } catch (err) {
             console.error('Error sending image:', err);
         } finally {
@@ -99,7 +99,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                     <ActivityIndicator size="large" />
                 </View>
             }
-            { device && !picture && !hasPermission &&
+            {device && !picture && !hasPermission &&
                 <View style={styles.loaderContainer}>
                     <Text variant="titleLarge">Permission to use camera denied</Text>
                 </View>
@@ -107,7 +107,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
 
             {picture &&
                 <>
-                    <Image source={{ uri: picture }} style={{ width: '100%', height: '100%' }} resizeMode="contain"/>
+                    <Image source={{ uri: picture }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
 
                     <View style={styles.buttonContainer}>
                         <Button style={styles.button} color={SECONDARY_LITE} icon="refresh" mode="contained" onPress={reset}>

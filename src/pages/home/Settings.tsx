@@ -71,7 +71,7 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
             deleteFromStorage(''),
             Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys` }),
             Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
-            dispatch(logOut),
+            dispatch(logOut({ navigation: _props.navigation })),
         ]);
     }, [user_data, dispatch]);
 
@@ -111,6 +111,7 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                     Buffer.from(ciphertext, 'base64'),
                 );
             } catch (err) {
+                console.error('Decryption error: Invalid password or corrupted file:', err);
                 throw new Error('Decryption error: Invalid password or corrupted file');
             }
 
@@ -131,7 +132,7 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
 
             // Reload contacts to re-generate per-conversation encryption keys (ECDH)
             console.debug('Regenerating Conversation encryption keys...');
-            await dispatch(loadContacts());
+            await dispatch(loadContacts({ atomic: true }));
 
             Toast.show({
                 type: 'success',

@@ -6,7 +6,7 @@ import { getMessaging, getToken, registerDeviceForRemoteMessages } from '@react-
 import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { AppDispatch, GetState, RootState } from '~/store/store';
-import { ADD_CONTACT_SUCCESS, Conversation, KEY_LOAD, LOAD_CONTACTS, LOAD_CONVERSATIONS, SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData } from '~/store/reducers/user';
+import { ADD_CONTACT_SUCCESS, Conversation, KEY_LOAD, LOAD_CONTACTS, LOAD_CONVERSATIONS, message, SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData } from '~/store/reducers/user';
 import { getPushNotificationPermission } from '~/global/permissions';
 import { getAvatar } from '~/global/helper';
 import { readFromStorage, writeToStorage } from '~/global/storage';
@@ -40,7 +40,7 @@ export const loadKeys = createDefaultAsyncThunk<boolean>('loadKeys', async (_, t
         let state = thunkAPI.getState().userReducer;
         if (state.keys) { return true; }
 
-        console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`);
+        console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage for user ${state.user_data.phone_no}`);
         await migrateKeysToNewStandard(state.user_data.phone_no);
         const credentials = await Keychain.getInternetCredentials(API_URL, {
             server: API_URL,
@@ -79,17 +79,18 @@ export const generateAndSyncKeys = createDefaultAsyncThunk<boolean>('generateAnd
         // Generate User's Keypair
         const keyPair = await generateIdentityKeypair();
         const keys = await exportKeypair(keyPair);
-        console.debug(`Saving '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys to secure storage`);
+
+        // Upload public key
+        console.debug(`Syncing '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' public key to server`);
+        await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.publicKey }, axiosBearerConfig(state.token));
 
         // Store on device
+        console.debug(`Saving '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys to secure storage`);
         await Keychain.setInternetCredentials(API_URL, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
             storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
             server: API_URL,
             service: `${state.user_data.phone_no}-keys`,
         });
-
-        // Upload public key
-        await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.publicKey }, axiosBearerConfig(state.token));
 
         // Store keypair in memory
         thunkAPI.dispatch(KEY_LOAD(keyPair));
@@ -129,12 +130,13 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
                 if (!cachedConversations) { throw new Error('No cached messages'); }
 
                 previousConversations = new Map(JSON.parse(cachedConversations));
-                console.debug(`Loaded ${previousConversations.size} conversations from storage. Last checked ${lastChecked}`);
+                console.debug('Loaded', previousConversations.size, 'conversations from storage. Last checked', lastChecked);
             } catch (err: any) {
                 console.warn('Failed to load messages from storage: ', err);
             }
         } else {
             previousConversations = new Map(state.conversations);
+            console.debug('Found', previousConversations.size, 'conversations in memory. Last checked', lastChecked);
         }
 
         // If no cached conversations, load all from API just in case.
@@ -145,12 +147,17 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
         const response = await axios.get(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token));
         response.data = response.data.reverse();
 
-        response.data.forEach((message: any) => {
+        response.data.forEach((message: message) => {
             let other = message.sender === state.user_data.phone_no
                 ? { phone_no: message.reciever, id: message.reciever_id, pic: getAvatar(message.reciever_id) }
                 : { phone_no: message.sender, id: message.sender_id, pic: getAvatar(message.sender_id) };
             if (conversations.has(other.phone_no)) {
-                conversations.get(other.phone_no)?.messages.unshift(message);
+                // Have to do this instead of unshift() because of readonly property?
+                const convo = conversations.get(other.phone_no)!
+                conversations.set(other.phone_no, {
+                    other_user: convo.other_user,
+                    messages: [message, ...convo.messages],
+                });
             } else {
                 conversations.set(other.phone_no, {
                     other_user: other,
@@ -158,7 +165,7 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
                 });
             }
         });
-        console.debug(`Loaded ${response.data?.length} new messages from api`);
+        console.debug('Loaded', response.data?.length, 'new messages from api');
 
         // Save all new conversations to redux state
         thunkAPI.dispatch(LOAD_CONVERSATIONS(conversations));
@@ -193,6 +200,7 @@ export const loadContacts = createDefaultAsyncThunk('loadContacts', async ({ ato
         const contacts = await Promise.all(response.data.map(async (contact: any) => {
             try {
                 const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey);
+                console.debug('Generated session key for contact:', contact.phone_no);
                 return { ...contact, pic: getAvatar(contact.id), session_key };
             } catch (err: any) {
                 console.warn('Failed to generate session key:', contact.phone_no, err.message || err);

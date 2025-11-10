@@ -43,10 +43,6 @@ export default function Home(props) {
             // Load keys from TPM
             setLoadingMsg('Loading keys from TPM...');
             const loadedKeys = await store.dispatch(loadKeys());
-            
-            // Load new messages from backend and old messages from storage
-            setLoadingMsg('Loading data from server...');
-            await loadAllMessages();
 
             // If keys not loaded, generate them (first time login)
             if (!loadedKeys.payload) {
@@ -66,6 +62,10 @@ export default function Home(props) {
                     return;
                 }
             }
+
+            // Load new messages from backend and old messages from storage
+            setLoadingMsg('Loading data from server...');
+            await loadAllMessages();
 
             // Setup axios interceptors
             setupInterceptors(props.navigation);
