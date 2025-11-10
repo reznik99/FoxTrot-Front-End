@@ -5,11 +5,12 @@ import { getMessaging, getToken, registerDeviceForRemoteMessages } from '@react-
 
 import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
-import { AppDispatch, GetState } from '~/store/store';
-import { Conversation, UserData } from '~/store/reducers/user';
+import { AppDispatch, GetState, RootState } from '~/store/store';
+import { ADD_CONTACT_SUCCESS, Conversation, KEY_LOAD, LOAD_CONTACTS, LOAD_CONVERSATIONS, SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData } from '~/store/reducers/user';
 import { getPushNotificationPermission } from '~/global/permissions';
 import { getAvatar } from '~/global/helper';
 import { readFromStorage, writeToStorage } from '~/global/storage';
+import { createAsyncThunk } from '@reduxjs/toolkit';
 
 async function migrateKeysToNewStandard(username: string) {
     const credentials = await Keychain.getInternetCredentials(`${username}-keys`);
@@ -30,217 +31,209 @@ async function migrateKeysToNewStandard(username: string) {
     });
 }
 
-export function loadKeys() {
-    return async (dispatch: AppDispatch, getState: GetState) => {
-        try {
-            dispatch({ type: 'SET_LOADING', payload: true });
+const createDefaultAsyncThunk = createAsyncThunk.withTypes<{ state: RootState, dispatch: AppDispatch }>()
 
-            let state = getState().userReducer;
-            if (state.keys) {return true;}
+export const loadKeys = createDefaultAsyncThunk<boolean>('loadKeys', async (_, thunkAPI) => {
+    try {
+        thunkAPI.dispatch(SET_LOADING(true));
 
-            console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`);
-            await migrateKeysToNewStandard(state.user_data.phone_no);
-            const credentials = await Keychain.getInternetCredentials(API_URL, {
-                server: API_URL,
-                service: `${state.user_data.phone_no}-keys`,
-            });
-            if (!credentials || credentials.username !== `${state.user_data.phone_no}-keys`) {
-                console.debug('Warn: No keys found. First time login on device');
-                return false;
+        let state = thunkAPI.getState().userReducer;
+        if (state.keys) { return true; }
+
+        console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage`);
+        await migrateKeysToNewStandard(state.user_data.phone_no);
+        const credentials = await Keychain.getInternetCredentials(API_URL, {
+            server: API_URL,
+            service: `${state.user_data.phone_no}-keys`,
+        });
+        if (!credentials || credentials.username !== `${state.user_data.phone_no}-keys`) {
+            console.debug('Warn: No keys found. First time login on device');
+            return false;
+        }
+
+        const keys = await importKeypair(JSON.parse(credentials.password));
+
+        // Store keypair in memory
+        thunkAPI.dispatch(KEY_LOAD(keys));
+        return true;
+    } catch (err: any) {
+        console.error('Error loading keys:', err, JSON.stringify(await Keychain.getSupportedBiometryType()));
+        Toast.show({
+            type: 'error',
+            text1: 'Failed to load Identity Keypair from TPM',
+            text2: err.message ?? err.toString(),
+            visibilityTime: 5000,
+        });
+        return false;
+    } finally {
+        thunkAPI.dispatch(SET_LOADING(false));
+    }
+});
+
+export const generateAndSyncKeys = createDefaultAsyncThunk<boolean>('generateAndSyncKeys', async (_, thunkAPI) => {
+    const state = thunkAPI.getState().userReducer;
+
+    try {
+        thunkAPI.dispatch(SET_LOADING(true));
+
+        // Generate User's Keypair
+        const keyPair = await generateIdentityKeypair();
+        const keys = await exportKeypair(keyPair);
+        console.debug(`Saving '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys to secure storage`);
+
+        // Store on device
+        await Keychain.setInternetCredentials(API_URL, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
+            storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+            server: API_URL,
+            service: `${state.user_data.phone_no}-keys`,
+        });
+
+        // Upload public key
+        await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.publicKey }, axiosBearerConfig(state.token));
+
+        // Store keypair in memory
+        thunkAPI.dispatch(KEY_LOAD(keyPair));
+        return true;
+
+    } catch (err: any) {
+        await Keychain.resetInternetCredentials({ server: API_URL, service: `${state.user_data?.phone_no}-keys` });
+        console.error('Error generating and syncing keys:', err);
+        Toast.show({
+            type: 'error',
+            text1: 'Failed to generate Identity Keypair',
+            text2: err.message ?? err.toString(),
+            visibilityTime: 5000,
+        });
+        return false;
+    } finally {
+        thunkAPI.dispatch(SET_LOADING(false));
+    }
+});
+
+export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, thunkAPI) => {
+    try {
+        thunkAPI.dispatch(SET_REFRESHING(true));
+
+        let state = thunkAPI.getState().userReducer;
+
+        // Check last time we hit the API for messages
+        const cachedLastChecked = (await readFromStorage(`messages-${state.user_data.id}-last-checked`)) || '0';
+
+        let lastChecked = parseInt(cachedLastChecked, 10);
+        let previousConversations = new Map<string, Conversation>();
+
+        // Load bulk messages from storage if there aren't any in the redux state
+        if (!state.conversations.size) {
+            try {
+                const cachedConversations = await readFromStorage(`messages-${state.user_data.id}`);
+                if (!cachedConversations) { throw new Error('No cached messages'); }
+
+                previousConversations = new Map(JSON.parse(cachedConversations));
+                console.debug(`Loaded ${previousConversations.size} conversations from storage. Last checked ${lastChecked}`);
+            } catch (err: any) {
+                console.warn('Failed to load messages from storage: ', err);
             }
-
-            const keys = await importKeypair(JSON.parse(credentials.password));
-
-            // Store keypair in memory
-            dispatch({ type: 'KEY_LOAD', payload: keys });
-            return true;
-        } catch (err: any) {
-            console.error('Error loading keys:', err, JSON.stringify(await Keychain.getSupportedBiometryType()));
-            Toast.show({
-                type: 'error',
-                text1: 'Failed to load Identity Keypair from TPM',
-                text2: err.message ?? err.toString(),
-                visibilityTime: 5000,
-            });
-            return false;
-        } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
+        } else {
+            previousConversations = new Map(state.conversations);
         }
-    };
-}
 
-export function generateAndSyncKeys() {
-    return async (dispatch: AppDispatch, getState: GetState) => {
-        const state = getState().userReducer;
+        // If no cached conversations, load all from API just in case.
+        if (!previousConversations.size) { lastChecked = 0; }
 
-        try {
-            dispatch({ type: 'SET_LOADING', payload: true });
+        // Load new user messages
+        const conversations = new Map(previousConversations);
+        const response = await axios.get(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token));
+        response.data = response.data.reverse();
 
-            // Generate User's Keypair
-            const keyPair = await generateIdentityKeypair();
-            const keys = await exportKeypair(keyPair);
-            console.debug(`Saving '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys to secure storage`);
-
-            // Store on device
-            await Keychain.setInternetCredentials(API_URL, `${state.user_data.phone_no}-keys`, JSON.stringify(keys), {
-                storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
-                server: API_URL,
-                service: `${state.user_data.phone_no}-keys`,
-            });
-
-            // Upload public key
-            await axios.post(`${API_URL}/savePublicKey`, { publicKey: keys.publicKey }, axiosBearerConfig(state.token));
-
-            // Store keypair in memory
-            dispatch({ type: 'KEY_LOAD', payload: keyPair });
-            return true;
-
-        } catch (err: any) {
-            await Keychain.resetInternetCredentials({ server: API_URL, service: `${state.user_data?.phone_no}-keys`});
-            console.error('Error generating and syncing keys:', err);
-            Toast.show({
-                type: 'error',
-                text1: 'Failed to generate Identity Keypair',
-                text2: err.message ?? err.toString(),
-                visibilityTime: 5000,
-            });
-            return false;
-        } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
-        }
-    };
-}
-
-export function loadMessages() {
-    return async (dispatch: AppDispatch, getState: GetState) => {
-        try {
-            dispatch({ type: 'SET_REFRESHING', payload: true });
-
-            let state = getState().userReducer;
-
-            // Check last time we hit the API for messages
-            const cachedLastChecked = (await readFromStorage(`messages-${state.user_data.id}-last-checked`)) || '0';
-
-            let lastChecked = parseInt(cachedLastChecked, 10);
-            let previousConversations = new Map<string, Conversation>();
-
-            // Load bulk messages from storage if there aren't any in the redux state
-            if (!state.conversations.size) {
-                try {
-                    const cachedConversations = await readFromStorage(`messages-${state.user_data.id}`);
-                    if (!cachedConversations) {throw new Error('No cached messages');}
-
-                    previousConversations = new Map(JSON.parse(cachedConversations));
-                    console.debug(`Loaded ${previousConversations.size} conversations from storage. Last checked ${lastChecked}`);
-                } catch (err: any) {
-                    console.warn('Failed to load messages from storage: ', err);
-                }
+        response.data.forEach((message: any) => {
+            let other = message.sender === state.user_data.phone_no
+                ? { phone_no: message.reciever, id: message.reciever_id, pic: getAvatar(message.reciever_id) }
+                : { phone_no: message.sender, id: message.sender_id, pic: getAvatar(message.sender_id) };
+            if (conversations.has(other.phone_no)) {
+                conversations.get(other.phone_no)?.messages.unshift(message);
             } else {
-                previousConversations = new Map(state.conversations);
+                conversations.set(other.phone_no, {
+                    other_user: other,
+                    messages: [message],
+                });
             }
+        });
+        console.debug(`Loaded ${response.data?.length} new messages from api`);
 
-            // If no cached conversations, load all from API just in case.
-            if (!previousConversations.size) {lastChecked = 0;}
+        // Save all new conversations to redux state
+        thunkAPI.dispatch(LOAD_CONVERSATIONS(conversations));
 
-            // Load new user messages
-            const conversations = new Map(previousConversations);
-            const response = await axios.get(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token));
-            response.data = response.data.reverse();
+        // Save all conversations to local-storage so we don't reload them unnecessarily from the API
+        await Promise.all([
+            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries()))),
+            writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now())),
+        ]);
 
-            response.data.forEach((message: any) => {
-                let other = message.sender === state.user_data.phone_no
-                    ? { phone_no: message.reciever, id: message.reciever_id, pic: getAvatar(message.reciever_id) }
-                    : { phone_no: message.sender, id: message.sender_id, pic: getAvatar(message.sender_id) };
-                if (conversations.has(other.phone_no)) {
-                    conversations.get(other.phone_no)?.messages.unshift(message);
-                } else {
-                    conversations.set(other.phone_no, {
-                        other_user: other,
-                        messages: [message],
-                    });
-                }
-            });
-            console.debug(`Loaded ${response.data?.length} new messages from api`);
+    } catch (err: any) {
+        console.error('Error loading messages:', err);
+        Toast.show({
+            type: 'error',
+            text1: 'Error loading messages',
+            text2: err.message ?? err.toString(),
+            visibilityTime: 5000,
+        });
+    } finally {
+        thunkAPI.dispatch(SET_REFRESHING(false));
+    }
+});
 
-            // Save all new conversations to redux state
-            dispatch({ type: 'LOAD_CONVERSATIONS', payload: conversations });
+export const loadContacts = createDefaultAsyncThunk('loadContacts', async ({ atomic }: { atomic: boolean }, thunkAPI) => {
+    try {
+        thunkAPI.dispatch(SET_REFRESHING(true));
+        let state = thunkAPI.getState().userReducer;
 
-            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            await Promise.all([
-                writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries()))),
-                writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now())),
-            ]);
+        // Load contacts
+        const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token));
 
-        } catch (err: any) {
-            console.error('Error loading messages:', err);
-            Toast.show({
-                type: 'error',
-                text1: 'Error loading messages',
-                text2: err.message ?? err.toString(),
-                visibilityTime: 5000,
-            });
-        } finally {
-            dispatch({ type: 'SET_REFRESHING', payload: false });
-        }
-    };
-}
+        const contacts = await Promise.all(response.data.map(async (contact: any) => {
+            try {
+                const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey);
+                return { ...contact, pic: getAvatar(contact.id), session_key };
+            } catch (err: any) {
+                console.warn('Failed to generate session key:', contact.phone_no, err.message || err);
+                return { ...contact, pic: getAvatar(contact.id) };
+            }
+        }));
 
-export function loadContacts(atomic = true) {
-    return async (dispatch: AppDispatch, getState: GetState) => {
-        try {
-            dispatch({ type: 'SET_REFRESHING', payload: true });
-            let state = getState().userReducer;
+        thunkAPI.dispatch(LOAD_CONTACTS(contacts));
 
-            // Load contacts
-            const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token));
+    } catch (err: any) {
+        console.error('Error loading contacts:', err);
+        Toast.show({
+            type: 'error',
+            text1: 'Error loading contacts',
+            text2: err.message ?? err.toString(),
+            visibilityTime: 5000,
+        });
+    } finally {
+        if (atomic) { thunkAPI.dispatch(SET_REFRESHING(false)); }
+    }
+});
 
-            const contacts = await Promise.all(response.data.map(async (contact: any) => {
-                try {
-                    const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey);
-                    return { ...contact, pic: getAvatar(contact.id), session_key };
-                } catch (err: any) {
-                    console.warn('Failed to generate session key:', contact.phone_no, err.message || err);
-                    return { ...contact, pic: getAvatar(contact.id) };
-                }
-            }));
+export const addContact = createDefaultAsyncThunk('addContact', async ({ user }: { user: UserData }, thunkAPI) => {
+    try {
+        let state = thunkAPI.getState().userReducer;
+        const { data } = await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token));
+        const session_key = await generateSessionKeyECDH(data.public_key || '', state.keys?.privateKey);
 
-            dispatch({ type: 'LOAD_CONTACTS', payload: contacts });
-
-        } catch (err: any) {
-            console.error('Error loading contacts:', err);
-            Toast.show({
-                type: 'error',
-                text1: 'Error loading contacts',
-                text2: err.message ?? err.toString(),
-                visibilityTime: 5000,
-            });
-        } finally {
-            if (atomic) {dispatch({ type: 'SET_REFRESHING', payload: false });}
-        }
-    };
-}
-
-export function addContact(user: UserData) {
-    return async (dispatch: AppDispatch, getState: GetState) => {
-        try {
-            let state = getState().userReducer;
-            const { data } = await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token));
-            const session_key = await generateSessionKeyECDH(data.public_key || '', state.keys?.privateKey);
-
-            dispatch({ type: 'ADD_CONTACT_SUCCESS', payload: { ...data, pic: getAvatar(user.id), session_key } });
-            return true;
-        } catch (err: any) {
-            console.error('Error adding contact:', err);
-            Toast.show({
-                type: 'error',
-                text1: 'Failed to add contact',
-                text2: err.message || 'Please try again later',
-                visibilityTime: 5000,
-            });
-            return false;
-        }
-    };
-}
+        thunkAPI.dispatch(ADD_CONTACT_SUCCESS({ ...data, pic: getAvatar(user.id), session_key }));
+        return true;
+    } catch (err: any) {
+        console.error('Error adding contact:', err);
+        Toast.show({
+            type: 'error',
+            text1: 'Failed to add contact',
+            text2: err.message || 'Please try again later',
+            visibilityTime: 5000,
+        });
+        return false;
+    }
+});
 
 export function searchUsers(prefix: string) {
     return async (dispatch: AppDispatch, getState: GetState): Promise<UserData[]> => {
@@ -264,131 +257,124 @@ export function searchUsers(prefix: string) {
     };
 }
 
-export function sendMessage(message: string, to_user: UserData) {
-    return async (dispatch: AppDispatch, getState: GetState) => {
-        try {
-            dispatch({ type: 'SET_LOADING', payload: true });
-            const state = getState().userReducer;
+export const sendMessage = createDefaultAsyncThunk('sendMessage', async ({ message, to_user }: { message: string, to_user: UserData }, thunkAPI) => {
+    try {
+        thunkAPI.dispatch(SET_LOADING(true));
+        const state = thunkAPI.getState().userReducer;
 
-            if (!to_user?.session_key) {throw new Error('Missing session_key for ' + to_user?.phone_no);}
+        if (!to_user?.session_key) { throw new Error('Missing session_key for ' + to_user?.phone_no); }
 
-            // Encrypt and send message
-            const encryptedMessage = await encrypt(to_user.session_key, message);
-            await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token));
+        // Encrypt and send message
+        const encryptedMessage = await encrypt(to_user.session_key, message);
+        await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token));
 
-            // Save message locally
-            let msg = {
-                sender: state.user_data,
-                reciever: to_user,
-                rawMessage: {
-                    id: Date.now(),
-                    message: encryptedMessage,
-                    sender: state.user_data.phone_no,
-                    reciever: to_user.phone_no,
-                    sent_at: Date.now(),
-                    seen: false,
-                },
-            };
-            dispatch({ type: 'SEND_MESSAGE', payload: msg });
+        // Save message locally
+        let msg = {
+            sender: state.user_data,
+            reciever: to_user,
+            rawMessage: {
+                id: Date.now(),
+                message: encryptedMessage,
+                sender: state.user_data.phone_no,
+                sender_id: state.user_data.id,
+                reciever: to_user.phone_no,
+                reciever_id: to_user.id,
+                sent_at: Date.now().toString(),
+                seen: false,
+            },
+        };
+        thunkAPI.dispatch(SEND_MESSAGE(msg));
+        // Save all conversations to local-storage so we don't reload them unnecessarily from the API
+        writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(thunkAPI.getState().userReducer.conversations.entries())));
+        writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
+        return true;
+    } catch (err: any) {
+        console.error('Error sending message:', err);
+        Toast.show({
+            type: 'error',
+            text1: 'Error sending message',
+            text2: err.message ?? err.toString(),
+        });
+        return false;
+    } finally {
+        thunkAPI.dispatch(SET_LOADING(false));
+    }
+});
 
-            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(getState().userReducer.conversations.entries())));
-            writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
-            return true;
-        } catch (err: any) {
-            console.error('Error sending message:', err);
-            Toast.show({
-                type: 'error',
-                text1: 'Error sending message',
-                text2: err.message ?? err.toString(),
-            });
-            return false;
-        } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
+export const validateToken = createDefaultAsyncThunk('validateToken', async ({ token }: { token: string }, thunkAPI) => {
+    try {
+        thunkAPI.dispatch(SET_LOADING(true));
+        if (!token) { return false; }
+
+        const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(token));
+
+        thunkAPI.dispatch(TOKEN_VALID({ token: token, valid: res.data?.valid }));
+        return res.data?.valid;
+    } catch (err: any) {
+        thunkAPI.dispatch(TOKEN_VALID({ token: '', valid: false }));
+        return false;
+    } finally {
+        thunkAPI.dispatch(SET_LOADING(false));
+    }
+});
+
+export const syncFromStorage = createDefaultAsyncThunk('syncFromStorage', async (_, thunkAPI) => {
+    try {
+        thunkAPI.dispatch(SET_LOADING(true));
+
+        console.debug('Loading user from local storage');
+        // TODO: Load existing contacts from async storage
+        // const token = await readFromStorage('auth_token')
+        const user_data = await readFromStorage('user_data');
+        if (!user_data) { return false; }
+
+        const payload = {
+            user_data: JSON.parse(user_data),
+        };
+        thunkAPI.dispatch(SYNC_FROM_STORAGE(payload));
+        return true;
+    } catch (err: any) {
+        console.error('Error syncing from storage:', err);
+        Toast.show({
+            type: 'error',
+            text1: 'Failed to sync data from storage',
+            text2: err.message ?? err.toString(),
+            visibilityTime: 5000,
+        });
+        return false;
+    } finally {
+        thunkAPI.dispatch(SET_LOADING(false));
+    }
+});
+
+export const registerPushNotifications = createDefaultAsyncThunk('registerPushNotifications', async (_, thunkAPI) => {
+    try {
+        let state = thunkAPI.getState().userReducer;
+
+        console.debug('Registering for Push Notifications');
+        const granted = await getPushNotificationPermission();
+        if (granted) {
+            await registerDeviceForRemoteMessages(getMessaging());
+            const token = await getToken(getMessaging());
+            await axios.post(`${API_URL}/registerPushNotifications`, { token }, axiosBearerConfig(state.token));
+            // Register background handler
+            // messaging().setBackgroundMessageHandler(async remoteMessage => {
+            //     console.log('Message handled in the background!', remoteMessage);
+            // });
+        } else {
+            console.error('Push notifications permission denied');
         }
-    };
-}
 
-export function validateToken(token: string) {
-    return async (dispatch: AppDispatch, _getState: GetState) => {
-        try {
-            dispatch({ type: 'SET_LOADING', payload: true });
-            if (!token) {return false;}
-
-            const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(token));
-
-            dispatch({ type: 'TOKEN_VALID', payload: { token: token, valid: res.data?.valid } });
-            return res.data?.valid;
-        } catch (err: any) {
-            dispatch({ type: 'TOKEN_VALID', payload: false });
-            return false;
-        } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
-        }
-    };
-}
-
-export function syncFromStorage() {
-    return async (dispatch: AppDispatch) => {
-        try {
-            dispatch({ type: 'SET_LOADING', payload: true });
-
-            console.debug('Loading user from local storage');
-            // TODO: Load existing contacts from async storage
-            // const token = await readFromStorage('auth_token')
-            const user_data = await readFromStorage('user_data');
-            if (!user_data) {return false;}
-
-            const payload = {
-                user_data: JSON.parse(user_data),
-            };
-            dispatch({ type: 'SYNC_FROM_STORAGE', payload: payload });
-            return true;
-        } catch (err: any) {
-            console.error('Error syncing from storage:', err);
-            Toast.show({
-                type: 'error',
-                text1: 'Failed to sync data from storage',
-                text2: err.message ?? err.toString(),
-                visibilityTime: 5000,
-            });
-            return false;
-        } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
-        }
-    };
-}
-
-export function registerPushNotifications() {
-    return async (dispatch: AppDispatch, getState: GetState) => {
-        try {
-            let state = getState().userReducer;
-
-            console.debug('Registering for Push Notifications');
-            const granted = await getPushNotificationPermission();
-            if (granted) {
-                await registerDeviceForRemoteMessages(getMessaging());
-                const token = await getToken(getMessaging());
-                await axios.post(`${API_URL}/registerPushNotifications`, { token }, axiosBearerConfig(state.token));
-                // Register background handler
-                // messaging().setBackgroundMessageHandler(async remoteMessage => {
-                //     console.log('Message handled in the background!', remoteMessage);
-                // });
-            } else {
-                console.error('Push notifications permission denied');
-            }
-
-        } catch (err: any) {
-            console.error('Error Registering for Push Notifications:', err);
-            Toast.show({
-                type: 'error',
-                text1: 'Failed to register for push notifications',
-                text2: err.message ?? err.toString(),
-                visibilityTime: 5000,
-            });
-        }
-    };
-}
+    } catch (err: any) {
+        console.error('Error Registering for Push Notifications:', err);
+        Toast.show({
+            type: 'error',
+            text1: 'Failed to register for push notifications',
+            text2: err.message ?? err.toString(),
+            visibilityTime: 5000,
+        });
+    }
+});
 
 function axiosBearerConfig(token: string) {
     return { headers: { 'Authorization': `JWT ${token}` } };
