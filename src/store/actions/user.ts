@@ -5,7 +5,7 @@ import { getMessaging, getToken, registerDeviceForRemoteMessages } from '@react-
 
 import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
-import { AppDispatch, GetState, RootState } from '~/store/store';
+import { AppDispatch, RootState } from '~/store/store';
 import { ADD_CONTACT_SUCCESS, Conversation, KEY_LOAD, LOAD_CONTACTS, LOAD_CONVERSATIONS, message, SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData } from '~/store/reducers/user';
 import { getPushNotificationPermission } from '~/global/permissions';
 import { getAvatar } from '~/global/helper';
@@ -31,7 +31,7 @@ async function migrateKeysToNewStandard(username: string) {
     });
 }
 
-const createDefaultAsyncThunk = createAsyncThunk.withTypes<{ state: RootState, dispatch: AppDispatch }>()
+const createDefaultAsyncThunk = createAsyncThunk.withTypes<{ state: RootState, dispatch: AppDispatch }>();
 
 export const loadKeys = createDefaultAsyncThunk<boolean>('loadKeys', async (_, thunkAPI) => {
     try {
@@ -147,21 +147,21 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
         const response = await axios.get(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token));
         response.data = response.data.reverse();
 
-        response.data.forEach((message: message) => {
-            let other = message.sender === state.user_data.phone_no
-                ? { phone_no: message.reciever, id: message.reciever_id, pic: getAvatar(message.reciever_id) }
-                : { phone_no: message.sender, id: message.sender_id, pic: getAvatar(message.sender_id) };
+        response.data.forEach((msg: message) => {
+            let other = msg.sender === state.user_data.phone_no
+                ? { phone_no: msg.reciever, id: msg.reciever_id, pic: getAvatar(msg.reciever_id) }
+                : { phone_no: msg.sender, id: msg.sender_id, pic: getAvatar(msg.sender_id) };
             if (conversations.has(other.phone_no)) {
                 // Have to do this instead of unshift() because of readonly property?
-                const convo = conversations.get(other.phone_no)!
+                const convo = conversations.get(other.phone_no)!;
                 conversations.set(other.phone_no, {
                     other_user: convo.other_user,
-                    messages: [message, ...convo.messages],
+                    messages: [msg, ...convo.messages],
                 });
             } else {
                 conversations.set(other.phone_no, {
                     other_user: other,
-                    messages: [message],
+                    messages: [msg],
                 });
             }
         });
@@ -243,55 +243,55 @@ export const addContact = createDefaultAsyncThunk('addContact', async ({ user }:
     }
 });
 
-export function searchUsers(prefix: string) {
-    return async (dispatch: AppDispatch, getState: GetState): Promise<UserData[]> => {
-        try {
-            dispatch({ type: 'SET_LOADING', payload: true });
-            const state = getState().userReducer;
+export const searchUsers = createDefaultAsyncThunk<UserData[], { prefix: string }>('searchUsers', async ({ prefix }, thunkAPI) => {
+    try {
+        thunkAPI.dispatch({ type: 'SET_LOADING', payload: true });
+        const state = thunkAPI.getState().userReducer;
 
-            const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token));
+        const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token));
 
-            // Append robot picture to users
-            const results = response.data.map((user: any) => ({ ...user, pic: getAvatar(user.id), isContact: state.contacts.some(contact => contact.id === user.id) }));
+        // Append robot picture to users
+        const results = response.data.map((user: any) => (
+            { ...user, pic: getAvatar(user.id), isContact: state.contacts.some(contact => contact.id === user.id) }
+        ));
 
-            return results;
+        return results;
+    } catch (err: any) {
+        console.error('Error searching users:', err);
+        return [];
+    } finally {
+        thunkAPI.dispatch({ type: 'SET_LOADING', payload: false });
+    }
+});
 
-        } catch (err: any) {
-            console.error('Error searching users:', err);
-            return [];
-        } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
-        }
-    };
-}
-
-export const sendMessage = createDefaultAsyncThunk('sendMessage', async ({ message, to_user }: { message: string, to_user: UserData }, thunkAPI) => {
+type sendMessageParams = { message: string, to_user: UserData }
+export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: sendMessageParams, thunkAPI) => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
         const state = thunkAPI.getState().userReducer;
 
-        if (!to_user?.session_key) { throw new Error('Missing session_key for ' + to_user?.phone_no); }
+        if (!data.to_user?.session_key) { throw new Error('Missing session_key for ' + data.to_user?.phone_no); }
 
         // Encrypt and send message
-        const encryptedMessage = await encrypt(to_user.session_key, message);
-        await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: to_user.id, contact_phone_no: to_user.phone_no }, axiosBearerConfig(state.token));
+        const encryptedMessage = await encrypt(data.to_user.session_key, data.message);
+        await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: data.to_user.id, contact_phone_no: data.to_user.phone_no }, axiosBearerConfig(state.token));
 
         // Save message locally
-        let msg = {
+        const localMessage = {
             sender: state.user_data,
-            reciever: to_user,
+            reciever: data.to_user,
             rawMessage: {
                 id: Date.now(),
                 message: encryptedMessage,
                 sender: state.user_data.phone_no,
                 sender_id: state.user_data.id,
-                reciever: to_user.phone_no,
-                reciever_id: to_user.id,
+                reciever: data.to_user.phone_no,
+                reciever_id: data.to_user.id,
                 sent_at: Date.now().toString(),
                 seen: false,
             },
         };
-        thunkAPI.dispatch(SEND_MESSAGE(msg));
+        thunkAPI.dispatch(SEND_MESSAGE(localMessage));
         // Save all conversations to local-storage so we don't reload them unnecessarily from the API
         writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(thunkAPI.getState().userReducer.conversations.entries())));
         writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
