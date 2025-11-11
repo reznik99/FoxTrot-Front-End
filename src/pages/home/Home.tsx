@@ -1,23 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native';
-import { useSelector } from 'react-redux';
 import { Divider, FAB, ActivityIndicator, Snackbar, Icon } from 'react-native-paper';
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
+import { DrawerScreenProps } from '@react-navigation/drawer';
 import inCallManager from 'react-native-incall-manager';
+import { useSelector } from 'react-redux';
 
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user';
 import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket';
+import ConversationPeek from '~/components/ConversationPeek';
 import { setupInterceptors } from '~/store/actions/auth';
+import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
 import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
-import ConversationPeek from '~/components/ConversationPeek';
-import { store } from '~/store/store';
+import { RootState, store } from '~/store/store';
+import { Conversation, UserData } from '~/store/reducers/user';
 
-export default function Home(props) {
+type IProps = DrawerScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
 
-    const { conversations, loading, refreshing, socketErr } = useSelector(state => state.userReducer);
+export default function Home(props: IProps) {
+    const { conversations, loading, refreshing, socketErr } = useSelector((state: RootState) => state.userReducer);
     const [loadingMsg, setLoadingMsg] = useState('');
-    const [convos, setConvos] = useState([]);
+    const [convos, setConvos] = useState<Array<Conversation>>([]);
 
     useEffect(() => {
         const initLoad = async () => {
@@ -30,10 +34,11 @@ export default function Home(props) {
             await configureWebsocket();
 
             // Register Call Screen handler
-            RNNotificationCall.addEventListener('answer', (payload) => {
-                console.debug('RNNotificationCall: User answered call', payload);
+            RNNotificationCall.addEventListener('answer', (info) => {
+                console.debug('RNNotificationCall: User answered call', info);
                 RNNotificationCall.backToApp();
-                props.navigation.navigate('Call');
+                const caller = JSON.parse(info.payload || '{}') as UserData;
+                props.navigation.navigate('Call', { data: { peer_user: caller } });
             });
             RNNotificationCall.addEventListener('endCall', (payload) => {
                 console.debug('RNNotificationCall: User ended call', payload);
@@ -53,9 +58,11 @@ export default function Home(props) {
                     Alert.alert('Failed to generate keys', 'This account might have already logged into another device. Keys must be imported in the settings page.',
                         [
                             {
-                                text: 'Logout', onPress: () => props.navigation.navigate('Login', { data: { loggedOut: true } }),
+                                text: 'Logout',
+                                onPress: () => { props.navigation.navigate('Login', { data: { loggedOut: true, errorMsg: '' } }); },
                             }, {
-                                text: 'OK', onPress: () => { },
+                                text: 'OK',
+                                onPress: () => { },
                             },
                         ]
                     );
@@ -74,8 +81,8 @@ export default function Home(props) {
         initLoad();
 
         // returned function will be called on component unmount
-        return async () => {
-            await store.dispatch(destroyWebsocket());
+        return () => {
+            store.dispatch(destroyWebsocket());
         };
     }, []);
 
@@ -89,7 +96,7 @@ export default function Home(props) {
 
     const loadAllMessages = useCallback(async () => {
         setLoadingMsg('Loading contacts...');
-        await store.dispatch(loadContacts(false));
+        await store.dispatch(loadContacts({ atomic: false }));
         setLoadingMsg('Loading messages...');
         await store.dispatch(loadMessages());
         setLoadingMsg('');
@@ -103,7 +110,7 @@ export default function Home(props) {
 
     return (
         <View style={globalStyle.wrapper}>
-            <Snackbar visible={socketErr} style={{ zIndex: 100 }}
+            <Snackbar visible={!!socketErr} style={{ zIndex: 100 }}
                 onDismiss={() => { }}
                 action={{
                     label: 'Reconnect',
@@ -142,6 +149,6 @@ export default function Home(props) {
     );
 }
 
-const renderFABIcon = ({ size, color }) => {
-    return <Icon source="message" color={color} size={size} />;
+const renderFABIcon = (props: { size: number, color: string }) => {
+    return <Icon source="message" color={props.color} size={props.size} />;
 };

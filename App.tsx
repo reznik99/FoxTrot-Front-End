@@ -40,12 +40,16 @@ const animationDefaults: StackNavigationOptions = {
     gestureDirection: 'horizontal',
 };
 
-const AppNavigator = createDrawerNavigator();
+export type RootDrawerParamList = {
+    FoxTrot: undefined;
+};
+const AppNavigator = createDrawerNavigator<RootDrawerParamList>();
 const AppDrawer = () => {
     return (
-        <AppNavigator.Navigator screenOptions={{ swipeEdgeWidth: 200 }}
+        <AppNavigator.Navigator
+            screenOptions={{ swipeEdgeWidth: 200 }}
             drawerContent={renderDrawerContent} >
-            <AppNavigator.Screen name="Foxtrot" component={Home} options={defaultHeaderOptions} />
+            <AppNavigator.Screen name="FoxTrot" component={Home} options={defaultHeaderOptions} />
         </AppNavigator.Navigator>
     );
 };

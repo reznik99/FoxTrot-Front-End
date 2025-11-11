@@ -31,10 +31,10 @@ export function initializeWebsocket() {
             dispatch({ type: 'user/SET_LOADING', payload: true });
 
             let state = getState().userReducer;
-            if (!state.token) {throw new Error('Token is not present. Re-auth required');}
+            if (!state.token) { throw new Error('Token is not present. Re-auth required'); }
 
             // Already opened so return early
-            if (state.socketConn) {state.socketConn.close();}
+            if (state.socketConn) { state.socketConn.close(); }
 
             // Enstablish websocket
             const socketConn = new WebSocket(`${WEBSOCKET_URL}?token=${state.token}`);
@@ -80,7 +80,7 @@ export function destroyWebsocket() {
             let state = getState().userReducer;
 
             // Close existing socket
-            if (state.socketConn) {state.socketConn.close();}
+            if (state.socketConn) { state.socketConn.close(); }
 
             dispatch({ type: 'user/WEBSOCKET_CONNECT', payload: null });
         } catch (err) {
@@ -143,6 +143,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                         notificationColor: 'colorAccent',
                         // notificationSound: 'skype_ring',
                         // mainComponent: "CallScreen"
+                        payload: JSON.stringify(caller),
                     }
                 );
                 break;
