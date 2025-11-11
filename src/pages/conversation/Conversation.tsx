@@ -32,6 +32,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
             ?? { messages: [], other_user: peer_user };
     });
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
+    const peer = useSelector((state: RootState) => state.userReducer.contacts.find((contact) => contact.id === peer_user.id)) || peer_user;
 
     const [loading, setLoading] = useState(false);
     const [inputMessage, setInputMessage] = useState('');
@@ -63,13 +64,13 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                 type: 'MSG',
                 message: inputMessage.trim(),
             });
-            await dispatch(sendMessage({ message: toSend, to_user: peer_user }));
+            await dispatch(sendMessage({ message: toSend, to_user: peer }));
         } catch (err) {
             console.error('Error sending message:', err);
         } finally {
             setLoading(false);
         }
-    }, [inputMessage, peer_user, dispatch]);
+    }, [inputMessage, peer, dispatch]);
 
     const handleImageSelect = useCallback(async () => {
         try {
@@ -78,18 +79,18 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
             if (didCancel || !assets?.length) { return; }
 
             // Render Camera page pre-filled with selected image
-            props.navigation.navigate('CameraView', { data: { peer: peer_user, picturePath: assets[0].uri! } });
+            props.navigation.navigate('CameraView', { data: { peer: peer, picturePath: assets[0].uri! } });
         } catch (err) {
             console.error('Error sending gallery image:', err);
         } finally {
             setLoading(false);
         }
-    }, [props.navigation, peer_user]);
+    }, [props.navigation, peer]);
 
     const handleCameraSelect = useCallback(async () => {
         // Render Camera page
-        props.navigation.navigate('CameraView', { data: { peer: peer_user, picturePath: '' } });
-    }, [props.navigation, peer_user]);
+        props.navigation.navigate('CameraView', { data: { peer: peer, picturePath: '' } });
+    }, [props.navigation, peer]);
 
     const renderListEmpty = useCallback(() => (
         <View><Text style={[styles.message, styles.system]}> No messages </Text></View>
@@ -115,7 +116,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                     <Message
                         key={item.id}
                         item={item}
-                        peer={peer_user}
+                        peer={peer}
                         isSent={item.sender === user_data.phone_no}
                         zoomMedia={(data) => setZoomMedia(data)} />
                 )}
