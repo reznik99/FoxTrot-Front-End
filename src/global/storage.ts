@@ -1,5 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+/**
+ * Writes given data to given key in AsyncStorage. If data exceeds 1 MiB, it is split into chunks.
+ * Chunks are stored with keys in the format 'key', 'key-chunk1', 'key-chunk2', ...
+ * To read all chunks for key, use `readFromStorage` function.
+ * To delete all chunks for key, use `deleteFromStorage` function.
+ * @param key Unique key to store data under
+ * @param data Stringified data to store
+ */
 export async function writeToStorage(key: string, data: string) {
     const chunks = data.match(/.{1,1048576}/g) || [data]; // Split on 1 Mib
 
@@ -11,6 +19,11 @@ export async function writeToStorage(key: string, data: string) {
     console.debug('Wrote', chunks.length, 'chunk(s) to storage for', key);
 }
 
+/**
+ * Reads data from given key from AsyncStorage.
+ * It handles reading chunked data stored with `writeToStorage` function.
+ * @param key Unique key to find data under
+ */
 export async function readFromStorage(key: string) {
     let data = '';
     let i = 0;
@@ -18,7 +31,7 @@ export async function readFromStorage(key: string) {
         try {
             const index = i === 0 ? '' : '-chunk' + i;
             const chunk = await AsyncStorage.getItem(key + index);
-            if (!chunk) {break;} // Finished chunks
+            if (!chunk) { break; } // Finished chunks
 
             data += chunk;
             i++;
@@ -31,6 +44,11 @@ export async function readFromStorage(key: string) {
     return data;
 }
 
+/**
+ * Deletes data from AsyncStorage under given key.
+ * It handles deleting chunked data stored with `writeToStorage` function.
+ * @param key Unique key to find data under
+ */
 export async function deleteFromStorage(key: string) {
     const keys = (await AsyncStorage.getAllKeys()).filter(k => k.includes(key));
     AsyncStorage.multiRemove(keys);

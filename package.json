@@ -48,8 +48,7 @@
     "react-native-webrtc": "^124.0.7",
     "react-native-webview": "^13.14.1",
     "react-native-webview-crypto": "^0.0.27",
-    "react-redux": "^9.2.0",
-    "redux-thunk": "^3.1.0"
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.9",

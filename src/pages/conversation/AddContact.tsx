@@ -2,18 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Text, View, ScrollView } from 'react-native';
 import { Divider, Searchbar, ActivityIndicator, Icon } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
-import { ThunkDispatch } from 'redux-thunk';
-import { AnyAction } from 'redux';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import { searchUsers, addContact } from '~/store/actions/user';
 import globalStyle from '~/global/style';
-import { RootState } from '~/store/store';
+import { AppDispatch, RootState } from '~/store/store';
 import { UserData } from '~/store/reducers/user';
 import ContactPeek from '~/components/ContactPeek';
 import { HomeStackParamList } from '../../../App';
-
-type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
 export default function AddContact(props: StackScreenProps<HomeStackParamList, 'AddContact'>) {
 
@@ -27,18 +23,18 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
     const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
     const handleSearch = async () => {
-        const users: UserData[] = await dispatch(searchUsers(prefix)) as any;
+        const users: UserData[] = await dispatch(searchUsers({ prefix: prefix })) as any;
         setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no) ? 1 : -1));
     };
 
     useEffect(() => {
         if (timer) { clearTimeout(timer); }
         if (prefix.length > 2) { setTimer(setTimeout(handleSearch, 250)); }
-    }, [prefix]);
+    }, [prefix, timer]);
 
     const handleAddContact = async (user: UserData) => {
         setAddingContact(user);
-        const success = await dispatch(addContact(user));
+        const success = await dispatch(addContact({ user: user }));
         if (success) { navigation.replace('Conversation', { data: { peer_user: user } }); }
 
         setAddingContact(undefined);

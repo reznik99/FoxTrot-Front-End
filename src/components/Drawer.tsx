@@ -5,15 +5,11 @@ import { Avatar, Button, Chip, Dialog, Icon, Paragraph, Portal } from 'react-nat
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { DrawerContentComponentProps } from '@react-navigation/drawer/lib/typescript/src/types';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { ThunkDispatch } from 'redux-thunk';
-import { AnyAction } from 'redux';
 
 import { SECONDARY, KeypairAlgorithm, DARKHEADER, PRIMARY } from '~/global/variables';
 import { logOut } from '~/store/actions/auth';
 import { publicKeyFingerprint } from '~/global/crypto';
-import { RootState } from '~/store/store';
-
-type AppDispatch = ThunkDispatch<any, any, AnyAction>
+import { AppDispatch, RootState } from '~/store/store';
 
 export default function Drawer(props: DrawerContentComponentProps) {
 
@@ -69,7 +65,7 @@ export default function Drawer(props: DrawerContentComponentProps) {
                         inactiveTintColor="#fff"
                         label="Logout"
                         style={{ borderTopWidth: 1, borderTopColor: '#e3e1e1', backgroundColor: DARKHEADER }}
-                        onPress={() => dispatch(logOut(props.navigation))}
+                        onPress={() => dispatch(logOut({ navigation: props.navigation }))}
                         icon={renderLogoutIcon}
                     />
                 </View>

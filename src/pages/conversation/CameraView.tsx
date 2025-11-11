@@ -1,20 +1,17 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Image, StyleSheet } from 'react-native';
 import { ActivityIndicator, Button, Text } from 'react-native-paper';
 import { Camera, useCameraDevices } from 'react-native-vision-camera';
 import { StackScreenProps } from '@react-navigation/stack';
+import { View, Image, StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
-import RNFS from 'react-native-fs';
-import { ThunkDispatch } from 'redux-thunk';
 import { useDispatch } from 'react-redux';
-import { AnyAction } from 'redux';
+import RNFS from 'react-native-fs';
 
-import { sendMessage } from '~/store/actions/user';
-import { SECONDARY, SECONDARY_LITE } from '~/global/variables';
 import { getCameraAndMicrophonePermissions } from '~/global/permissions';
+import { SECONDARY, SECONDARY_LITE } from '~/global/variables';
+import { sendMessage } from '~/store/actions/user';
 import { HomeStackParamList } from '../../../App';
-
-type AppDispatch = ThunkDispatch<any, any, AnyAction>
+import { AppDispatch } from '~/store/store';
 
 export default function CameraView(props: StackScreenProps<HomeStackParamList, 'CameraView'>) {
 

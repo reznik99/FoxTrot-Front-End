@@ -51,8 +51,8 @@ export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKey
 /** Generates a 256bit AES-CBC Encryption key for messages with a user */
 export async function generateSessionKeyECDH(peerPublic: string, userPrivate: CryptoKey | undefined): Promise<CryptoKey> {
 
-    if (!peerPublic) {throw new Error("Contacts's public key not present. ECDHE failed");}
-    if (!userPrivate) {throw new Error('User private key not loaded. ECDHE failed');}
+    if (!peerPublic) { throw new Error("Contacts's public key not present. ECDHE failed"); }
+    if (!userPrivate) { throw new Error('User private key not loaded. ECDHE failed'); }
 
     const publicKey = await crypto.subtle.importKey(
         'spki',
@@ -81,7 +81,7 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
 }
 
 /** Derives a 256bit AES-GCM Key Encryption key from a password and salt. Allows customising PBKDF2 difficulty through *Iterations* parameter */
-export async function deriveKeyFromPassword(password: string, salt: Uint8Array, iterations: number): Promise<CryptoKey> {
+export async function deriveKeyFromPassword(password: string, salt: Uint8Array<ArrayBuffer>, iterations: number): Promise<CryptoKey> {
     // Derive Key from password using PBKDF2
     const keyMaterial = await crypto.subtle.importKey(
         'raw',
@@ -117,7 +117,7 @@ export async function publicKeyFingerprint(peerPublic: string): Promise<string> 
 
 /** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
 export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
-    if (!sessionKey) {throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.");}
+    if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
 
     const startTime = performance.now();
     const chunks = encryptedMessage.split(':');
@@ -138,7 +138,7 @@ export async function decrypt(sessionKey: CryptoKey, encryptedMessage: string): 
 /** Encrypts a given message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a Base64 string. */
 export async function encrypt(sessionKey: CryptoKey, message: string): Promise<string> {
 
-    if (!sessionKey) {throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.");}
+    if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
 
     const startTime = performance.now();
     const encryptedChunks: string[] = [];
