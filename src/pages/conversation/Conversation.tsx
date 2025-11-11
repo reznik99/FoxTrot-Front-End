@@ -2,6 +2,7 @@ import React, { PureComponent, useState, useEffect, useRef, useCallback } from '
 import {
     StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Keyboard,
     Linking, KeyboardAvoidingView, ToastAndroid, Image,
+    EmitterSubscription,
 } from 'react-native';
 import { ActivityIndicator, Icon, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
@@ -14,23 +15,29 @@ import { sendMessage } from '~/store/actions/user';
 import { decrypt } from '~/global/crypto';
 import { PRIMARY, SECONDARY } from '~/global/variables';
 import FullScreenImage from '~/components/FullScreenImage';
+import { StackScreenProps } from '@react-navigation/stack';
+import { HomeStackParamList } from '../../../App';
+import { AppDispatch, RootState } from '~/store/store';
+import { message, UserData } from '~/store/reducers/user';
 
 const todaysDate = new Date().toLocaleDateString();
 
-export default function Conversation(props) {
+export default function Conversation(props: StackScreenProps<HomeStackParamList, 'Conversation'>) {
 
     const { peer_user } = props.route.params.data;
 
-    const dispatch = useDispatch();
-    const conversation = useSelector(state => state.userReducer.conversations).get(peer_user.phone_no) ?? { messages: [] };
-    const peer = useSelector(state => state.userReducer.contacts.find((contact) => contact.id === peer_user.id));
-    const user_data = useSelector(state => state.userReducer.user_data);
+    const dispatch = useDispatch<AppDispatch>();
+    const conversation = useSelector((state: RootState) => {
+        return state.userReducer.conversations.get(peer_user.phone_no)
+            ?? { messages: [], other_user: peer_user };
+    });
+    const user_data = useSelector((state: RootState) => state.userReducer.user_data);
 
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
+    const [inputMessage, setInputMessage] = useState('');
     const [zoomMedia, setZoomMedia] = useState('');
-    const scrollView = useRef();
-    const [keyboardDidShowListener, setkeyboardDidShowListener] = useState(null);
+    const scrollView = useRef<any>(null);
+    const [keyboardDidShowListener, setkeyboardDidShowListener] = useState<EmitterSubscription | null>(null);
 
     useEffect(() => {
         setkeyboardDidShowListener(Keyboard.addListener(
@@ -46,23 +53,23 @@ export default function Conversation(props) {
     }, [conversation.messages]);
 
     const handleSend = useCallback(async () => {
-        if (message.trim() === '') { return; }
+        if (inputMessage.trim() === '') { return; }
 
         try {
             setLoading(true);
-            setMessage('');
+            setInputMessage('');
 
             const toSend = JSON.stringify({
                 type: 'MSG',
-                message: message.trim(),
+                message: inputMessage.trim(),
             });
-            await dispatch(sendMessage({ message: toSend, to_user: peer }));
+            await dispatch(sendMessage({ message: toSend, to_user: peer_user }));
         } catch (err) {
             console.error('Error sending message:', err);
         } finally {
             setLoading(false);
         }
-    }, [message, peer, dispatch]);
+    }, [inputMessage, peer_user, dispatch]);
 
     const handleImageSelect = useCallback(async () => {
         try {
@@ -71,18 +78,18 @@ export default function Conversation(props) {
             if (didCancel || !assets?.length) { return; }
 
             // Render Camera page pre-filled with selected image
-            props.navigation.navigate('CameraView', { data: { peer: peer, picturePath: assets[0].uri } });
+            props.navigation.navigate('CameraView', { data: { peer: peer_user, picturePath: assets[0].uri! } });
         } catch (err) {
             console.error('Error sending gallery image:', err);
         } finally {
             setLoading(false);
         }
-    }, [props.navigation, peer]);
+    }, [props.navigation, peer_user]);
 
     const handleCameraSelect = useCallback(async () => {
         // Render Camera page
-        props.navigation.navigate('CameraView', { data: { peer: peer } });
-    }, [props.navigation, peer]);
+        props.navigation.navigate('CameraView', { data: { peer: peer_user, picturePath: '' } });
+    }, [props.navigation, peer_user]);
 
     const renderListEmpty = useCallback(() => (
         <View><Text style={[styles.message, styles.system]}> No messages </Text></View>
@@ -100,7 +107,7 @@ export default function Conversation(props) {
             <FlashList
                 removeClippedSubviews={false}
                 contentContainerStyle={styles.messageList}
-                ref={scrollView}
+                ref={scrollView as any}
                 inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
                 data={conversation.messages}
                 estimatedItemSize={95}
@@ -108,7 +115,7 @@ export default function Conversation(props) {
                     <Message
                         key={item.id}
                         item={item}
-                        peer={peer}
+                        peer={peer_user}
                         isSent={item.sender === user_data.phone_no}
                         zoomMedia={(data) => setZoomMedia(data)} />
                 )}
@@ -126,8 +133,8 @@ export default function Conversation(props) {
                 <KeyboardAvoidingView behavior={'padding'} style={{ flex: 1 }}>
                     <TextInput placeholder="Type a message"
                         multiline={true}
-                        value={message}
-                        onChangeText={setMessage}
+                        value={inputMessage}
+                        onChangeText={setInputMessage}
                         style={styles.input}
                         clearButtonMode="always"
                     />
@@ -143,7 +150,7 @@ export default function Conversation(props) {
             </View>
 
             <Portal>
-                <Modal visible={zoomMedia}
+                <Modal visible={!!zoomMedia}
                     onDismiss={() => setZoomMedia('')}
                     contentContainerStyle={{ width: '100%', height: '100%' }}>
                     {zoomMedia && <FullScreenImage media={zoomMedia} onDismiss={() => setZoomMedia('')} />}
@@ -153,8 +160,22 @@ export default function Conversation(props) {
     );
 }
 
-class Message extends PureComponent {
-    constructor(props) {
+type decryptedMessage = {
+    type: string,
+    message: string,
+}
+type MProps = {
+    item: message,
+    isSent: boolean,
+    peer: UserData,
+    zoomMedia: (data: string) => void,
+}
+type MState = {
+    loading: boolean,
+    decryptedMessage?: decryptedMessage
+}
+class Message extends PureComponent<MProps, MState> {
+    constructor(props: MProps) {
         super(props);
         this.state = {
             loading: false,
@@ -173,8 +194,8 @@ class Message extends PureComponent {
         );
     };
 
-    decryptMessage = async (item) => {
-        const decryptedMessage = await decrypt(this.props.peer.session_key, item.message);
+    decryptMessage = async (item: message) => {
+        const decryptedMessage = await decrypt(this.props.peer.session_key!, item.message);
         try {
             return JSON.parse(decryptedMessage);
         } catch (err) {
@@ -184,10 +205,10 @@ class Message extends PureComponent {
         }
     };
 
-    renderMessage = (item, isSent) => {
-        if (!item?.message) { return; }
+    renderMessage = (item: decryptedMessage | undefined, isSent: boolean) => {
+        if (!item || item?.message) { return; }
 
-        switch (item?.type) {
+        switch (item.type) {
             // TODO: Add VIDEO, GIF and AUDIO message types
             case 'IMG':
                 return (
@@ -209,12 +230,12 @@ class Message extends PureComponent {
                     </Text>
                 );
             default:
-                console.warn('Unrecognized message type:', item?.type);
+                console.warn('Unrecognized message type:', item.type);
                 return null;
         }
     };
 
-    handleClick = async (item) => {
+    handleClick = async (item: message) => {
         try {
             this.setState({ loading: true });
             const msgObject = this.state.decryptedMessage;
@@ -228,7 +249,7 @@ class Message extends PureComponent {
             switch (msgObject?.type) {
                 case 'IMG':
                     // Image is contained in message, then zoom in
-                    this.props.zoomMedia(this.state.decryptedMessage.message);
+                    this.props.zoomMedia(this.state.decryptedMessage!.message);
                     break;
                 case 'MSG':
                     // If message contains URL open it in browser
@@ -237,10 +258,10 @@ class Message extends PureComponent {
                     if (link) { Linking.openURL(link); }
                     break;
                 default:
-                    console.warn('Unrecognized message type:', item?.type);
+                    console.warn('Unrecognized message type:', msgObject?.type);
                     break;
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error on message click:', err);
             Toast.show({
                 type: 'error',
@@ -258,11 +279,10 @@ class Message extends PureComponent {
         const sent_at = new Date(item.sent_at);
 
         return (
-            <Pressable selectable
-                style={[styles.messageContainer, isSent ? styles.sent : styles.received]}
+            <Pressable style={[styles.messageContainer, isSent ? styles.sent : styles.received]}
                 onPress={() => this.handleClick(item)}
                 onLongPress={() => this.copyMessage()}>
-                <View selectable style={[styles.message]}>
+                <View style={[styles.message]}>
                     {/* Loader */}
                     <ActivityIndicator style={{ position: 'absolute', zIndex: 10 }} animating={this.state.loading && !this.state.decryptedMessage} />
                     {/* Message preview */}

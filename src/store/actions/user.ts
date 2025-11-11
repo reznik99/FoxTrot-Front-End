@@ -254,7 +254,7 @@ export const searchUsers = createDefaultAsyncThunk<UserData[], { prefix: string 
         const results = response.data.map((user: any) => (
             { ...user, pic: getAvatar(user.id), isContact: state.contacts.some(contact => contact.id === user.id) }
         ));
-        console.debug("Action: searchUsers, Prefix:", prefix, "Results:", results);
+        console.debug('Action: searchUsers, Prefix:', prefix, 'Results:', results);
         return results;
     } catch (err: any) {
         console.error('Error searching users:', err);
