@@ -80,8 +80,8 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                 message: rawPic,
             });
 
-            const success = await dispatch(sendMessage({ message: toSend, to_user: props.route.params?.data?.peer }));
-            if (success) { props.navigation.goBack(); }
+            const res = await dispatch(sendMessage({ message: toSend, to_user: props.route.params?.data?.peer }));
+            if (res.payload) { props.navigation.goBack(); }
         } catch (err) {
             console.error('Error sending image:', err);
         } finally {

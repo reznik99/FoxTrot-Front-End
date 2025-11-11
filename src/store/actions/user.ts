@@ -33,7 +33,7 @@ async function migrateKeysToNewStandard(username: string) {
 
 const createDefaultAsyncThunk = createAsyncThunk.withTypes<{ state: RootState, dispatch: AppDispatch }>();
 
-export const loadKeys = createDefaultAsyncThunk<boolean>('loadKeys', async (_, thunkAPI) => {
+export const loadKeys = createDefaultAsyncThunk('loadKeys', async (_, thunkAPI): Promise<boolean> => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
 
@@ -254,7 +254,7 @@ export const searchUsers = createDefaultAsyncThunk<UserData[], { prefix: string 
         const results = response.data.map((user: any) => (
             { ...user, pic: getAvatar(user.id), isContact: state.contacts.some(contact => contact.id === user.id) }
         ));
-
+        console.debug("Action: searchUsers, Prefix:", prefix, "Results:", results);
         return results;
     } catch (err: any) {
         console.error('Error searching users:', err);
@@ -265,7 +265,7 @@ export const searchUsers = createDefaultAsyncThunk<UserData[], { prefix: string 
 });
 
 type sendMessageParams = { message: string, to_user: UserData }
-export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: sendMessageParams, thunkAPI) => {
+export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: sendMessageParams, thunkAPI): Promise<boolean> => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
         const state = thunkAPI.getState().userReducer;

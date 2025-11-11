@@ -67,7 +67,7 @@ const initialState: State = {
     signupErr: '',
 };
 
-export const userReducer = createSlice({
+export const userSlice = createSlice({
     name: 'user',
     initialState,
     reducers: {
@@ -167,8 +167,6 @@ export const userReducer = createSlice({
     },
 });
 
-export default userReducer.reducer;
-
 export const {
     ADD_CONTACT_SUCCESS,
     LOAD_CONTACTS,
@@ -191,4 +189,4 @@ export const {
     WEBSOCKET_CONNECT,
     WEBSOCKET_ERROR,
     LOGOUT,
-} = userReducer.actions;
+} = userSlice.actions;

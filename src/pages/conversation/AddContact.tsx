@@ -23,19 +23,20 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
     const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
     const handleSearch = async () => {
-        const users: UserData[] = await dispatch(searchUsers({ prefix: prefix })) as any;
+        const res = await dispatch(searchUsers({ prefix: prefix }));
+        const users = res.payload as UserData[];
         setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no) ? 1 : -1));
     };
 
     useEffect(() => {
         if (timer) { clearTimeout(timer); }
         if (prefix.length > 2) { setTimer(setTimeout(handleSearch, 250)); }
-    }, [prefix, timer]);
+    }, [prefix]);
 
     const handleAddContact = async (user: UserData) => {
         setAddingContact(user);
-        const success = await dispatch(addContact({ user: user }));
-        if (success) { navigation.replace('Conversation', { data: { peer_user: user } }); }
+        const res = await dispatch(addContact({ user: user }));
+        if (res.payload) { navigation.replace('Conversation', { data: { peer_user: user } }); }
 
         setAddingContact(undefined);
     };

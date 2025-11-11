@@ -21,7 +21,7 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
         if (loading) { return; }
 
         const res = await dispatch(signUp({ username, password, rePassword }));
-        if (res) { return props.navigation.navigate('Login', { data: { errorMsg: '', loggedOut: false } }); }
+        if (res.payload) { return props.navigation.navigate('Login', { data: { errorMsg: '', loggedOut: false } }); }
     };
 
     return (

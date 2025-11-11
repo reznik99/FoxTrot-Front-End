@@ -55,7 +55,7 @@ export const logIn = createAsyncThunk('logIn', async ({ username, password }: lo
 });
 
 type signUpParams = { username: string, password: string, rePassword: string }
-export const signUp = createAsyncThunk('signUp', async ({ username, password, rePassword }: signUpParams, thunkAPI) => {
+export const signUp = createAsyncThunk('signUp', async ({ username, password, rePassword }: signUpParams, thunkAPI): Promise<boolean> => {
     if (!username || !password || !rePassword) {
         thunkAPI.dispatch(SIGNUP_ERROR_MSG('Textfields cannot be blank!'));
         return false;
