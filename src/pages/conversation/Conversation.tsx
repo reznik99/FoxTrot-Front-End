@@ -208,7 +208,7 @@ class Message extends PureComponent<MProps, MState> {
 
     renderMessage = (item: decryptedMessage | undefined, isSent: boolean) => {
         if (!item || !item?.message) { return; }
-        
+
         switch (item.type) {
             // TODO: Add VIDEO, GIF and AUDIO message types
             case 'IMG':

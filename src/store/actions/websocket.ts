@@ -30,7 +30,7 @@ export function initializeWebsocket() {
         try {
             dispatch({ type: 'user/SET_LOADING', payload: true });
 
-            let state = getState().userReducer;
+            const state = getState().userReducer;
             if (!state.token) { throw new Error('Token is not present. Re-auth required'); }
 
             // Already opened so return early
@@ -77,7 +77,7 @@ export function initializeWebsocket() {
 export function destroyWebsocket() {
     return async (dispatch: AppDispatch, getState: GetState) => {
         try {
-            let state = getState().userReducer;
+            const state = getState().userReducer;
 
             // Close existing socket
             if (state.socketConn) { state.socketConn.close(); }
@@ -92,7 +92,6 @@ export function destroyWebsocket() {
 export function resetCallState() {
     return async (dispatch: AppDispatch) => {
         try {
-
             dispatch({ type: 'user/RESET_CALL_ICE_CANDIDATES', payload: undefined });
             dispatch({ type: 'user/RECV_CALL_ANSWER', payload: undefined });
             dispatch({ type: 'user/RECV_CALL_OFFER', payload: undefined });

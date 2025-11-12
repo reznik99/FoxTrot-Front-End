@@ -25,14 +25,23 @@ export default function Home(props: IProps) {
 
     useEffect(() => {
         const initLoad = async () => {
-
             // Register device for push notifications
-            setLoadingMsg('Connecting to server...');
             store.dispatch(registerPushNotifications());
-
             // Start websocket connection to server
             await configureWebsocket();
-
+            // Load keys from TPM
+            const loaded = await loadKeypair();
+            if (!loaded) {
+                const generated = await generateKeypair();
+                if (!generated) {
+                    setLoadingMsg('');
+                    return;
+                }
+            }
+            // Load new messages from backend and old messages from storage
+            await loadMessagesAndContacts();
+            // Setup axios interceptors
+            setupInterceptors(props.navigation);
             // Register Call Screen handler
             RNNotificationCall.addEventListener('answer', (info) => {
                 console.debug('RNNotificationCall: User answered call', info);
@@ -44,42 +53,9 @@ export default function Home(props: IProps) {
                 console.debug('RNNotificationCall: User ended call', payload);
                 inCallManager.stopRingtone();
             });
-
-            // Load keys from TPM
-            setLoadingMsg('Loading keys from TPM...');
-            const loadedKeys = await store.dispatch(loadKeys());
-
-            // If keys not loaded, generate them (first time login)
-            if (!loadedKeys.payload) {
-                setLoadingMsg('Generating cryptographic keys...');
-                const success = await store.dispatch(generateAndSyncKeys());
-                setLoadingMsg('');
-                if (!success) {
-                    Alert.alert('Failed to generate keys', 'This account might have already logged into another device. Keys must be imported in the settings page.',
-                        [
-                            {
-                                text: 'Logout',
-                                onPress: () => { props.navigation.navigate('Login', { data: { loggedOut: true, errorMsg: '' } }); },
-                            }, {
-                                text: 'OK',
-                                onPress: () => { },
-                            },
-                        ]
-                    );
-                    return;
-                }
-            }
-
-            // Load new messages from backend and old messages from storage
-            setLoadingMsg('Loading data from server...');
-            await loadAllMessages();
-
-            // Setup axios interceptors
-            setupInterceptors(props.navigation);
+            setLoadingMsg('');
         };
-
         initLoad();
-
         // returned function will be called on component unmount
         return () => {
             store.dispatch(destroyWebsocket());
@@ -94,19 +70,42 @@ export default function Home(props: IProps) {
         }));
     }, [conversations]);
 
-    const loadAllMessages = useCallback(async () => {
+    const loadMessagesAndContacts = useCallback(async () => {
         setLoadingMsg('Loading contacts & messages...');
         await Promise.all([
             store.dispatch(loadContacts({ atomic: false })),
-            store.dispatch(loadMessages())
-        ])
-        setLoadingMsg('');
+            store.dispatch(loadMessages()),
+        ]);
+    }, [store.dispatch]);
+
+    const loadKeypair = useCallback(async () => {
+        setLoadingMsg('Loading keys from TPM...');
+        const loadedKeys = await store.dispatch(loadKeys());
+        return loadedKeys.payload as boolean;
+    }, [store.dispatch]);
+
+    const generateKeypair = useCallback(async () => {
+        setLoadingMsg('Generating cryptographic keys...');
+        const success = await store.dispatch(generateAndSyncKeys());
+        if (!success.payload) {
+            Alert.alert('Failed to generate keys', 'This account might have already logged into another device. Keys must be imported in the settings page.',
+                [
+                    {
+                        text: 'Logout',
+                        onPress: () => { props.navigation.navigate('Login', { data: { loggedOut: true, errorMsg: '' } }); },
+                    }, {
+                        text: 'OK',
+                        onPress: () => { },
+                    },
+                ]
+            );
+        }
+        return success.payload as boolean;
     }, [store.dispatch]);
 
     const configureWebsocket = useCallback(async () => {
         setLoadingMsg('Initializing websocket...');
         await store.dispatch(initializeWebsocket());
-        setLoadingMsg('');
     }, [store.dispatch]);
 
     return (
@@ -115,7 +114,10 @@ export default function Home(props: IProps) {
                 onDismiss={() => { }}
                 action={{
                     label: 'Reconnect',
-                    onPress: configureWebsocket,
+                    onPress: () => {
+                        configureWebsocket()
+                            .finally(() => setLoadingMsg(''));
+                    },
                 }}>
                 Connection to servers lost! Please try again later
             </Snackbar>
@@ -126,7 +128,12 @@ export default function Home(props: IProps) {
                         <ActivityIndicator size="large" />
                     </View>
                     : <>
-                        <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadAllMessages} />}>
+                        <ScrollView refreshControl={
+                            <RefreshControl refreshing={refreshing}
+                                onRefresh={() => {
+                                    loadMessagesAndContacts()
+                                        .finally(() => setLoadingMsg(''));
+                                }} />}>
                             {convos?.length
                                 ? convos.map((convo, index) =>
                                 (<View key={index} >

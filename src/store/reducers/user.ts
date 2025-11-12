@@ -72,7 +72,7 @@ export const userSlice = createSlice({
     initialState,
     reducers: {
         ADD_CONTACT_SUCCESS: (state, action: PayloadAction<UserData>) => {
-            state.contacts.push(action.payload as UserData);
+            state.contacts.push(action.payload);
         },
         LOAD_CONTACTS: (state, action: PayloadAction<UserData[]>) => {
             state.contacts = action.payload;
@@ -112,7 +112,7 @@ export const userSlice = createSlice({
         },
         SEND_MESSAGE: (state, action: PayloadAction<{ sender: UserData, reciever: UserData, rawMessage: message }>) => {
             const reciever = action.payload.reciever;
-            const message = action.payload.rawMessage as message;
+            const message = action.payload.rawMessage;
             const converastionS = state.conversations.get(reciever.phone_no);
             if (converastionS) { converastionS.messages = [message, ...converastionS.messages]; }
             else {
@@ -123,7 +123,7 @@ export const userSlice = createSlice({
             }
         },
         RECV_MESSAGE: (state, action: PayloadAction<message>) => {
-            const data = action.payload as message;
+            const data = action.payload;
             const conversationR = state.conversations.get(data.sender);
             if (conversationR) { conversationR.messages = [data, ...conversationR.messages]; }
             else {
