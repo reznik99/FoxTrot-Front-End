@@ -7,7 +7,6 @@ import { DARKHEADER, PRIMARY } from '~/global/variables';
 import { UserData } from '~/store/reducers/user';
 
 interface IProps {
-    navigation: any;
     data: UserData;
     loading?: boolean;
     isContact?: boolean;

@@ -9,9 +9,10 @@ import { addContact } from '~/store/actions/user';
 import { DARKHEADER } from '~/global/variables';
 import { Conversation } from '~/store/reducers/user';
 import { AppDispatch, RootState } from '~/store/store';
+import { RootNavigation } from '~/store/actions/auth';
 
 interface IProps {
-    navigation: any;
+    navigation: RootNavigation
     data: Conversation;
 }
 

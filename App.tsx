@@ -72,16 +72,20 @@ const HomeNavigator = () => {
         <HomeStack.Navigator initialRouteName="Home" screenOptions={{ ...defaultHeaderOptions, ...animationDefaults }}>
             <HomeStack.Screen name="Home" component={AppDrawer} options={{ headerShown: false }} />
             <HomeStack.Screen name="Conversation" component={Conversation} options={renderHeaderConversation} />
-            <HomeStack.Screen name="NewConversation" component={NewConversation} options={() => ({ title: 'My Contacts' })} />
-            <HomeStack.Screen name="AddContact" component={AddContact} options={() => ({ title: 'Search New Users' })} />
+            <HomeStack.Screen name="NewConversation" component={NewConversation} options={{ title: 'My Contacts' }} />
+            <HomeStack.Screen name="AddContact" component={AddContact} options={{ title: 'Search New Users' }} />
             <HomeStack.Screen name="Call" component={Call} options={renderHeaderConversation} />
-            <HomeStack.Screen name="CameraView" component={CameraView} options={() => ({ title: 'Camera' })} />
-            <HomeStack.Screen name="Settings" component={Settings} options={() => ({ title: 'Settings' })} />
+            <HomeStack.Screen name="CameraView" component={CameraView} options={{ title: 'Camera' }} />
+            <HomeStack.Screen name="Settings" component={Settings} options={{ title: 'Settings' }} />
         </HomeStack.Navigator>
     );
 };
 const renderHeaderConversation = ({ route }: { route: RouteProp<HomeStackParamList, 'Call' | 'Conversation'> }) => (
-    { header: (props: StackHeaderProps) => (<HeaderConversation navigation={props.navigation} data={route.params?.data} allowBack={true} />) }
+    {
+        header: (props: StackHeaderProps) => (
+            <HeaderConversation navigation={props.navigation as any} data={route.params.data} allowBack={true} />
+        ),
+    }
 );
 
 export type AuthStackParamList = {

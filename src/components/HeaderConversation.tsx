@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, TouchableOpacity, ToastAndroid, Platform, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, ToastAndroid, Platform, StyleSheet, StatusBar } from 'react-native';
 import { useSelector } from 'react-redux';
 import { Image } from 'react-native-elements';
 import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal, Icon } from 'react-native-paper';
@@ -9,9 +9,11 @@ import { publicKeyFingerprint } from '~/global/crypto';
 import { RootState } from '~/store/store';
 import { UserData } from '~/store/reducers/user';
 import { DARKHEADER } from '~/global/variables';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { HomeStackParamList } from '../../App';
 
 interface IProps {
-    navigation: any;
+    navigation: StackNavigationProp<HomeStackParamList, 'Conversation' | 'Call'>;
     data: {
         peer_user: UserData;
     };
@@ -19,7 +21,6 @@ interface IProps {
 }
 // TODO: props are null when getting called!
 export default function HeaderConversation(props: IProps) {
-
     const { navigation, allowBack, data } = props;
     const [visibleDialog, setVisibleDialog] = useState('');
     const [securityCode, setSecurityCode] = useState('');
@@ -27,7 +28,7 @@ export default function HeaderConversation(props: IProps) {
 
     const showSecurityCode = useCallback(async () => {
         const contact = contacts.find(_contact => _contact.phone_no === data?.peer_user?.phone_no);
-        if (!contact || !contact.public_key) {return;}
+        if (!contact || !contact.public_key) { return; }
 
         setVisibleDialog('SecurityCode');
         const digest = await publicKeyFingerprint(contact.public_key);
@@ -49,7 +50,7 @@ export default function HeaderConversation(props: IProps) {
                 {
                     allowBack ?
                         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
-                            <Icon source="arrow-left" color={styles.topBarText.color} size={styles.topBarText.fontSize}/>
+                            <Icon source="arrow-left" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                         </TouchableOpacity>
                         :
                         null
@@ -65,20 +66,20 @@ export default function HeaderConversation(props: IProps) {
             </View>
             <View style={[styles.buttonContainer]}>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user } })}>
-                    <Icon source="video" color={styles.topBarText.color} size={styles.topBarText.fontSize}/>
+                    <Icon source="video" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user } })}>
-                    <Icon source="phone" color={styles.topBarText.color} size={styles.topBarText.fontSize}/>
+                    <Icon source="phone" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button}>
-                    <Icon source="menu" color={styles.topBarText.color} size={styles.topBarText.fontSize}/>
+                    <Icon source="menu" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
             </View>
 
             <Portal>
                 <Dialog visible={visibleDialog === 'SecurityCode'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Title>
-                        <Icon source="lock" color={styles.topBarText.color} size={styles.topBarText.fontSize}/> Security Code
+                        <Icon source="lock" color={styles.topBarText.color} size={styles.topBarText.fontSize} /> Security Code
                     </Dialog.Title>
                     <Dialog.Content>
                         <Paragraph>Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code:</Paragraph>
@@ -102,7 +103,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: DARKHEADER,
-        paddingVertical: 5,
+        paddingTop: StatusBar.currentHeight,
+        paddingBottom: 10,
     }, backAndTitle: {
         flexDirection: 'row',
         justifyContent: 'flex-start',

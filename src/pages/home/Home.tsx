@@ -2,21 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native';
 import { Divider, FAB, ActivityIndicator, Snackbar, Icon } from 'react-native-paper';
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
-import { DrawerScreenProps } from '@react-navigation/drawer';
+import { StackScreenProps } from '@react-navigation/stack';
 import inCallManager from 'react-native-incall-manager';
 import { useSelector } from 'react-redux';
 
+import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user';
 import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket';
 import ConversationPeek from '~/components/ConversationPeek';
 import { setupInterceptors } from '~/store/actions/auth';
-import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
 import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
 import { RootState, store } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
 
-type IProps = DrawerScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
+type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
 
 export default function Home(props: IProps) {
     const { conversations, loading, refreshing, socketErr } = useSelector((state: RootState) => state.userReducer);

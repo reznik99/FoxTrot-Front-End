@@ -7,6 +7,8 @@ import { API_URL } from '~/global/variables';
 import { getAvatar } from '~/global/helper';
 import { deleteFromStorage, writeToStorage } from '~/global/storage';
 import { LOGGED_IN, LOGIN_ERROR_MSG, LOGOUT, SET_LOADING, SIGNED_UP, SIGNUP_ERROR_MSG } from '../reducers/user';
+import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 type logInParams = { username: string, password: string }
 export const logIn = createAsyncThunk('logIn', async ({ username, password }: logInParams, thunkAPI) => {
@@ -96,7 +98,8 @@ export const signUp = createAsyncThunk('signUp', async ({ username, password, re
     }
 });
 
-export const logOut = createAsyncThunk('logOut', async ({ navigation }: { navigation: any }, thunkAPI) => {
+export type RootNavigation = StackNavigationProp<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot', undefined>
+export const logOut = createAsyncThunk('logOut', async ({ navigation }: { navigation: RootNavigation }, thunkAPI) => {
     console.debug('Logging out');
     // Clear redux state
     thunkAPI.dispatch(LOGOUT(undefined));
@@ -104,16 +107,16 @@ export const logOut = createAsyncThunk('logOut', async ({ navigation }: { naviga
     await deleteFromStorage('user_data');
     await deleteFromStorage('auth_token');
 
-    navigation.replace('Login', { data: { loggedOut: true } });
+    navigation.replace('Login', { data: { loggedOut: true, errorMsg: '' } });
 });
 
-export function setupInterceptors(navigation: any) {
+export function setupInterceptors(navigation: RootNavigation) {
     axios.interceptors.response.use(
         (response) => response,
         (error: AxiosError) => {
             if (error.response?.status === 403) {
                 // TODO: Re-authenticate instead of signing out
-                navigation.replace('Login');
+                navigation.replace('Login', { data: { loggedOut: true, errorMsg: 'Session expired. Please re-authenticate.' } });
             }
             return Promise.reject(error);
         }

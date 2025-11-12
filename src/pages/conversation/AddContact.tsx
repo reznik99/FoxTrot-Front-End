@@ -70,9 +70,7 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
                         ? results.map((user, index) => {
                             return (
                                 <View key={index}>
-                                    <ContactPeek
-                                        data={user}
-                                        navigation={navigation}
+                                    <ContactPeek data={user}
                                         loading={addingContact?.phone_no === user.phone_no}
                                         onSelect={() => handleAddContact(user)}
                                     />
