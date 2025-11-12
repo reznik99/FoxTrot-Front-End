@@ -14,7 +14,7 @@
       "react-native"
     ],
     "lib": [
-      "es2019",
+      "es2023",
       "dom"
     ]
   },

@@ -1,14 +1,21 @@
-import { createStore, combineReducers, applyMiddleware } from 'redux';
-import thunk from 'redux-thunk';
-import userReducer from './reducers/user';
+import { configureStore } from '@reduxjs/toolkit';
+import { enableMapSet } from 'immer';
 
-const rootReducer = combineReducers({
-    userReducer: userReducer,
+import { userSlice } from './reducers/user';
+
+// Allow storing Map and Set in redux state
+enableMapSet();
+
+export const store = configureStore({
+    reducer: {
+        userReducer: userSlice.reducer,
+    },
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+        serializableCheck: false,
+    }),
 });
-export const store = createStore(rootReducer, applyMiddleware(thunk));
 
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
-export type AppDispatch = typeof store.dispatch
-// Infer the `RootState` and `AppDispatch` types from the store itself
-export type RootState = ReturnType<typeof rootReducer> //ReturnType<typeof store.getState>
-export type GetState = typeof store.getState
+type AppStore = typeof store;
+export type GetState = AppStore['getState']
+export type AppDispatch = AppStore['dispatch'];
+export type RootState = ReturnType<GetState>;

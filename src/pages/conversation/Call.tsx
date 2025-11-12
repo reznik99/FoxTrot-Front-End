@@ -21,7 +21,7 @@ const peerConstraints = {
 };
 
 class Call extends React.Component<Props, State> {
-    timer: number | undefined;
+    timer: NodeJS.Timeout | undefined;
 
     constructor(props: Props) {
         super(props);
@@ -53,7 +53,7 @@ class Call extends React.Component<Props, State> {
         InCallManager.setKeepScreenOn(false);
         InCallManager.stop();
         this.endCall();
-        if (this.timer) {clearInterval(this.timer);}
+        if (this.timer) { clearInterval(this.timer); }
     };
 
     componentDidUpdate = async (prevProps: Readonly<Props>, _prevState: Readonly<State>) => {
@@ -79,7 +79,7 @@ class Call extends React.Component<Props, State> {
     };
 
     answerCall = async () => {
-        if (!this.state.peerConnection) {return console.debug('answerCall: Unable to answer call with null peerConnection');}
+        if (!this.state.peerConnection) { return console.debug('answerCall: Unable to answer call with null peerConnection'); }
 
         // Use the received offerDescription
         let offerDescription = new RTCSessionDescription(this.props.callOffer);
@@ -107,7 +107,7 @@ class Call extends React.Component<Props, State> {
     };
 
     call = async () => {
-        if (!this.state.peerConnection) {return console.error('call: Unable to initiate call with null peerConnection');}
+        if (!this.state.peerConnection) { return console.error('call: Unable to initiate call with null peerConnection'); }
 
         let sessionConstraints: RTCOfferOptions = {
             offerToReceiveAudio: true,
@@ -130,11 +130,11 @@ class Call extends React.Component<Props, State> {
         };
         this.props.socketConn?.send(JSON.stringify(message));
 
-        this.setState({ callStatus: `${this.state.peer_user?.phone_no} : Dialing`});
+        this.setState({ callStatus: `${this.state.peer_user?.phone_no} : Dialing` });
     };
 
     startStream = async () => {
-        if (this.state.stream) {return;}
+        if (this.state.stream) { return; }
 
         try {
             console.debug('startStream - Loading local MediaStreams');
@@ -151,7 +151,7 @@ class Call extends React.Component<Props, State> {
             })
             );
             newConnection.addEventListener('icecandidate', (event: any) => {
-                if (!event.candidate) {console.debug('onIceCandidate finished');}
+                if (!event.candidate) { console.debug('onIceCandidate finished'); }
                 // Send the iceCandidate to the other participant. Using websockets
                 const message: SocketData = {
                     cmd: 'CALL_ICE_CANDIDATE',
@@ -168,7 +168,7 @@ class Call extends React.Component<Props, State> {
             newConnection.addEventListener('connectionstatechange', _event => {
                 console.debug('WebRTC connection state change: ', newConnection?.connectionState);
                 this.setState({ callStatus: `${this.state.peer_user?.phone_no} : ${newConnection?.connectionState}` });
-                if (newConnection?.connectionState === 'disconnected') {this.endCall();}
+                if (newConnection?.connectionState === 'disconnected') { this.endCall(); }
             });
             newConnection.addEventListener('iceconnectionstatechange', _event => {
                 console.debug('ICE connection state change: ', newConnection?.iceConnectionState);
@@ -187,8 +187,8 @@ class Call extends React.Component<Props, State> {
                 stream: newStream,
                 peerConnection: newConnection,
             }, () => {
-                if (!this.props.callOffer) {this.call();}
-                else {this.answerCall();}
+                if (!this.props.callOffer) { this.call(); }
+                else { this.answerCall(); }
             });
         } catch (err: any) {
             console.error('startStream error:', err);
@@ -196,7 +196,7 @@ class Call extends React.Component<Props, State> {
     };
 
     endCall = () => {
-        if (!this.state.stream) {return;}
+        if (!this.state.stream) { return; }
 
         // Close networking
         this.state.stream.release();
@@ -214,7 +214,7 @@ class Call extends React.Component<Props, State> {
     };
 
     toggleVideoEnabled = async () => {
-        if (!this.state.stream) {return;}
+        if (!this.state.stream) { return; }
 
         const videoTrack = await this.state.stream.getVideoTracks()[0];
         videoTrack.enabled = !this.state.videoEnabled;
@@ -222,7 +222,7 @@ class Call extends React.Component<Props, State> {
     };
 
     toggleVoiceEnabled = async () => {
-        if (!this.state.stream) {return;}
+        if (!this.state.stream) { return; }
 
         const audioTrack = await this.state.stream.getAudioTracks()[0];
         audioTrack.enabled = !this.state.voiceEnabled;
@@ -230,14 +230,14 @@ class Call extends React.Component<Props, State> {
     };
 
     toggleLoudSpeaker = () => {
-        if (!this.state.stream) {return;}
+        if (!this.state.stream) { return; }
 
         InCallManager.setSpeakerphoneOn(!this.state.loudSpeaker);
         this.setState({ loudSpeaker: !this.state.loudSpeaker });
     };
 
     toggleCamera = async () => {
-        if (!this.state.stream) {return;}
+        if (!this.state.stream) { return; }
 
         const videoTrack = await this.state.stream.getVideoTracks()[0];
         videoTrack._switchCamera();
@@ -245,7 +245,7 @@ class Call extends React.Component<Props, State> {
     };
 
     toggleMinimizedStream = () => {
-        this.setState({minimizeLocalStream: !this.state.minimizeLocalStream});
+        this.setState({ minimizeLocalStream: !this.state.minimizeLocalStream });
     };
 
     printCallTime = () => {
@@ -277,7 +277,7 @@ class Call extends React.Component<Props, State> {
                             streamURL={this.state.stream.toURL()}
                             mirror={this.state.isFrontCamera}
                             objectFit={'cover'}
-                            zOrder={2} onTouchEnd={this.toggleMinimizedStream}/>
+                            zOrder={2} onTouchEnd={this.toggleMinimizedStream} />
                         : <Image style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]} source={{ uri: this.props.user_data.pic }} />
                     }
                 </View>
@@ -316,7 +316,12 @@ class Call extends React.Component<Props, State> {
 }
 
 const mapStateToProps = (state: RootState) => ({
-    ...state.userReducer,
+    callOffer: state.userReducer.callOffer,
+    callAnswer: state.userReducer.callAnswer,
+    iceCandidates: state.userReducer.iceCandidates,
+    user_data: state.userReducer.user_data,
+    caller: state.userReducer.caller,
+    socketConn: state.userReducer.socketConn,
 });
 
 const mapDispatchToProps = {

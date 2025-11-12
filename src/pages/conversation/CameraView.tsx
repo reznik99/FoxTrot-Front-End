@@ -1,20 +1,17 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Image, StyleSheet } from 'react-native';
 import { ActivityIndicator, Button, Text } from 'react-native-paper';
 import { Camera, useCameraDevices } from 'react-native-vision-camera';
 import { StackScreenProps } from '@react-navigation/stack';
+import { View, Image, StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
-import RNFS from 'react-native-fs';
-import { ThunkDispatch } from 'redux-thunk';
 import { useDispatch } from 'react-redux';
-import { AnyAction } from 'redux';
+import RNFS from 'react-native-fs';
 
-import { sendMessage } from '~/store/actions/user';
-import { SECONDARY, SECONDARY_LITE } from '~/global/variables';
 import { getCameraAndMicrophonePermissions } from '~/global/permissions';
+import { SECONDARY, SECONDARY_LITE } from '~/global/variables';
+import { sendMessage } from '~/store/actions/user';
 import { HomeStackParamList } from '../../../App';
-
-type AppDispatch = ThunkDispatch<any, any, AnyAction>
+import { AppDispatch } from '~/store/store';
 
 export default function CameraView(props: StackScreenProps<HomeStackParamList, 'CameraView'>) {
 
@@ -28,7 +25,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (props.route.params?.data?.picturePath) {return;}
+        if (props.route.params?.data?.picturePath) { return; }
         requestPermissions();
     }, []);
 
@@ -58,7 +55,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
 
     const reset = useCallback(() => {
         setPicture('');
-        if (!hasPermission) {requestPermissions();}
+        if (!hasPermission) { requestPermissions(); }
     }, [hasPermission, requestPermissions]);
 
     const swapCamera = useCallback(() => {
@@ -67,7 +64,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     }, [devices, isFront]);
 
     const takePic = useCallback(async () => {
-        if (!camera.current) {return;}
+        if (!camera.current) { return; }
         const pic = await camera.current.takeSnapshot({ quality: 30 });
         setPicture(`file://${pic.path}`);
     }, [camera]);
@@ -83,8 +80,8 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                 message: rawPic,
             });
 
-            const success = await dispatch(sendMessage(toSend, props.route.params?.data?.peer));
-            if (success) {props.navigation.goBack();}
+            const res = await dispatch(sendMessage({ message: toSend, to_user: props.route.params?.data?.peer }));
+            if (res.payload) { props.navigation.goBack(); }
         } catch (err) {
             console.error('Error sending image:', err);
         } finally {
@@ -99,7 +96,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                     <ActivityIndicator size="large" />
                 </View>
             }
-            { device && !picture && !hasPermission &&
+            {device && !picture && !hasPermission &&
                 <View style={styles.loaderContainer}>
                     <Text variant="titleLarge">Permission to use camera denied</Text>
                 </View>
@@ -107,7 +104,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
 
             {picture &&
                 <>
-                    <Image source={{ uri: picture }} style={{ width: '100%', height: '100%' }} resizeMode="contain"/>
+                    <Image source={{ uri: picture }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
 
                     <View style={styles.buttonContainer}>
                         <Button style={styles.button} color={SECONDARY_LITE} icon="refresh" mode="contained" onPress={reset}>

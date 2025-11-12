@@ -49,7 +49,6 @@ export default function NewConversation(props: StackScreenProps<HomeStackParamLi
                     {results?.length
                         ? results.map((contact, index) => {
                             return <ContactPeek key={index}
-                                navigation={navigation}
                                 data={{ ...contact }}
                                 isContact={true}
                                 onSelect={() => navigation.navigate('Conversation', { data: { peer_user: contact } })} />;

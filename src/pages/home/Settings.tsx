@@ -2,27 +2,23 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, Alert, StyleSheet } from 'react-native';
 import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, Icon } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Keychain from 'react-native-keychain';
 import { pick, types } from '@react-native-documents/picker';
 import { StackScreenProps } from '@react-navigation/stack';
+import { useDispatch, useSelector } from 'react-redux';
+import * as Keychain from 'react-native-keychain';
 import Toast from 'react-native-toast-message';
 import RNFS from 'react-native-fs';
-import { AnyAction } from 'redux';
-import { useDispatch, useSelector } from 'react-redux';
-import { ThunkDispatch } from 'redux-thunk';
 import { Buffer } from 'buffer';
 
-import globalStyle from '~/global/style';
-import { RootState } from '~/store/store';
+import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions';
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto';
 import { ACCENT, API_URL, DARKHEADER } from '~/global/variables';
+import globalStyle from '~/global/style';
+import { deleteFromStorage } from '~/global/storage';
+import { AppDispatch, RootState } from '~/store/store';
 import { loadContacts, loadKeys } from '~/store/actions/user';
 import { logOut } from '~/store/actions/auth';
-import { deleteFromStorage } from '~/global/storage';
-import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions';
 import { HomeStackParamList } from '../../../App';
-
-type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
 export default function Settings(_props: StackScreenProps<HomeStackParamList, 'Settings'>) {
 
@@ -71,7 +67,7 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
             deleteFromStorage(''),
             Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys` }),
             Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
-            dispatch(logOut),
+            dispatch(logOut({ navigation: _props.navigation })),
         ]);
     }, [user_data, dispatch]);
 
@@ -111,6 +107,7 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                     Buffer.from(ciphertext, 'base64'),
                 );
             } catch (err) {
+                console.error('Decryption error: Invalid password or corrupted file:', err);
                 throw new Error('Decryption error: Invalid password or corrupted file');
             }
 
@@ -124,14 +121,14 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
 
             // Load into redux store
             console.debug('Loading keys into App...');
-            const success = await dispatch(loadKeys());
-            if (!success) { throw new Error('Failed to load imported keys into app'); }
+            const res = await dispatch(loadKeys());
+            if (!res.payload) { throw new Error('Failed to load imported keys into app'); }
 
             // TODO: Validate that public key locally matches public key on Key Server.
 
             // Reload contacts to re-generate per-conversation encryption keys (ECDH)
             console.debug('Regenerating Conversation encryption keys...');
-            await dispatch(loadContacts());
+            await dispatch(loadContacts({ atomic: true }));
 
             Toast.show({
                 type: 'success',

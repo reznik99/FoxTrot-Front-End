@@ -2,18 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Text, View, ScrollView } from 'react-native';
 import { Divider, Searchbar, ActivityIndicator, Icon } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
-import { ThunkDispatch } from 'redux-thunk';
-import { AnyAction } from 'redux';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import { searchUsers, addContact } from '~/store/actions/user';
 import globalStyle from '~/global/style';
-import { RootState } from '~/store/store';
+import { AppDispatch, RootState } from '~/store/store';
 import { UserData } from '~/store/reducers/user';
 import ContactPeek from '~/components/ContactPeek';
 import { HomeStackParamList } from '../../../App';
-
-type AppDispatch = ThunkDispatch<any, any, AnyAction>
 
 export default function AddContact(props: StackScreenProps<HomeStackParamList, 'AddContact'>) {
 
@@ -27,7 +23,8 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
     const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
     const handleSearch = async () => {
-        const users: UserData[] = await dispatch(searchUsers(prefix)) as any;
+        const res = await dispatch(searchUsers({ prefix: prefix }));
+        const users = res.payload as UserData[];
         setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no) ? 1 : -1));
     };
 
@@ -38,8 +35,8 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
 
     const handleAddContact = async (user: UserData) => {
         setAddingContact(user);
-        const success = await dispatch(addContact(user));
-        if (success) { navigation.replace('Conversation', { data: { peer_user: user } }); }
+        const res = await dispatch(addContact({ user: user }));
+        if (res.payload) { navigation.replace('Conversation', { data: { peer_user: user } }); }
 
         setAddingContact(undefined);
     };
@@ -73,9 +70,7 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
                         ? results.map((user, index) => {
                             return (
                                 <View key={index}>
-                                    <ContactPeek
-                                        data={user}
-                                        navigation={navigation}
+                                    <ContactPeek data={user}
                                         loading={addingContact?.phone_no === user.phone_no}
                                         onSelect={() => handleAddContact(user)}
                                     />

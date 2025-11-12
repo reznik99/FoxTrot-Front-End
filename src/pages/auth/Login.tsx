@@ -9,7 +9,7 @@ import styles from './style';
 import { API_URL, DARKHEADER, KeychainOpts } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
-import { RootState } from '~/store/store';
+import { RootState, store } from '~/store/store';
 import { AuthStackParamList } from '../../../App';
 import { StackScreenProps } from '@react-navigation/stack';
 
@@ -63,7 +63,7 @@ class Login extends Component<IProps, IState> {
 
             // Load data from disk into redux store
             if (!this.props.user_data?.phone_no && !this.state.username) {
-                await this.props.syncFromStorage();
+                await store.dispatch(syncFromStorage());
                 this.setState({ username: this.props.user_data?.phone_no || '' }, () => this.attemptAutoLogin());
             }
         } catch (err) {
@@ -75,12 +75,12 @@ class Login extends Component<IProps, IState> {
 
     attemptAutoLogin = async () => {
         const creds = await this.loadCredentials(this.state.username);
-        if (!creds) {return;}
+        if (!creds) { return; }
 
         // If auth token is recent (<30min) then validate it
         if (Date.now() - creds.time < 1000 * 60 * 30) {
             // TODO: place token in store in store
-            if (await this.props.validateToken(creds.auth_token)) {
+            if (await this.props.validateToken({ token: creds.auth_token })) {
                 console.debug('JWT auth token still valid, skipping login...');
                 this.props.navigation.replace('App');
                 return true;
@@ -99,18 +99,18 @@ class Login extends Component<IProps, IState> {
             service: `${username}-credentials`,
             authenticationPrompt: KeychainOpts.authenticationPrompt,
         });
-        if (!res) {return undefined;}
-        if (res.username !== this.state.username) {return undefined;}
+        if (!res) { return undefined; }
+        if (res.username !== this.state.username) { return undefined; }
 
         const creds = JSON.parse(res.password);
         return { username: res.username, ...creds } as Credentials;
     };
 
     handleLogin = async (username: string, password: string) => {
-        if (this.props.loading) {return;}
+        if (this.props.loading) { return; }
 
         Keyboard.dismiss();
-        const loggedIn = await this.props.logIn(username, password);
+        const loggedIn = await this.props.logIn({ username, password });
         if (loggedIn) {
             console.debug('Routing to home page');
             this.props.navigation.replace('App');
