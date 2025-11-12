@@ -19,7 +19,7 @@ interface IProps {
     };
     allowBack: boolean;
 }
-// TODO: props are null when getting called!
+
 export default function HeaderConversation(props: IProps) {
     const { navigation, allowBack, data } = props;
     const [visibleDialog, setVisibleDialog] = useState('');
@@ -27,13 +27,13 @@ export default function HeaderConversation(props: IProps) {
     const contacts = useSelector((store: RootState) => store.userReducer.contacts);
 
     const showSecurityCode = useCallback(async () => {
-        const contact = contacts.find(_contact => _contact.phone_no === data?.peer_user?.phone_no);
+        const contact = contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
         if (!contact || !contact.public_key) { return; }
 
         setVisibleDialog('SecurityCode');
         const digest = await publicKeyFingerprint(contact.public_key);
         setSecurityCode(digest);
-    }, [contacts, data?.peer_user?.phone_no]);
+    }, [contacts, data.peer_user.phone_no]);
 
     const copySecurityCode = useCallback(() => {
         setVisibleDialog('');
@@ -61,7 +61,7 @@ export default function HeaderConversation(props: IProps) {
                             style={styles.profilePic}
                             PlaceholderContent={<ActivityIndicator />} />
                     </View>
-                    <Text style={styles.topBarText}>{data?.peer_user?.phone_no}</Text>
+                    <Text style={styles.topBarText}>{data.peer_user.phone_no}</Text>
                 </TouchableOpacity>
             </View>
             <View style={[styles.buttonContainer]}>
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         backgroundColor: DARKHEADER,
         paddingTop: StatusBar.currentHeight,
-        paddingBottom: 10,
+        paddingBottom: 8,
     }, backAndTitle: {
         flexDirection: 'row',
         justifyContent: 'flex-start',
