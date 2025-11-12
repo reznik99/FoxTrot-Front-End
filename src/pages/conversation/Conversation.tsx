@@ -1,13 +1,14 @@
-import React, { PureComponent, useState, useEffect, useRef, useCallback } from 'react';
+import React, { PureComponent, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
     StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Keyboard,
     Linking, KeyboardAvoidingView, ToastAndroid, Image,
     EmitterSubscription,
+    Vibration,
 } from 'react-native';
 import { ActivityIndicator, Icon, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { launchImageLibrary } from 'react-native-image-picker';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, FlashListRef } from '@shopify/flash-list';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 
@@ -37,7 +38,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     const [loading, setLoading] = useState(false);
     const [inputMessage, setInputMessage] = useState('');
     const [zoomMedia, setZoomMedia] = useState('');
-    const scrollView = useRef<any>(null);
+    const scrollView = useRef<FlashListRef<any>>(null);
     const [keyboardDidShowListener, setkeyboardDidShowListener] = useState<EmitterSubscription | null>(null);
 
     useEffect(() => {
@@ -51,6 +52,11 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     // Scroll to end when new messages appear (sent or recieved)
     useEffect(() => {
         scrollView.current?.scrollToOffset({ offset: 0, animated: true });
+    }, [conversation.messages]);
+
+    // Memoize the reversed messages
+    const reversedMessages = useMemo(() => {
+        return [...conversation.messages].reverse();
     }, [conversation.messages]);
 
     const handleSend = useCallback(async () => {
@@ -109,9 +115,15 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                 removeClippedSubviews={false}
                 contentContainerStyle={styles.messageList}
                 ref={scrollView as any}
-                inverted={conversation.messages?.length ? true : false} // silly workaround because ListEmptyComponent is rendered upside down when list empty
-                data={conversation.messages}
-                estimatedItemSize={95}
+                data={reversedMessages}
+                maintainVisibleContentPosition={{
+                    autoscrollToBottomThreshold: 0.2,
+                    startRenderingFromBottom: true,
+                }}
+                onEndReached={() => Vibration.vibrate()}
+                onStartReached={() => Vibration.vibrate()}
+                ListEmptyComponent={renderListEmpty}
+                ListFooterComponent={renderListFooter}
                 renderItem={({ item }) => (
                     <Message
                         key={item.id}
@@ -120,8 +132,6 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                         isSent={item.sender === user_data.phone_no}
                         zoomMedia={(data) => setZoomMedia(data)} />
                 )}
-                ListEmptyComponent={renderListEmpty}
-                ListHeaderComponent={renderListFooter}
             />
 
             <View style={styles.inputContainer}>
