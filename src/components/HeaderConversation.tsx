@@ -49,7 +49,7 @@ export default function HeaderConversation(props: IProps) {
             <View style={styles.backAndTitle}>
                 {
                     allowBack ?
-                        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
+                        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home', undefined, { pop: true })}>
                             <Icon source="arrow-left" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                         </TouchableOpacity>
                         :

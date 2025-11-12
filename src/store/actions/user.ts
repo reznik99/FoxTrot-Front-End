@@ -115,7 +115,7 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
     try {
         thunkAPI.dispatch(SET_REFRESHING(true));
 
-        let state = thunkAPI.getState().userReducer;
+        const state = thunkAPI.getState().userReducer;
 
         // Check last time we hit the API for messages
         const cachedLastChecked = (await readFromStorage(`messages-${state.user_data.id}-last-checked`)) || '0';
@@ -192,7 +192,7 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
 export const loadContacts = createDefaultAsyncThunk('loadContacts', async ({ atomic }: { atomic: boolean }, thunkAPI) => {
     try {
         thunkAPI.dispatch(SET_REFRESHING(true));
-        let state = thunkAPI.getState().userReducer;
+        const state = thunkAPI.getState().userReducer;
 
         // Load contacts
         const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token));

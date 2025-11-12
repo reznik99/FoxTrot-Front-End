@@ -95,10 +95,11 @@ export default function Home(props: IProps) {
     }, [conversations]);
 
     const loadAllMessages = useCallback(async () => {
-        setLoadingMsg('Loading contacts...');
-        await store.dispatch(loadContacts({ atomic: false }));
-        setLoadingMsg('Loading messages...');
-        await store.dispatch(loadMessages());
+        setLoadingMsg('Loading contacts & messages...');
+        await Promise.all([
+            store.dispatch(loadContacts({ atomic: false })),
+            store.dispatch(loadMessages())
+        ])
         setLoadingMsg('');
     }, [store.dispatch]);
 

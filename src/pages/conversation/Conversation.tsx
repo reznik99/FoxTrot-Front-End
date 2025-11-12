@@ -195,7 +195,7 @@ class Message extends PureComponent<MProps, MState> {
         );
     };
 
-    decryptMessage = async (item: message) => {
+    decryptMessage = async (item: message): Promise<decryptedMessage> => {
         const decryptedMessage = await decrypt(this.props.peer.session_key!, item.message);
         try {
             return JSON.parse(decryptedMessage);
@@ -207,8 +207,8 @@ class Message extends PureComponent<MProps, MState> {
     };
 
     renderMessage = (item: decryptedMessage | undefined, isSent: boolean) => {
-        if (!item || item?.message) { return; }
-
+        if (!item || !item?.message) { return; }
+        
         switch (item.type) {
             // TODO: Add VIDEO, GIF and AUDIO message types
             case 'IMG':
@@ -221,7 +221,9 @@ class Message extends PureComponent<MProps, MState> {
                 const messageChunks = item.message.split(' ');
                 const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'));
 
-                if (linkIndex < 0) { return <Text style={[isSent ? styles.sentText : styles.receivedText]} selectable>{item.message}</Text>; }
+                if (linkIndex < 0) {
+                    return <Text style={[isSent ? styles.sentText : styles.receivedText]} selectable>{item.message}</Text>;
+                }
 
                 return (
                     <Text style={[isSent ? styles.sentText : styles.receivedText]}>
