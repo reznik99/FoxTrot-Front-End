@@ -7,6 +7,9 @@ import { NavigationContainer, DarkTheme as NavDarkTheme, RouteProp } from '@reac
 import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions, StackHeaderProps } from '@react-navigation/stack';
 import { createDrawerNavigator, DrawerContentComponentProps, DrawerNavigationOptions } from '@react-navigation/drawer';
 import Toast from 'react-native-toast-message';
+import { getMessaging } from '@react-native-firebase/messaging'; // Push Notifications
+import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
+import InCallManager from 'react-native-incall-manager';
 
 // Crypto
 import 'react-native-get-random-values';
@@ -15,9 +18,8 @@ window.crypto.getRandomValues = globalThis.crypto.getRandomValues;
 
 // App
 import { store } from '~/store/store';
-
 import { Login, Signup, Home, Conversation, NewConversation, AddContact, Call, CameraView, Settings } from './src';
-import { PRIMARY, SECONDARY, ACCENT, DARKHEADER } from '~/global/variables';
+import { PRIMARY, SECONDARY, ACCENT, DARKHEADER, VibratePattern } from '~/global/variables';
 import Drawer from '~/components/Drawer';
 import HeaderConversation from '~/components/HeaderConversation';
 import { UserData } from '~/store/reducers/user';
@@ -117,6 +119,47 @@ const darkTheme = {
     },
     dark: true,
 };
+
+// Register background handler
+const messaging = getMessaging();
+messaging.setBackgroundMessageHandler(async remoteMessage => {
+    console.log('Message handled in the background!', remoteMessage);
+    const caller = remoteMessage.data?.caller as UserData | undefined
+    if (!caller) {
+        console.error("Caller data is not defined")
+        return
+    }
+    RNNotificationCall.addEventListener('answer', (info) => {
+        console.debug('RNNotificationCall: User answered call', info);
+        RNNotificationCall.backToApp();
+        const caller = JSON.parse(info.payload || '{}') as UserData;
+        console.debug('RNNotificationCall: caller', caller);
+    });
+    RNNotificationCall.addEventListener('endCall', (payload) => {
+        console.debug('RNNotificationCall: User ended call', payload);
+        InCallManager.stopRingtone();
+    });
+    InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
+    RNNotificationCall.displayNotification(
+        crypto.randomUUID(),
+        caller.pic || '',
+        30000,
+        {
+            channelId: 'com.foxtrot.callNotifications',
+            channelName: 'Notifications for incoming calls',
+            notificationIcon: '@mipmap/foxtrot', // mipmap
+            notificationTitle: caller.phone_no || 'Unknown User',
+            notificationBody: 'Incoming video call',
+            answerText: 'Answer',
+            declineText: 'Decline',
+            notificationColor: 'colorAccent',
+            payload: caller,
+            // notificationSound: 'skype_ring',
+            // mainComponent: "CallScreen"
+            // isVideo: true
+        }
+    );
+});
 
 export default function App() {
     return (

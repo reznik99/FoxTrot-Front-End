@@ -2,15 +2,19 @@ import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
 import Toast from 'react-native-toast-message';
 import { getMessaging, getToken, registerDeviceForRemoteMessages } from '@react-native-firebase/messaging'; // Push Notifications
-
-import { API_URL, KeypairAlgorithm } from '~/global/variables';
-import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
-import { AppDispatch, RootState } from '~/store/store';
-import { ADD_CONTACT_SUCCESS, Conversation, KEY_LOAD, LOAD_CONTACTS, LOAD_CONVERSATIONS, message, SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData } from '~/store/reducers/user';
-import { getPushNotificationPermission } from '~/global/permissions';
-import { getAvatar } from '~/global/helper';
-import { readFromStorage, writeToStorage } from '~/global/storage';
 import { createAsyncThunk } from '@reduxjs/toolkit';
+
+import {
+    Conversation, message, ADD_CONTACT_SUCCESS, KEY_LOAD, LOAD_CONTACTS, LOAD_CONVERSATIONS,
+    SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData
+} from '~/store/reducers/user';
+import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
+import { readFromStorage, writeToStorage } from '~/global/storage';
+import { getPushNotificationPermission } from '~/global/permissions';
+import { API_URL, KeypairAlgorithm } from '~/global/variables';
+import { AppDispatch, RootState } from '~/store/store';
+import { getAvatar } from '~/global/helper';
+
 
 async function migrateKeysToNewStandard(username: string) {
     const credentials = await Keychain.getInternetCredentials(`${username}-keys`);
@@ -362,17 +366,13 @@ export const registerPushNotifications = createDefaultAsyncThunk('registerPushNo
         console.debug('Registering for Push Notifications');
         const granted = await getPushNotificationPermission();
         if (granted) {
-            await registerDeviceForRemoteMessages(getMessaging());
-            const token = await getToken(getMessaging());
+            const messaging = getMessaging();
+            await registerDeviceForRemoteMessages(messaging);
+            const token = await getToken(messaging);
             await axios.post(`${API_URL}/registerPushNotifications`, { token }, axiosBearerConfig(state.token));
-            // Register background handler
-            // messaging().setBackgroundMessageHandler(async remoteMessage => {
-            //     console.log('Message handled in the background!', remoteMessage);
-            // });
         } else {
             console.error('Push notifications permission denied');
         }
-
     } catch (err: any) {
         console.error('Error Registering for Push Notifications:', err);
         Toast.show({

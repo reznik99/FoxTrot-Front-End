@@ -3,7 +3,7 @@ import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native';
 import { Divider, FAB, ActivityIndicator, Snackbar, Icon } from 'react-native-paper';
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
 import { StackScreenProps } from '@react-navigation/stack';
-import inCallManager from 'react-native-incall-manager';
+import InCallManager from 'react-native-incall-manager';
 import { useSelector } from 'react-redux';
 
 import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
@@ -51,7 +51,7 @@ export default function Home(props: IProps) {
             });
             RNNotificationCall.addEventListener('endCall', (payload) => {
                 console.debug('RNNotificationCall: User ended call', payload);
-                inCallManager.stopRingtone();
+                InCallManager.stopRingtone();
             });
             setLoadingMsg('');
         };

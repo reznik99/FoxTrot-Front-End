@@ -140,9 +140,10 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                         answerText: 'Answer',
                         declineText: 'Decline',
                         notificationColor: 'colorAccent',
+                        payload: caller,
                         // notificationSound: 'skype_ring',
                         // mainComponent: "CallScreen"
-                        payload: JSON.stringify(caller),
+                        // isVideo: true
                     }
                 );
                 break;
