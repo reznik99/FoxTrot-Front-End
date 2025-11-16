@@ -124,11 +124,12 @@ const darkTheme = {
 const messaging = getMessaging();
 messaging.setBackgroundMessageHandler(async remoteMessage => {
     console.log('Message handled in the background!', remoteMessage);
-    const caller = remoteMessage.data?.caller as UserData | undefined
-    if (!caller) {
+    const callerRaw = remoteMessage.data?.caller as string
+    if (!callerRaw) {
         console.error("Caller data is not defined")
         return
     }
+    const caller = JSON.parse(callerRaw) as UserData
     RNNotificationCall.addEventListener('answer', (info) => {
         console.debug('RNNotificationCall: User answered call', info);
         RNNotificationCall.backToApp();
@@ -141,7 +142,7 @@ messaging.setBackgroundMessageHandler(async remoteMessage => {
     });
     InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
     RNNotificationCall.displayNotification(
-        crypto.randomUUID(),
+        '22221a99-8eb4-4ac2-b2cf-0a3c0b9100af',
         caller.pic || '',
         30000,
         {
