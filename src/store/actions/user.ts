@@ -6,7 +6,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 
 import {
     Conversation, message, ADD_CONTACT_SUCCESS, KEY_LOAD, LOAD_CONTACTS, LOAD_CONVERSATIONS,
-    SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData
+    SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData,
 } from '~/store/reducers/user';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { readFromStorage, writeToStorage } from '~/global/storage';

@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import { ConnectedProps, connect } from 'react-redux';
 import { View, ScrollView, Keyboard, Alert } from 'react-native';
-import { ActivityIndicator, TextInput, Button, Text } from 'react-native-paper';
+import { ActivityIndicator, TextInput, Button, Text, IconButton } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
 import SplashScreen from 'react-native-splash-screen';
 
 import styles from './style';
-import { API_URL, DARKHEADER, KeychainOpts } from '~/global/variables';
+import { API_URL, DARKHEADER, KeychainOpts, PRIMARY } from '~/global/variables';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
 import { RootState, store } from '~/store/store';
@@ -127,7 +127,8 @@ class Login extends Component<IProps, IState> {
                     </View>
                     {this.props.loginErr && <Text style={styles.errorMsg}>{this.props.loginErr}</Text>}
 
-                    {this.state.gloablLoading ? <ActivityIndicator size="large" />
+                    {this.state.gloablLoading
+                        ? <ActivityIndicator size="large" />
                         : <View>
                             <TextInput mode="outlined"
                                 autoCapitalize="none"
@@ -157,6 +158,14 @@ class Login extends Component<IProps, IState> {
                                     icon="account-plus"
                                     style={[styles.button, { backgroundColor: DARKHEADER }]}
                                     onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
+                            </View>
+                            <View style={{ display: 'flex', alignItems: 'center' }}>
+                                <IconButton icon="fingerprint"
+                                    size={50}
+                                    iconColor={PRIMARY}
+                                    onPress={this.attemptAutoLogin}
+                                    accessibilityLabel="Retry biometric authentication"
+                                />
                             </View>
                         </View>
                     }

@@ -55,11 +55,11 @@ export default function Home(props: IProps) {
                 InCallManager.stopRingtone();
             });
             // Check if user answered a call in the background
-            setLoadingMsg('Checking call status')
-            const callerRaw = await readFromStorage('call_answered_in_background')
+            setLoadingMsg('Checking call status');
+            const callerRaw = await readFromStorage('call_answered_in_background');
             if (callerRaw) {
                 const caller = JSON.parse(callerRaw) as UserData;
-                await deleteFromStorage('call_answered_in_background')
+                await deleteFromStorage('call_answered_in_background');
                 props.navigation.navigate('Call', { data: { peer_user: caller } });
             }
             setLoadingMsg('');

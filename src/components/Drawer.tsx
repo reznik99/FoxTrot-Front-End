@@ -46,26 +46,21 @@ export default function Drawer(props: DrawerContentComponentProps) {
                     </View>
                 </View>
 
-                <View style={{ width: '100%' }}>
-                    <DrawerItem
-                        inactiveTintColor="#fff"
+                <View>
+                    <DrawerItem inactiveTintColor={PRIMARY}
                         label="Security Code"
-                        style={{ backgroundColor: PRIMARY }}
                         onPress={() => { setShowSecurityCode(true); publicKeyFingerprint(state.user_data.public_key || '').then(setSecurityCode).catch(err => console.error(err)); }}
                         icon={renderLockIcon}
                     />
-                    <DrawerItem
-                        inactiveTintColor="#fff"
+                    <DrawerItem inactiveTintColor={PRIMARY}
                         label="Settings"
-                        style={{ backgroundColor: PRIMARY }}
                         onPress={() => { props.navigation.navigate('Settings'); props.navigation.closeDrawer(); }}
                         icon={renderCogIcon}
                     />
-                    <DrawerItem
-                        inactiveTintColor="#fff"
+                    <DrawerItem inactiveTintColor="#fff"
                         label="Logout"
                         style={{ borderTopWidth: 1, borderTopColor: '#e3e1e1', backgroundColor: DARKHEADER }}
-                        onPress={() => dispatch(logOut({ navigation: props.navigation }))}
+                        onPress={() => dispatch(logOut({ navigation: props.navigation as any }))}
                         icon={renderLogoutIcon}
                     />
                 </View>

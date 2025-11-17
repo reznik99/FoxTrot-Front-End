@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     },
     wrapper: {
         flex: 1,
-        width: '70%',
+        width: '75%',
         height: '100%',
         justifyContent: 'center',
         padding: 10,

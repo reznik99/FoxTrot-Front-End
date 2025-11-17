@@ -67,7 +67,7 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
             deleteFromStorage(''),
             Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys` }),
             Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
-            dispatch(logOut({ navigation: _props.navigation })),
+            dispatch(logOut({ navigation: _props.navigation as any })),
         ]);
     }, [user_data, dispatch]);
 

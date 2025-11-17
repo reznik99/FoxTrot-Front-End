@@ -125,21 +125,21 @@ const darkTheme = {
 const messaging = getMessaging();
 messaging.setBackgroundMessageHandler(async remoteMessage => {
     console.log('Message handled in the background!', remoteMessage);
-    const callerRaw = remoteMessage.data?.caller as string
+    const callerRaw = remoteMessage.data?.caller as string;
     if (!callerRaw) {
-        console.error("Caller data is not defined")
-        return
+        console.error('Caller data is not defined');
+        return;
     }
-    const caller = JSON.parse(callerRaw) as UserData
+    const caller = JSON.parse(callerRaw) as UserData;
     RNNotificationCall.addEventListener('answer', (info) => {
         console.debug('RNNotificationCall: User answered call', info);
         RNNotificationCall.backToApp();
         if (!info.payload) {
-            console.error("Background notification data is not defined after call-screen passthrough:", info)
-            return
+            console.error('Background notification data is not defined after call-screen passthrough:', info);
+            return;
         }
         // Write caller info to special storage key that is checked after app login
-        writeToStorage('call_answered_in_background', info.payload)
+        writeToStorage('call_answered_in_background', info.payload);
         // User will be opening app and authenticating after this...
     });
     RNNotificationCall.addEventListener('endCall', (payload) => {

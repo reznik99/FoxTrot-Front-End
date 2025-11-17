@@ -127,7 +127,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 dispatch({ type: 'user/RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
 
                 // Ring and show notification
-                if (parsedData.data.ring === false) break;
+                if (parsedData.data.ring === false) {break;}
                 InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
                 RNNotificationCall.displayNotification(
                     '22221a97-8eb4-4ac2-b2cf-0a3c0b9100ad',
