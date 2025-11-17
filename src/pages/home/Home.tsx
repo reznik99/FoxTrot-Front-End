@@ -15,7 +15,7 @@ import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
 import { RootState, store } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
-import { readFromStorage } from '~/global/storage';
+import { deleteFromStorage, readFromStorage } from '~/global/storage';
 
 type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
 
@@ -59,6 +59,7 @@ export default function Home(props: IProps) {
             const callerRaw = await readFromStorage('call_answered_in_background')
             if (callerRaw) {
                 const caller = JSON.parse(callerRaw) as UserData;
+                await deleteFromStorage('call_answered_in_background')
                 props.navigation.navigate('Call', { data: { peer_user: caller } });
             }
             setLoadingMsg('');
