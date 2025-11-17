@@ -15,6 +15,7 @@ import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
 import { RootState, store } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
+import { readFromStorage } from '~/global/storage';
 
 type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
 
@@ -53,6 +54,13 @@ export default function Home(props: IProps) {
                 console.debug('RNNotificationCall: User ended call', payload);
                 InCallManager.stopRingtone();
             });
+            // Check if user answered a call in the background
+            setLoadingMsg('Checking call status')
+            const callerRaw = await readFromStorage('call_answered_in_background')
+            if (callerRaw) {
+                const caller = JSON.parse(callerRaw) as UserData;
+                props.navigation.navigate('Call', { data: { peer_user: caller } });
+            }
             setLoadingMsg('');
         };
         initLoad();

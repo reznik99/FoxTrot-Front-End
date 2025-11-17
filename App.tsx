@@ -23,6 +23,7 @@ import { PRIMARY, SECONDARY, ACCENT, DARKHEADER, VibratePattern } from '~/global
 import Drawer from '~/components/Drawer';
 import HeaderConversation from '~/components/HeaderConversation';
 import { UserData } from '~/store/reducers/user';
+import { writeToStorage } from '~/global/storage';
 
 const defaultHeaderOptions: StackNavigationOptions & DrawerNavigationOptions = {
     headerStyle: {
@@ -133,8 +134,13 @@ messaging.setBackgroundMessageHandler(async remoteMessage => {
     RNNotificationCall.addEventListener('answer', (info) => {
         console.debug('RNNotificationCall: User answered call', info);
         RNNotificationCall.backToApp();
-        const caller = JSON.parse(info.payload || '{}') as UserData;
-        console.debug('RNNotificationCall: caller', caller);
+        if (!info.payload) {
+            console.error("Background notification data is not defined after call-screen passthrough:", info)
+            return
+        }
+        // Write caller info to special storage key that is checked after app login
+        writeToStorage('call_answered_in_background', info.payload)
+        // User will be opening app and authenticating after this...
     });
     RNNotificationCall.addEventListener('endCall', (payload) => {
         console.debug('RNNotificationCall: User ended call', payload);
