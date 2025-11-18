@@ -100,11 +100,10 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                 contentContainerStyle={styles.messageList}
                 data={reversedMessages}
                 maintainVisibleContentPosition={{
-                    autoscrollToBottomThreshold: 0.2,
+                    autoscrollToBottomThreshold: 0.25,
                     startRenderingFromBottom: true,
                 }}
                 onEndReached={() => Vibration.vibrate()}
-                onStartReached={() => Vibration.vibrate()}
                 ListEmptyComponent={renderListEmpty}
                 ListFooterComponent={renderListFooter}
                 renderItem={({ item }) => (
