@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { Image } from 'react-native-elements';
 import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal, Icon } from 'react-native-paper';
 import Clipboard from '@react-native-clipboard/clipboard';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { publicKeyFingerprint } from '~/global/crypto';
 import { RootState } from '~/store/store';
@@ -45,7 +46,7 @@ export default function HeaderConversation(props: IProps) {
     }, [securityCode]);
 
     return (
-        <View style={styles.topBar}>
+        <SafeAreaView style={styles.topBar} edges={['top', 'right', 'left']}>
             <View style={styles.backAndTitle}>
                 {
                     allowBack ?
@@ -93,7 +94,7 @@ export default function HeaderConversation(props: IProps) {
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -103,7 +104,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: DARKHEADER,
-        paddingTop: StatusBar.currentHeight,
         paddingBottom: 8,
     }, backAndTitle: {
         flexDirection: 'row',

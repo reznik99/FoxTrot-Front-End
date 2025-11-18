@@ -11,6 +11,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sendMessage } from '~/store/actions/user';
 import { decrypt } from '~/global/crypto';
@@ -134,7 +135,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                 )}
             />
 
-            <View style={styles.inputContainer}>
+            <SafeAreaView style={styles.inputContainer} edges={['bottom', 'left', 'right']}>
                 <TouchableOpacity style={styles.button} onPress={handleCameraSelect}>
                     <Icon source="camera" color={styles.buttonIcon.color} size={20} />
                 </TouchableOpacity>
@@ -157,8 +158,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                         <Icon source="send-lock" color={styles.buttonIcon.color} size={20} />
                     </TouchableOpacity>
                 }
-
-            </View>
+            </SafeAreaView>
 
             <Portal>
                 <Modal visible={!!zoomMedia}

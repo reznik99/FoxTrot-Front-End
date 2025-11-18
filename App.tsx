@@ -10,6 +10,7 @@ import Toast from 'react-native-toast-message';
 import { getMessaging } from '@react-native-firebase/messaging'; // Push Notifications
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
 import InCallManager from 'react-native-incall-manager';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Crypto
 import 'react-native-get-random-values';
@@ -170,13 +171,15 @@ messaging.setBackgroundMessageHandler(async remoteMessage => {
 
 export default function App() {
     return (
-        <Provider store={store}>
-            <PaperProvider theme={darkTheme}>
-                <WebviewCrypto />
-                <StatusBar backgroundColor={DARKHEADER} barStyle="light-content" />
-                <AuthNavigator />
-                <Toast />
-            </PaperProvider>
-        </Provider>
+        <SafeAreaProvider>
+            <Provider store={store}>
+                <PaperProvider theme={darkTheme}>
+                    <WebviewCrypto />
+                    <StatusBar backgroundColor={DARKHEADER} barStyle="light-content" />
+                    <AuthNavigator />
+                    <Toast />
+                </PaperProvider>
+            </Provider>
+        </SafeAreaProvider>
     );
 }

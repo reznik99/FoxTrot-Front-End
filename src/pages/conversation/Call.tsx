@@ -1,10 +1,11 @@
 import React from 'react';
-import { SafeAreaView, StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { connect, ConnectedProps } from 'react-redux';
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCSessionDescription, RTCView } from 'react-native-webrtc';
 import InCallManager from 'react-native-incall-manager';
 import Toast from 'react-native-toast-message';
 import { StackScreenProps } from '@react-navigation/stack';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { UserData } from '~/store/reducers/user';
 import { RootState } from '~/store/store';
@@ -12,6 +13,7 @@ import { resetCallState, SocketData } from '~/store/actions/websocket';
 import { RTCOfferOptions } from 'react-native-webrtc/lib/typescript/RTCUtil';
 import { Icon } from 'react-native-paper';
 import { HomeStackParamList } from '../../../App';
+import { DARKHEADER } from '~/global/variables';
 
 const peerConstraints = {
     iceServers: [
@@ -258,7 +260,7 @@ class Call extends React.Component<Props, State> {
 
     render = () => {
         return (
-            <SafeAreaView style={styles.body}>
+            <View style={styles.body}>
                 <View style={styles.header}>
                     <Text>{this.state.callStatus}</Text>
                     {this.state.stream && <Text>{this.printCallTime()}</Text>}
@@ -281,7 +283,7 @@ class Call extends React.Component<Props, State> {
                         : <Image style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]} source={{ uri: this.props.user_data.pic }} />
                     }
                 </View>
-                <View style={styles.footer}>
+                <SafeAreaView style={styles.footer} edges={['bottom']}>
                     <View style={{ flexDirection: 'row' }}>
                         {!this.state.stream &&
                             <TouchableOpacity onPress={this.startStream} style={[styles.actionButton, styles.bgGreen]}>
@@ -308,8 +310,8 @@ class Call extends React.Component<Props, State> {
                             </>
                         }
                     </View>
-                </View>
-            </SafeAreaView>
+                </SafeAreaView>
+            </View>
         );
     };
 
@@ -361,7 +363,7 @@ const styles = StyleSheet.create({
         zIndex: 2,
         paddingVertical: 5,
     }, body: {
-        backgroundColor: 'white',
+        backgroundColor: DARKHEADER,
         justifyContent: 'center',
         width: '100%',
         height: '100%',
