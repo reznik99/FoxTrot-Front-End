@@ -1,14 +1,12 @@
-import React, { PureComponent, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { PureComponent, useState, useCallback, useMemo } from 'react';
 import {
     StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Keyboard,
-    Linking, KeyboardAvoidingView, ToastAndroid, Image,
-    EmitterSubscription,
-    Vibration,
+    Linking, KeyboardAvoidingView, ToastAndroid, Image, Vibration,
 } from 'react-native';
 import { ActivityIndicator, Icon, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { launchImageLibrary } from 'react-native-image-picker';
-import { FlashList, FlashListRef } from '@shopify/flash-list';
+import { FlashList } from '@shopify/flash-list';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,21 +37,6 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     const [loading, setLoading] = useState(false);
     const [inputMessage, setInputMessage] = useState('');
     const [zoomMedia, setZoomMedia] = useState('');
-    const scrollView = useRef<FlashListRef<any>>(null);
-    const [keyboardDidShowListener, setkeyboardDidShowListener] = useState<EmitterSubscription | null>(null);
-
-    useEffect(() => {
-        setkeyboardDidShowListener(Keyboard.addListener(
-            'keyboardDidShow',
-            () => scrollView.current?.scrollToOffset({ offset: 0, animated: true }),
-        ));
-        return () => keyboardDidShowListener?.remove();
-    }, []);
-
-    // Scroll to end when new messages appear (sent or recieved)
-    useEffect(() => {
-        scrollView.current?.scrollToOffset({ offset: 0, animated: true });
-    }, [conversation.messages]);
 
     // Memoize the reversed messages
     const reversedMessages = useMemo(() => {
@@ -115,7 +98,6 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
             <FlashList
                 removeClippedSubviews={false}
                 contentContainerStyle={styles.messageList}
-                ref={scrollView as any}
                 data={reversedMessages}
                 maintainVisibleContentPosition={{
                     autoscrollToBottomThreshold: 0.2,
