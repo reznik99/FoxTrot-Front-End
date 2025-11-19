@@ -69,7 +69,7 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
                 <ScrollView>
                     {results?.length
                         ? results.map((user, index) => {
-                            const isContact = contact_ids.includes(user.id)
+                            const isContact = contact_ids.includes(user.id);
                             return (
                                 <View key={index}>
                                     <ContactPeek data={user}

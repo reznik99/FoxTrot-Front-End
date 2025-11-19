@@ -28,7 +28,7 @@ export default function Home(props: IProps) {
                 ...convo,
                 _latest: convo.messages?.[0]?.sent_at
                     ? new Date(convo.messages[0].sent_at).getTime()
-                    : 0
+                    : 0,
             }))
             .sort((a, b) => b._latest - a._latest);
     }, [conversations]);
