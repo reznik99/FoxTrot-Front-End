@@ -103,7 +103,8 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                     autoscrollToBottomThreshold: 0.25,
                     startRenderingFromBottom: true,
                 }}
-                onEndReached={() => Vibration.vibrate()}
+                keyExtractor={(t) => t.id.toString()}
+                onStartReached={() => Vibration.vibrate()}
                 ListEmptyComponent={renderListEmpty}
                 ListFooterComponent={renderListFooter}
                 renderItem={({ item }) => (
