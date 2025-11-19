@@ -15,6 +15,7 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
 
     const { navigation } = props;
     const loading = useSelector((state: RootState) => state.userReducer.loading);
+    const contact_ids = useSelector((state: RootState) => state.userReducer.contacts.map(c => c.id));
     const dispatch = useDispatch<AppDispatch>();
 
     const [results, setResults] = useState<UserData[] | undefined>(undefined);
@@ -68,11 +69,13 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
                 <ScrollView>
                     {results?.length
                         ? results.map((user, index) => {
+                            const isContact = contact_ids.includes(user.id)
                             return (
                                 <View key={index}>
                                     <ContactPeek data={user}
                                         loading={addingContact?.phone_no === user.phone_no}
-                                        onSelect={() => handleAddContact(user)}
+                                        onSelect={() => isContact ? navigation.navigate('Conversation', { data: { peer_user: user } }) : handleAddContact(user)}
+                                        isContact={isContact}
                                     />
                                     <Divider />
                                 </View>

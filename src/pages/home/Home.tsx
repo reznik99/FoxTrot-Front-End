@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native';
 import { Divider, FAB, ActivityIndicator, Snackbar, Icon } from 'react-native-paper';
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
@@ -22,7 +22,16 @@ type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDra
 export default function Home(props: IProps) {
     const { conversations, loading, refreshing, socketErr } = useSelector((state: RootState) => state.userReducer);
     const [loadingMsg, setLoadingMsg] = useState('');
-    const [convos, setConvos] = useState<Array<Conversation>>([]);
+    const convos: Array<Conversation> = useMemo(() => {
+        return [...conversations.values()]
+            .map(convo => ({
+                ...convo,
+                _latest: convo.messages?.[0]?.sent_at
+                    ? new Date(convo.messages[0].sent_at).getTime()
+                    : 0
+            }))
+            .sort((a, b) => b._latest - a._latest);
+    }, [conversations]);
 
     useEffect(() => {
         const initLoad = async () => {
@@ -70,14 +79,6 @@ export default function Home(props: IProps) {
             store.dispatch(destroyWebsocket());
         };
     }, []);
-
-    useEffect(() => {
-        setConvos([...conversations.values()].sort((c1, c2) => {
-            if (!c1.messages?.length) { return -1; }
-            if (!c2.messages?.length) { return 1; }
-            return new Date(c1.messages[0]?.sent_at).getTime() < new Date(c2.messages[0]?.sent_at).getTime() ? 1 : -1;
-        }));
-    }, [conversations]);
 
     const loadMessagesAndContacts = useCallback(async () => {
         setLoadingMsg('Loading contacts & messages...');
