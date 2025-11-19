@@ -10,7 +10,6 @@ import Toast from 'react-native-toast-message';
 import { getMessaging } from '@react-native-firebase/messaging'; // Push Notifications
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
 import InCallManager from 'react-native-incall-manager';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Crypto
 import 'react-native-get-random-values';
@@ -78,7 +77,7 @@ const HomeNavigator = () => {
             <HomeStack.Screen name="Conversation" component={Conversation} options={renderHeaderConversation} />
             <HomeStack.Screen name="NewConversation" component={NewConversation} options={{ title: 'My Contacts' }} />
             <HomeStack.Screen name="AddContact" component={AddContact} options={{ title: 'Search New Users' }} />
-            <HomeStack.Screen name="Call" component={Call} options={renderHeaderConversation} />
+            <HomeStack.Screen name="Call" component={Call as any} options={renderHeaderConversation} />
             <HomeStack.Screen name="CameraView" component={CameraView} options={{ title: 'Camera' }} />
             <HomeStack.Screen name="Settings" component={Settings} options={{ title: 'Settings' }} />
         </HomeStack.Navigator>
@@ -171,15 +170,13 @@ messaging.setBackgroundMessageHandler(async remoteMessage => {
 
 export default function App() {
     return (
-        <SafeAreaProvider>
-            <Provider store={store}>
-                <PaperProvider theme={darkTheme}>
-                    <WebviewCrypto />
-                    <StatusBar backgroundColor={DARKHEADER} barStyle="light-content" />
-                    <AuthNavigator />
-                    <Toast />
-                </PaperProvider>
-            </Provider>
-        </SafeAreaProvider>
+        <Provider store={store}>
+            <PaperProvider theme={darkTheme}>
+                <WebviewCrypto />
+                <StatusBar backgroundColor={DARKHEADER} barStyle="light-content" />
+                <AuthNavigator />
+                <Toast />
+            </PaperProvider>
+        </Provider>
     );
 }

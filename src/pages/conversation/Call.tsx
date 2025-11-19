@@ -5,7 +5,7 @@ import { mediaDevices, MediaStream, RTCPeerConnection, RTCSessionDescription, RT
 import InCallManager from 'react-native-incall-manager';
 import Toast from 'react-native-toast-message';
 import { StackScreenProps } from '@react-navigation/stack';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { withSafeAreaInsets, WithSafeAreaInsetsProps } from 'react-native-safe-area-context';
 
 import { UserData } from '~/store/reducers/user';
 import { RootState } from '~/store/store';
@@ -283,7 +283,7 @@ class Call extends React.Component<Props, State> {
                         : <Image style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]} source={{ uri: this.props.user_data.pic }} />
                     }
                 </View>
-                <SafeAreaView style={styles.footer} edges={['bottom']}>
+                <View style={[styles.footer, { paddingBottom: this.props.insets.bottom }]}>
                     <View style={{ flexDirection: 'row' }}>
                         {!this.state.stream &&
                             <TouchableOpacity onPress={this.startStream} style={[styles.actionButton, styles.bgGreen]}>
@@ -310,7 +310,7 @@ class Call extends React.Component<Props, State> {
                             </>
                         }
                     </View>
-                </SafeAreaView>
+                </View>
             </View>
         );
     };
@@ -332,7 +332,7 @@ const mapDispatchToProps = {
 
 const connector = connect(mapStateToProps, mapDispatchToProps);
 type PropsFromRedux = ConnectedProps<typeof connector>
-export default connector(Call);
+export default withSafeAreaInsets(connector(Call));
 
 interface State {
     peer_user: UserData;
@@ -349,7 +349,7 @@ interface State {
     startTime: number;
 }
 
-type Props = PropsFromRedux & StackScreenProps<HomeStackParamList, 'Call'>
+type Props = PropsFromRedux & StackScreenProps<HomeStackParamList, 'Call'> & WithSafeAreaInsetsProps
 
 const styles = StyleSheet.create({
     header: {
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         height: 275,
         width: 225,
-        bottom: 60,
+        bottom: 80,
         right: 0,
         borderRadius: 5,
         backgroundColor: '#333333f0',

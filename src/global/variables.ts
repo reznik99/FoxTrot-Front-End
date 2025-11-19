@@ -18,7 +18,7 @@ export const KeychainOpts = {
       title: 'Authentication required for Login',
       cancel: 'Cancel',
     },
-    accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE
+    accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
 };
 
 // Style

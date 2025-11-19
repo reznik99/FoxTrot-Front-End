@@ -107,8 +107,8 @@ class Login extends Component<IProps, IState> {
             const creds = JSON.parse(res.password);
             return { username: res.username, ...creds } as Credentials;
         } catch (err) {
-            console.error("Failed to load creds:", err)
-            return undefined
+            console.error('Failed to load creds:', err);
+            return undefined;
         }
     };
 

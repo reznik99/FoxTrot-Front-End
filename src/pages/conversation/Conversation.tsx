@@ -1,24 +1,22 @@
 import React, { PureComponent, useState, useCallback, useMemo } from 'react';
-import {
-    StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Keyboard,
-    Linking, KeyboardAvoidingView, ToastAndroid, Image, Vibration,
-} from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Linking, ToastAndroid, Image, Vibration } from 'react-native';
 import { ActivityIndicator, Icon, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { FlashList } from '@shopify/flash-list';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StackScreenProps } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { sendMessage } from '~/store/actions/user';
+import CustomKeyboardAvoidingView from '~/components/CustomKeyboardAvoidingView';
+import FullScreenImage from '~/components/FullScreenImage';
 import { decrypt } from '~/global/crypto';
 import { PRIMARY, SECONDARY } from '~/global/variables';
-import FullScreenImage from '~/components/FullScreenImage';
-import { StackScreenProps } from '@react-navigation/stack';
 import { HomeStackParamList } from '../../../App';
-import { AppDispatch, RootState } from '~/store/store';
 import { message, UserData } from '~/store/reducers/user';
+import { AppDispatch, RootState } from '~/store/store';
+import { sendMessage } from '~/store/actions/user';
 
 const todaysDate = new Date().toLocaleDateString();
 
@@ -37,6 +35,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     const [loading, setLoading] = useState(false);
     const [inputMessage, setInputMessage] = useState('');
     const [zoomMedia, setZoomMedia] = useState('');
+    const edgeInsets = useSafeAreaInsets();
 
     // Memoize the reversed messages
     const reversedMessages = useMemo(() => {
@@ -117,30 +116,32 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                 )}
             />
 
-            <SafeAreaView style={styles.inputContainer} edges={['bottom', 'left', 'right']}>
-                <TouchableOpacity style={styles.button} onPress={handleCameraSelect}>
-                    <Icon source="camera" color={styles.buttonIcon.color} size={20} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={handleImageSelect}>
-                    <Icon source="image" color={styles.buttonIcon.color} size={20} />
-                </TouchableOpacity>
-                <KeyboardAvoidingView behavior={'padding'} style={{ flex: 1 }}>
-                    <TextInput placeholder="Type a message"
-                        multiline={true}
-                        value={inputMessage}
-                        onChangeText={setInputMessage}
-                        style={styles.input}
-                        clearButtonMode="always"
-                    />
-                </KeyboardAvoidingView>
-
-                {loading
-                    ? <ActivityIndicator style={{ marginHorizontal: 5 }} />
-                    : <TouchableOpacity style={styles.button} onPress={handleSend}>
-                        <Icon source="send-lock" color={styles.buttonIcon.color} size={20} />
+            <CustomKeyboardAvoidingView>
+                <View style={[styles.inputContainer, { paddingBottom: edgeInsets.bottom, paddingHorizontal: edgeInsets.left }]} >
+                    <TouchableOpacity style={styles.button} onPress={handleCameraSelect}>
+                        <Icon source="camera" color={styles.buttonIcon.color} size={20} />
                     </TouchableOpacity>
-                }
-            </SafeAreaView>
+                    <TouchableOpacity style={styles.button} onPress={handleImageSelect}>
+                        <Icon source="image" color={styles.buttonIcon.color} size={20} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <TextInput placeholder="Type a message"
+                            multiline={true}
+                            value={inputMessage}
+                            onChangeText={setInputMessage}
+                            style={styles.input}
+                            clearButtonMode="always"
+                        />
+                    </View>
+
+                    {loading
+                        ? <ActivityIndicator style={{ marginHorizontal: 5 }} />
+                        : <TouchableOpacity style={styles.button} onPress={handleSend}>
+                            <Icon source="send-lock" color={styles.buttonIcon.color} size={20} />
+                        </TouchableOpacity>
+                    }
+                </View>
+            </CustomKeyboardAvoidingView>
 
             <Portal>
                 <Modal visible={!!zoomMedia}
