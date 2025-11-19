@@ -84,7 +84,7 @@ const HomeNavigator = () => {
         </HomeStack.Navigator>
     );
 };
-const renderHeaderConversation = ({ route }: { route: RouteProp<HomeStackParamList, 'Call' | 'Conversation'> }) => (
+const renderHeaderConversation = ({ route }: { route: RouteProp<HomeStackParamList, 'Call' | 'Conversation'> }): StackNavigationOptions => (
     {
         header: (props: StackHeaderProps) => (
             <HeaderConversation navigation={props.navigation as any} data={route.params.data} allowBack={true} />

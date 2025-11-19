@@ -2,8 +2,9 @@ import axios, { AxiosError } from 'axios';
 import * as Keychain from 'react-native-keychain';
 import Toast from 'react-native-toast-message';
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { Alert } from 'react-native';
 
-import { API_URL } from '~/global/variables';
+import { API_URL, KeychainOpts } from '~/global/variables';
 import { getAvatar } from '~/global/helper';
 import { deleteFromStorage, writeToStorage } from '~/global/storage';
 import { LOGGED_IN, LOGIN_ERROR_MSG, LOGOUT, SET_LOADING, SIGNED_UP, SIGNUP_ERROR_MSG } from '../reducers/user';
@@ -36,10 +37,10 @@ export const logIn = createAsyncThunk('logIn', async ({ username, password }: lo
             time: Date.now(),
         };
         await Keychain.setGenericPassword(username, JSON.stringify(secrets), {
-            accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
-            storage: Keychain.STORAGE_TYPE.AES_GCM,
             server: API_URL,
             service: `${username}-credentials`,
+            accessControl: KeychainOpts.accessControl,
+            storage: Keychain.STORAGE_TYPE.AES_GCM,
         });
 
         // Save data in redux store
@@ -49,6 +50,10 @@ export const logIn = createAsyncThunk('logIn', async ({ username, password }: lo
     catch (err: any) {
         console.error('Error logging in:', err);
         thunkAPI.dispatch(LOGIN_ERROR_MSG(err.response?.data?.message || err.message));
+        Alert.alert('Unable to Login',
+            err.response?.data?.message || err.message,
+            [{ text: 'OK', onPress: () => { } }]
+        );
         return false;
     }
     finally {

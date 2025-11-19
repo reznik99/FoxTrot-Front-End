@@ -1,3 +1,4 @@
+import * as Keychain from 'react-native-keychain';
 
 // Networking (dev: 'http://10.0.2.2:1234/foxtrot-api')
 export const API_URL = 'https://francescogorini.com/foxtrot-api';
@@ -17,6 +18,7 @@ export const KeychainOpts = {
       title: 'Authentication required for Login',
       cancel: 'Cancel',
     },
+    accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE
 };
 
 // Style

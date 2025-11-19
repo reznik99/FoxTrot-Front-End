@@ -93,17 +93,23 @@ class Login extends Component<IProps, IState> {
     };
 
     loadCredentials = async (username: string) => {
-        console.debug('Loading credentials from secure storage');
-        const res = await Keychain.getGenericPassword({
-            server: API_URL,
-            service: `${username}-credentials`,
-            authenticationPrompt: KeychainOpts.authenticationPrompt,
-        });
-        if (!res) { return undefined; }
-        if (res.username !== this.state.username) { return undefined; }
+        try {
+            console.debug('Loading credentials from secure storage');
+            const res = await Keychain.getGenericPassword({
+                server: API_URL,
+                service: `${username}-credentials`,
+                accessControl: KeychainOpts.accessControl,
+                authenticationPrompt: KeychainOpts.authenticationPrompt,
+            });
+            if (!res) { return undefined; }
+            if (res.username !== this.state.username) { return undefined; }
 
-        const creds = JSON.parse(res.password);
-        return { username: res.username, ...creds } as Credentials;
+            const creds = JSON.parse(res.password);
+            return { username: res.username, ...creds } as Credentials;
+        } catch (err) {
+            console.error("Failed to load creds:", err)
+            return undefined
+        }
     };
 
     handleLogin = async (username: string, password: string) => {

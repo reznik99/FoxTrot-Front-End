@@ -12,7 +12,7 @@ import { Buffer } from 'buffer';
 
 import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions';
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto';
-import { ACCENT, API_URL, DARKHEADER } from '~/global/variables';
+import { ACCENT, API_URL, DARKHEADER, KeychainOpts } from '~/global/variables';
 import globalStyle from '~/global/style';
 import { deleteFromStorage } from '~/global/storage';
 import { AppDispatch, RootState } from '~/store/store';
@@ -55,6 +55,7 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
         const res = await Keychain.getGenericPassword({
             server: API_URL,
             service: `${user_data.phone_no}-credentials`,
+            accessControl: KeychainOpts.accessControl,
             authenticationPrompt: {
                 title: 'Authentication required',
             },
