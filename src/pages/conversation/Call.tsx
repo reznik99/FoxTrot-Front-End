@@ -7,20 +7,41 @@ import Toast from 'react-native-toast-message';
 import { StackScreenProps } from '@react-navigation/stack';
 import { withSafeAreaInsets, WithSafeAreaInsetsProps } from 'react-native-safe-area-context';
 
-import { UserData } from '~/store/reducers/user';
+import { TURNCredentials, UserData } from '~/store/reducers/user';
 import { RootState } from '~/store/store';
 import { resetCallState, SocketData } from '~/store/actions/websocket';
 import { RTCOfferOptions } from 'react-native-webrtc/lib/typescript/RTCUtil';
 import { Icon } from 'react-native-paper';
 import { HomeStackParamList } from '../../../App';
 import { DARKHEADER } from '~/global/variables';
+import { CandidatePair, getIconForConnType, LocalCandidate } from '~/global/webrtc';
 
-const peerConstraints = {
-    iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun.services.mozilla.com' },
-    ],
-};
+const getRTCConfiguration = (turnCredentials: TURNCredentials): RTCConfiguration => {
+    if (!turnCredentials.credential) {
+        return {
+            iceServers: [
+                // STUN peer-to-peer
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun.services.mozilla.com' },
+            ],
+        }
+    }
+    const username = turnCredentials.username
+    const credential = turnCredentials.credential
+    return {
+        iceServers: [
+            // STUN peer-to-peer
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun.services.mozilla.com' },
+            // TURN over UDP (fastest)
+            { urls: ['turn:turn.francescogorini.com:3478?transport=udp'], username, credential },
+            // TURN over TCP (fallback for UDP-restricted networks)
+            { urls: ['turn:turn.francescogorini.com:3478?transport=tcp'], username, credential },
+            // TURN over TLS (best for strict firewalls/proxies)
+            { urls: ['turn:turn.francescogorini.com:5349?transport=tcp'], username, credential },
+        ],
+    }
+}
 
 class Call extends React.Component<Props, State> {
     timer: NodeJS.Timeout | undefined;
@@ -38,6 +59,7 @@ class Call extends React.Component<Props, State> {
             isFrontCamera: true,
             minimizeLocalStream: true,
             callStatus: '',
+            connectionInfo: undefined,
             callTime: Date.now(),
             startTime: Date.now(),
         };
@@ -149,7 +171,7 @@ class Call extends React.Component<Props, State> {
             const newStream = await mediaDevices.getUserMedia({ video: true, audio: true });
 
             console.debug('startStream - RTCPeerConnection Init');
-            const newConnection = new RTCPeerConnection(peerConstraints);
+            const newConnection = new RTCPeerConnection(getRTCConfiguration(this.props.turnServerCreds));
 
             // Event handlers
             newConnection.addEventListener('icecandidateerror', () => {
@@ -175,12 +197,15 @@ class Call extends React.Component<Props, State> {
                 this.props.socketConn?.send(JSON.stringify(message));
             });
             newConnection.addEventListener('connectionstatechange', _event => {
-                console.debug('WebRTC connection state change: ', newConnection?.connectionState);
+                console.debug('WebRTC connection state change:', newConnection?.connectionState);
                 this.setState({ callStatus: `${this.state.peer_user?.phone_no} : ${newConnection?.connectionState}` });
                 if (newConnection?.connectionState === 'disconnected') { this.endCall(); }
             });
             newConnection.addEventListener('iceconnectionstatechange', _event => {
-                console.debug('ICE connection state change: ', newConnection?.iceConnectionState);
+                console.debug('ICE connection state change:', newConnection?.iceConnectionState);
+                if (newConnection.iceConnectionState === "connected") {
+                    this.checkConnectionType();
+                }
             });
             newConnection.addEventListener('track', (event: any) => {
                 const newPeerStream = event.streams[0];
@@ -265,12 +290,43 @@ class Call extends React.Component<Props, State> {
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     };
 
+    checkConnectionType = async () => {
+        if (!this.state.peerConnection) return;
+        // Get all WebRTC connection stats
+        const stats = await this.state.peerConnection.getStats() as RTCStatsReport
+        const reports: Array<CandidatePair | LocalCandidate> = []
+        stats.forEach(report => {
+            reports.push(report)
+        })
+        // Filter what we want
+        const candidatePair = reports
+            .find(rp => rp.type === "candidate-pair" && rp.state === "succeeded") as CandidatePair | undefined
+        const localCandidate = reports
+            .find(rp => rp.type === "local-candidate" && rp.id === candidatePair?.localCandidateId) as LocalCandidate | undefined
+
+        console.debug("candidatePair:", candidatePair)
+        console.debug("localCandidate:", localCandidate)
+        if (!candidatePair || !localCandidate) return
+
+        this.setState({
+            connectionInfo: { localCandidate, candidatePair }
+        })
+    }
+
     render = () => {
         return (
             <View style={styles.body}>
                 <View style={styles.header}>
                     <Text>{this.state.callStatus}</Text>
-                    {this.state.stream && <Text>{this.printCallTime()}</Text>}
+                    {this.state.stream && <View>
+                        <Text>{this.printCallTime()}</Text>
+                        <Text>Network Type:{this.state.connectionInfo?.localCandidate.networkType}</Text>
+                        <Text>VPN:{this.state.connectionInfo?.localCandidate.vpn}</Text>
+                        <Text>Proto:{this.state.connectionInfo?.localCandidate.protocol}</Text>
+                        <Text>Type:{this.state.connectionInfo?.localCandidate.candidateType} {getIconForConnType(this.state.connectionInfo?.localCandidate?.candidateType || "")}</Text>
+                        <Text>RTT:{(this.state.connectionInfo?.candidatePair.currentRoundTripTime || 0) * 1000}ms</Text>
+                    </View>
+                    }
                 </View>
                 <View style={{ width: '100%', flex: 1 }}>
                     {this.state.peerStream && this.state.peerConnection?.connectionState === 'connected'
@@ -330,6 +386,7 @@ const mapStateToProps = (state: RootState) => ({
     iceCandidates: state.userReducer.iceCandidates,
     user_data: state.userReducer.user_data,
     caller: state.userReducer.caller,
+    turnServerCreds: state.userReducer.turnServerCredentials,
     socketConn: state.userReducer.socketConn,
 });
 
@@ -352,6 +409,10 @@ interface State {
     isFrontCamera: boolean;
     minimizeLocalStream: boolean;
     callStatus: string;
+    connectionInfo: {
+        localCandidate: LocalCandidate;
+        candidatePair: CandidatePair;
+    } | undefined;
     callTime: number;
     startTime: number;
 }
