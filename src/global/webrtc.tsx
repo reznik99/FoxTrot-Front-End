@@ -2,20 +2,20 @@ import { Icon } from 'react-native-paper';
 
 export interface LocalCandidate {
     timestamp: number;
-    type: "local-candidate";
+    type: 'local-candidate';
     id: string;
     transportId: string;
 
     isRemote: boolean;
-    networkType: "wifi" | "?TODO?";
+    networkType: 'wifi' | '?TODO?';
 
     ip: string;
     address: string;
     port: number;
 
-    protocol: "udp" | "tcp";
-    relayProtocol: "udp" | "tcp";
-    candidateType: "host" | "srflx" | "prflx" | "relay";
+    protocol: 'udp' | 'tcp';
+    relayProtocol: 'udp' | 'tcp';
+    candidateType: 'host' | 'srflx' | 'prflx' | 'relay';
     priority: number;
     foundation: string;
 
@@ -30,14 +30,14 @@ export interface LocalCandidate {
 
 export interface CandidatePair {
     timestamp: number;
-    type: "candidate-pair";
+    type: 'candidate-pair';
     id: string;
     transportId: string;
 
     localCandidateId: string;
     remoteCandidateId: string;
 
-    state: "succeeded" | "waiting";
+    state: 'succeeded' | 'waiting';
     priority: number;
     nominated: boolean;
     writable: boolean;
@@ -66,21 +66,21 @@ export interface CandidatePair {
 
 
 
-export const getIconForConnType = (connType: "host" | "srflx" | "prflx" | "relay" | "") => {
+export const getIconForConnType = (connType: 'host' | 'srflx' | 'prflx' | 'relay' | '') => {
     switch (connType) {
         case '':
-            return <Icon source="connection" color='#6f6f6fff' size={20} />
+            return <Icon source="connection" color="#6f6f6fff" size={20} />;
         case 'host':
-            return <Icon source="lan" color='#02cb09ff' size={20} />
+            return <Icon source="lan" color="#02cb09ff" size={20} />;
         // "host" The candidate is a host candidate, whose IP address as specified in the RTCIceCandidate.address property is in fact the true address of the remote peer.
         case 'srflx':
-            return <Icon source="wan" color='#03b272ff' size={20} />
+            return <Icon source="wan" color="#03b272ff" size={20} />;
         // "srflx" The candidate is a server reflexive candidate; the ip and port are a binding allocated by a NAT for an agent when it sent a packet through the NAT to a server. They can be learned by the STUN server and TURN server to represent the candidate's peer anonymously.
         case 'prflx':
-            return <Icon source="web" color='#04b5c8ff' size={20} />
+            return <Icon source="web" color="#04b5c8ff" size={20} />;
         // "prflx" The candidate is a peer reflexive candidate; the ip and port are a binding allocated by a NAT when it sent a STUN request to represent the candidate's peer anonymously.
         case 'relay':
-            return <Icon source="server" color='#380793' size={20} />
+            return <Icon source="server" color="#380793" size={20} />;
         // "relay" The candidate is a relay candidate, obtained from a TURN server. The relay candidate's IP address is an address the TURN server uses to forward the media between the two peers.
     }
-}
+};

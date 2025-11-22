@@ -158,7 +158,7 @@ export const userSlice = createSlice({
         RECV_CALL_ANSWER: (state, action: PayloadAction<RTCSessionDescription>) => {
             state.callAnswer = action.payload;
         },
-        RECV_CALL_CLOSED: (state, action: PayloadAction<RTCIceCandidate>) => {
+        RECV_CALL_CLOSED: (_state, _action: PayloadAction<RTCIceCandidate>) => {
             // TODO: implement
         },
         RECV_CALL_ICE_CANDIDATE: (state, action: PayloadAction<RTCIceCandidate>) => {
@@ -168,7 +168,7 @@ export const userSlice = createSlice({
             state.iceCandidates = [];
         },
         TURN_CREDS: (state, action: PayloadAction<TURNCredentials>) => {
-            state.turnServerCredentials = action.payload
+            state.turnServerCredentials = action.payload;
         },
         WEBSOCKET_CONNECT: (state, action: PayloadAction<WebSocket>) => {
             state.socketConn = action.payload;

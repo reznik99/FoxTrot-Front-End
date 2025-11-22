@@ -38,7 +38,7 @@ export default function Home(props: IProps) {
             // [background] Register device for push notifications
             store.dispatch(registerPushNotifications());
             // [background] Get TURN credentials for proxying calls if peer-to-peer ICE fails
-            store.dispatch(getTURNServerCreds())
+            store.dispatch(getTURNServerCreds());
             // Start websocket connection to server
             await configureWebsocket();
             // Load keys from TPM

@@ -391,7 +391,7 @@ export const getTURNServerCreds = createDefaultAsyncThunk('getTURNServerCreds', 
 
         console.debug('Registering for Push Notifications');
         const response = await axios.get(`${API_URL}/turnServerKey`, axiosBearerConfig(state.token));
-        thunkAPI.dispatch(TURN_CREDS(response.data))
+        thunkAPI.dispatch(TURN_CREDS(response.data));
     } catch (err: any) {
         console.error('Error fetching TURN Server credentials:', err);
         Toast.show({

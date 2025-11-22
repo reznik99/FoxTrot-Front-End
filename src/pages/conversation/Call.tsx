@@ -24,10 +24,10 @@ const getRTCConfiguration = (turnCredentials: TURNCredentials): RTCConfiguration
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun.services.mozilla.com' },
             ],
-        }
+        };
     }
-    const username = turnCredentials.username
-    const credential = turnCredentials.credential
+    const username = turnCredentials.username;
+    const credential = turnCredentials.credential;
     return {
         iceServers: [
             // STUN peer-to-peer
@@ -40,8 +40,8 @@ const getRTCConfiguration = (turnCredentials: TURNCredentials): RTCConfiguration
             // TURN over TLS (best for strict firewalls/proxies)
             { urls: ['turn:turn.francescogorini.com:5349?transport=tcp'], username, credential },
         ],
-    }
-}
+    };
+};
 
 class Call extends React.Component<Props, State> {
     timer: NodeJS.Timeout | undefined;
@@ -93,7 +93,7 @@ class Call extends React.Component<Props, State> {
                 await this.state.peerConnection.setRemoteDescription(offerDescription);
                 this.props.iceCandidates.forEach(iceCandidate => {
                     // console.debug('Got ICE candidate after peer answered, adding to peerConnection:', iceCandidate);
-                    this.state.peerConnection?.addIceCandidate(iceCandidate)
+                    this.state.peerConnection?.addIceCandidate(iceCandidate);
                 });
             }
         }
@@ -132,7 +132,7 @@ class Call extends React.Component<Props, State> {
 
         this.props.iceCandidates.forEach(iceCandidate => {
             // console.debug('Got ICE candidate after we answered, adding to peerConnection:', iceCandidate);
-            this.state.peerConnection?.addIceCandidate(iceCandidate)
+            this.state.peerConnection?.addIceCandidate(iceCandidate);
         });
     };
 
@@ -179,7 +179,7 @@ class Call extends React.Component<Props, State> {
                     type: 'error',
                     text1: 'Error occoured during call',
                     text2: 'Unable to find viable path to peer',
-                })
+                });
             });
             newConnection.addEventListener('icecandidate', (event: any) => {
                 if (!event.candidate) { console.debug('onIceCandidate finished'); }
@@ -203,7 +203,7 @@ class Call extends React.Component<Props, State> {
             });
             newConnection.addEventListener('iceconnectionstatechange', _event => {
                 console.debug('ICE connection state change:', newConnection?.iceConnectionState);
-                if (newConnection.iceConnectionState === "connected") {
+                if (newConnection.iceConnectionState === 'connected') {
                     this.checkConnectionType();
                 }
             });
@@ -291,27 +291,27 @@ class Call extends React.Component<Props, State> {
     };
 
     checkConnectionType = async () => {
-        if (!this.state.peerConnection) return;
+        if (!this.state.peerConnection) {return;}
         // Get all WebRTC connection stats
-        const stats = await this.state.peerConnection.getStats() as RTCStatsReport
-        const reports: Array<CandidatePair | LocalCandidate> = []
+        const stats = await this.state.peerConnection.getStats() as RTCStatsReport;
+        const reports: Array<CandidatePair | LocalCandidate> = [];
         stats.forEach(report => {
-            reports.push(report)
-        })
+            reports.push(report);
+        });
         // Filter what we want
         const candidatePair = reports
-            .find(rp => rp.type === "candidate-pair" && rp.state === "succeeded") as CandidatePair | undefined
+            .find(rp => rp.type === 'candidate-pair' && rp.state === 'succeeded') as CandidatePair | undefined;
         const localCandidate = reports
-            .find(rp => rp.type === "local-candidate" && rp.id === candidatePair?.localCandidateId) as LocalCandidate | undefined
+            .find(rp => rp.type === 'local-candidate' && rp.id === candidatePair?.localCandidateId) as LocalCandidate | undefined;
 
-        console.debug("candidatePair:", candidatePair)
-        console.debug("localCandidate:", localCandidate)
-        if (!candidatePair || !localCandidate) return
+        console.debug('candidatePair:', candidatePair);
+        console.debug('localCandidate:', localCandidate);
+        if (!candidatePair || !localCandidate) {return;}
 
         this.setState({
-            connectionInfo: { localCandidate, candidatePair }
-        })
-    }
+            connectionInfo: { localCandidate, candidatePair },
+        });
+    };
 
     render = () => {
         return (
@@ -323,7 +323,7 @@ class Call extends React.Component<Props, State> {
                         <Text>Network Type:{this.state.connectionInfo?.localCandidate.networkType}</Text>
                         <Text>VPN:{this.state.connectionInfo?.localCandidate.vpn}</Text>
                         <Text>Proto:{this.state.connectionInfo?.localCandidate.protocol}</Text>
-                        <Text>Type:{this.state.connectionInfo?.localCandidate.candidateType} {getIconForConnType(this.state.connectionInfo?.localCandidate?.candidateType || "")}</Text>
+                        <Text>Type:{this.state.connectionInfo?.localCandidate.candidateType} {getIconForConnType(this.state.connectionInfo?.localCandidate?.candidateType || '')}</Text>
                         <Text>RTT:{(this.state.connectionInfo?.candidatePair.currentRoundTripTime || 0) * 1000}ms</Text>
                     </View>
                     }
