@@ -69,7 +69,10 @@ class Call extends React.Component<Props, State> {
                 // User answered our call, set remote description on webrtc connection and add recieved ice candidates
                 const offerDescription = new RTCSessionDescription(this.props.callAnswer);
                 await this.state.peerConnection.setRemoteDescription(offerDescription);
-                this.props.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate));
+                this.props.iceCandidates.forEach(iceCandidate => {
+                    // console.debug('Got ICE candidate after peer answered, adding to peerConnection:', iceCandidate);
+                    this.state.peerConnection?.addIceCandidate(iceCandidate)
+                });
             }
         }
 
@@ -105,7 +108,10 @@ class Call extends React.Component<Props, State> {
         };
         this.props.socketConn?.send(JSON.stringify(message));
 
-        this.props.iceCandidates.forEach(iceCandidate => this.state.peerConnection?.addIceCandidate(iceCandidate));
+        this.props.iceCandidates.forEach(iceCandidate => {
+            // console.debug('Got ICE candidate after we answered, adding to peerConnection:', iceCandidate);
+            this.state.peerConnection?.addIceCandidate(iceCandidate)
+        });
     };
 
     call = async () => {
