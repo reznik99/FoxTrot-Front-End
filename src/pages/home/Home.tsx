@@ -7,7 +7,7 @@ import InCallManager from 'react-native-incall-manager';
 import { useSelector } from 'react-redux';
 
 import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
-import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications } from '~/store/actions/user';
+import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications, getTURNServerCreds } from '~/store/actions/user';
 import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket';
 import ConversationPeek from '~/components/ConversationPeek';
 import { setupInterceptors } from '~/store/actions/auth';
@@ -35,8 +35,10 @@ export default function Home(props: IProps) {
 
     useEffect(() => {
         const initLoad = async () => {
-            // Register device for push notifications
+            // [background] Register device for push notifications
             store.dispatch(registerPushNotifications());
+            // [background] Get TURN credentials for proxying calls if peer-to-peer ICE fails
+            store.dispatch(getTURNServerCreds())
             // Start websocket connection to server
             await configureWebsocket();
             // Load keys from TPM

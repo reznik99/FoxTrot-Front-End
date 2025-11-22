@@ -16,6 +16,7 @@ export interface State {
     callOffer?: RTCSessionDescription;
     callAnswer?: RTCSessionDescription;
     iceCandidates: RTCIceCandidate[];
+    turnServerCredentials: TURNCredentials;
     loading: boolean;
     refreshing: boolean;
     loginErr: string;
@@ -46,6 +47,11 @@ export interface message {
     sender_id: string | number;
 }
 
+export interface TURNCredentials {
+    username: string;
+    credential: string;
+}
+
 const initialState: State = {
     tokenValid: false,
     token: '',
@@ -61,6 +67,10 @@ const initialState: State = {
     callOffer: undefined,
     callAnswer: undefined,
     iceCandidates: [],
+    turnServerCredentials: {
+        username: '',
+        credential: '',
+    },
     loading: false,
     refreshing: false,
     loginErr: '',
@@ -148,11 +158,17 @@ export const userSlice = createSlice({
         RECV_CALL_ANSWER: (state, action: PayloadAction<RTCSessionDescription>) => {
             state.callAnswer = action.payload;
         },
+        RECV_CALL_CLOSED: (state, action: PayloadAction<RTCIceCandidate>) => {
+            // TODO: implement
+        },
         RECV_CALL_ICE_CANDIDATE: (state, action: PayloadAction<RTCIceCandidate>) => {
             state.iceCandidates.push(action.payload);
         },
         RESET_CALL_ICE_CANDIDATES: state => {
             state.iceCandidates = [];
+        },
+        TURN_CREDS: (state, action: PayloadAction<TURNCredentials>) => {
+            state.turnServerCredentials = action.payload
         },
         WEBSOCKET_CONNECT: (state, action: PayloadAction<WebSocket>) => {
             state.socketConn = action.payload;
@@ -186,6 +202,7 @@ export const {
     RECV_CALL_ANSWER,
     RECV_CALL_ICE_CANDIDATE,
     RESET_CALL_ICE_CANDIDATES,
+    TURN_CREDS,
     WEBSOCKET_CONNECT,
     WEBSOCKET_ERROR,
     LOGOUT,

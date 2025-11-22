@@ -7,6 +7,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
     Conversation, message, ADD_CONTACT_SUCCESS, KEY_LOAD, LOAD_CONTACTS, LOAD_CONVERSATIONS,
     SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData,
+    TURN_CREDS,
 } from '~/store/reducers/user';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { readFromStorage, writeToStorage } from '~/global/storage';
@@ -379,6 +380,24 @@ export const registerPushNotifications = createDefaultAsyncThunk('registerPushNo
             type: 'error',
             text1: 'Failed to register for push notifications',
             text2: err.message ?? err.toString(),
+            visibilityTime: 5000,
+        });
+    }
+});
+
+export const getTURNServerCreds = createDefaultAsyncThunk('getTURNServerCreds', async (_, thunkAPI) => {
+    try {
+        let state = thunkAPI.getState().userReducer;
+
+        console.debug('Registering for Push Notifications');
+        const response = await axios.get(`${API_URL}/turnServerKey`, axiosBearerConfig(state.token));
+        thunkAPI.dispatch(TURN_CREDS(response.data))
+    } catch (err: any) {
+        console.error('Error fetching TURN Server credentials:', err);
+        Toast.show({
+            type: 'info',
+            text1: 'Failed to fetch proxy credentials',
+            text2: 'call stability might be impacted',
             visibilityTime: 5000,
         });
     }
