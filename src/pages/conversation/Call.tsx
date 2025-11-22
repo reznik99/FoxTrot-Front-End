@@ -146,12 +146,13 @@ class Call extends React.Component<Props, State> {
             const newConnection = new RTCPeerConnection(peerConstraints);
 
             // Event handlers
-            newConnection.addEventListener('icecandidateerror', () => Toast.show({
-                type: 'error',
-                text1: 'Error occoured during call',
-                text2: 'Unable to find viable path to peer',
-            })
-            );
+            newConnection.addEventListener('icecandidateerror', () => {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error occoured during call',
+                    text2: 'Unable to find viable path to peer',
+                })
+            });
             newConnection.addEventListener('icecandidate', (event: any) => {
                 if (!event.candidate) { console.debug('onIceCandidate finished'); }
                 // Send the iceCandidate to the other participant. Using websockets

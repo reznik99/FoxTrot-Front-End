@@ -120,7 +120,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 });
                 break;
             case 'CALL_OFFER':
-                console.debug('Websocket CALL_OFFER Recieved: ', parsedData.data?.sender);
+                console.debug('Websocket CALL_OFFER Recieved', parsedData.data?.sender);
 
                 const state = getState().userReducer;
                 const caller = state.contacts.find(con => con.phone_no === parsedData.data.sender);
@@ -150,15 +150,15 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 );
                 break;
             case 'CALL_ANSWER':
-                console.debug('Websocket CALL_ANSWER Recieved: ', parsedData.data?.sender);
+                console.debug('Websocket CALL_ANSWER Recieved', parsedData.data?.sender);
                 dispatch({ type: 'user/RECV_CALL_ANSWER', payload: parsedData.data?.answer });
                 break;
             case 'CALL_ICE_CANDIDATE':
-                console.debug('Websocket RECV_CALL_ICE_CANDIDATE Recieved: ', parsedData.data?.sender);
+                console.debug('Websocket RECV_CALL_ICE_CANDIDATE Recieved', parsedData.data?.sender);
                 dispatch({ type: 'user/RECV_CALL_ICE_CANDIDATE', payload: parsedData.data?.candidate });
                 break;
             default:
-                console.debug('Websocket RECV unknown command from: ', parsedData.data?.sender, parsedData.cmd);
+                console.debug('Websocket RECV unknown command from', parsedData.data?.sender, parsedData.cmd);
         }
     } catch (err: any) {
         console.error('Websocket RECV error:', err);

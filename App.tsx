@@ -7,7 +7,7 @@ import { NavigationContainer, DarkTheme as NavDarkTheme, RouteProp } from '@reac
 import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions, StackHeaderProps } from '@react-navigation/stack';
 import { createDrawerNavigator, DrawerContentComponentProps, DrawerNavigationOptions } from '@react-navigation/drawer';
 import Toast from 'react-native-toast-message';
-import { getMessaging } from '@react-native-firebase/messaging'; // Push Notifications
+import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging'; // Push Notifications
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
 import InCallManager from 'react-native-incall-manager';
 
@@ -123,7 +123,7 @@ const darkTheme = {
 
 // Register background handler
 const messaging = getMessaging();
-messaging.setBackgroundMessageHandler(async remoteMessage => {
+setBackgroundMessageHandler(messaging, async remoteMessage => {
     console.log('Message handled in the background!', remoteMessage);
     const callerRaw = remoteMessage.data?.caller as string;
     if (!callerRaw) {
