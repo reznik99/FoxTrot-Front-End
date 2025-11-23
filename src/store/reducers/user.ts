@@ -15,6 +15,7 @@ export interface State {
     caller?: UserData;
     callOffer?: RTCSessionDescription;
     callAnswer?: RTCSessionDescription;
+    callClosed: boolean;
     iceCandidates: RTCIceCandidate[];
     turnServerCredentials: TURNCredentials;
     loading: boolean;
@@ -66,6 +67,7 @@ const initialState: State = {
     caller: undefined,
     callOffer: undefined,
     callAnswer: undefined,
+    callClosed: false,
     iceCandidates: [],
     turnServerCredentials: {
         username: '',
@@ -131,6 +133,9 @@ export const userSlice = createSlice({
                     messages: [message],
                 });
             }
+            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
+            writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
+            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(state.conversations.entries())));
         },
         RECV_MESSAGE: (state, action: PayloadAction<message>) => {
             const data = action.payload;
@@ -158,8 +163,8 @@ export const userSlice = createSlice({
         RECV_CALL_ANSWER: (state, action: PayloadAction<RTCSessionDescription>) => {
             state.callAnswer = action.payload;
         },
-        RECV_CALL_CLOSED: (_state, _action: PayloadAction<RTCIceCandidate>) => {
-            // TODO: implement
+        RECV_CALL_CLOSED: (state, action: PayloadAction<boolean>) => {
+            state.callClosed = action.payload;
         },
         RECV_CALL_ICE_CANDIDATE: (state, action: PayloadAction<RTCIceCandidate>) => {
             state.iceCandidates.push(action.payload);
