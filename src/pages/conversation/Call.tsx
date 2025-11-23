@@ -14,25 +14,29 @@ import { RTCOfferOptions } from 'react-native-webrtc/lib/typescript/RTCUtil';
 import { Icon } from 'react-native-paper';
 import { HomeStackParamList } from '../../../App';
 import { DARKHEADER } from '~/global/variables';
-import { CandidatePair, getIconForConnType, LocalCandidate } from '~/global/webrtc';
+import { CandidatePair, LocalCandidate, getIconForConnType } from '~/global/webrtc';
 
 const getRTCConfiguration = (turnCredentials: TURNCredentials): RTCConfiguration => {
     if (!turnCredentials.credential) {
         return {
+            iceTransportPolicy: 'all',
+            iceCandidatePoolSize: 0,
             iceServers: [
                 // STUN peer-to-peer
+                { urls: 'stun:turn.francescogorini.com:3478' },
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun.services.mozilla.com' },
             ],
         };
     }
     const username = turnCredentials.username;
     const credential = turnCredentials.credential;
     return {
+        iceTransportPolicy: 'all',
+        iceCandidatePoolSize: 0,
         iceServers: [
             // STUN peer-to-peer
+            { urls: 'stun:turn.francescogorini.com:3478' },
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun.services.mozilla.com' },
             // TURN over UDP (fastest)
             { urls: ['turn:turn.francescogorini.com:3478?transport=udp'], username, credential },
             // TURN over TCP (fallback for UDP-restricted networks)
@@ -69,6 +73,7 @@ class Call extends React.Component<Props, State> {
     componentDidMount = () => {
         this.timer = setInterval(() => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }), 1000);
         InCallManager.start({ media: 'video', auto: true });
+        InCallManager.setSpeakerphoneOn(false)
         InCallManager.setKeepScreenOn(true);
         this.checkCallStatus(undefined);
     };
@@ -283,6 +288,7 @@ class Call extends React.Component<Props, State> {
     };
 
     printCallTime = () => {
+        // ~~ = fast Math.floor
         const hours = ~~(this.state.callTime / (60 * 60));
         const minutes = ~~(this.state.callTime / 60);
         const seconds = ~~(this.state.callTime - (minutes * 60));
@@ -291,7 +297,7 @@ class Call extends React.Component<Props, State> {
     };
 
     checkConnectionType = async () => {
-        if (!this.state.peerConnection) {return;}
+        if (!this.state.peerConnection) { return; }
         // Get all WebRTC connection stats
         const stats = await this.state.peerConnection.getStats() as RTCStatsReport;
         const reports: Array<CandidatePair | LocalCandidate> = [];
@@ -306,7 +312,7 @@ class Call extends React.Component<Props, State> {
 
         console.debug('candidatePair:', candidatePair);
         console.debug('localCandidate:', localCandidate);
-        if (!candidatePair || !localCandidate) {return;}
+        if (!candidatePair || !localCandidate) { return; }
 
         this.setState({
             connectionInfo: { localCandidate, candidatePair },
