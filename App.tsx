@@ -131,7 +131,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
         return;
     }
     const caller = JSON.parse(callerRaw) as UserData;
-    RNNotificationCall.addEventListener('answer', (info) => {
+    RNNotificationCall.addEventListener('answer', async (info) => {
         console.debug('RNNotificationCall: User answered call', info);
         RNNotificationCall.backToApp();
         if (!info.payload) {
@@ -139,7 +139,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
             return;
         }
         // Write caller info to special storage key that is checked after app login
-        writeToStorage('call_answered_in_background', info.payload);
+        await writeToStorage('call_answered_in_background', info.payload);
         // User will be opening app and authenticating after this...
     });
     RNNotificationCall.addEventListener('endCall', (payload) => {

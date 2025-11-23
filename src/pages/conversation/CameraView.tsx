@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ActivityIndicator, Button, Text } from 'react-native-paper';
 import { Camera, useCameraDevices } from 'react-native-vision-camera';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackScreenProps } from '@react-navigation/stack';
 import { View, Image, StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
@@ -16,6 +17,7 @@ import { AppDispatch } from '~/store/store';
 export default function CameraView(props: StackScreenProps<HomeStackParamList, 'CameraView'>) {
 
     const dispatch = useDispatch<AppDispatch>();
+    const edgeInsets = useSafeAreaInsets();
     const camera = useRef<Camera>(null);
     const devices = useCameraDevices();
     const [device, setDevice] = useState(devices[0]);
@@ -90,7 +92,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     }, [picture, props.navigation, props.route.params?.data?.peer, dispatch]);
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingBottom: edgeInsets.top, paddingHorizontal: edgeInsets.left }]}>
             {!device && !picture &&
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" />
@@ -107,10 +109,19 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                     <Image source={{ uri: picture }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
 
                     <View style={styles.buttonContainer}>
-                        <Button style={styles.button} color={SECONDARY_LITE} icon="refresh" mode="contained" onPress={reset}>
+                        <Button style={styles.button}
+                            buttonColor={SECONDARY_LITE}
+                            icon="refresh"
+                            mode="contained"
+                            onPress={reset}>
                             Take again
                         </Button>
-                        <Button style={styles.button} icon="send" mode="contained" onPress={send} loading={loading} disabled={loading}>
+                        <Button style={styles.button}
+                            icon="send"
+                            mode="contained"
+                            onPress={send}
+                            loading={loading}
+                            disabled={loading}>
                             Send
                         </Button>
                     </View>
@@ -126,10 +137,17 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                         enableZoomGesture={true}
                     />
                     <View style={styles.buttonContainer}>
-                        <Button style={styles.button} color={SECONDARY_LITE} icon="camera-party-mode" mode="contained" onPress={swapCamera}>
+                        <Button style={styles.button}
+                            buttonColor={SECONDARY_LITE}
+                            icon="camera-party-mode"
+                            mode="contained"
+                            onPress={swapCamera}>
                             Swap Camera
                         </Button>
-                        <Button style={styles.button} icon="camera" mode="contained" onPress={takePic}>
+                        <Button style={styles.button}
+                            icon="camera"
+                            mode="contained"
+                            onPress={takePic}>
                             Take pic
                         </Button>
                     </View>
