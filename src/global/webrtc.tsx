@@ -1,4 +1,5 @@
 import { Icon } from 'react-native-paper';
+import { RTCPeerConnection } from 'react-native-webrtc';
 
 export interface LocalCandidate {
     timestamp: number;
@@ -64,7 +65,14 @@ export interface CandidatePair {
     lastPacketSentTimestamp: number;
 }
 
-
+export const getConnStats = async (peerConnection: RTCPeerConnection) => {
+    const stats = await peerConnection.getStats() as RTCStatsReport;
+    const reports: Array<CandidatePair | LocalCandidate> = [];
+    stats.forEach(report => {
+        reports.push(report);
+    });
+    return reports;
+}
 
 export const getIconForConnType = (connType: 'host' | 'srflx' | 'prflx' | 'relay' | '') => {
     switch (connType) {

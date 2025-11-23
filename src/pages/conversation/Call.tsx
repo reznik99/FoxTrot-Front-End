@@ -14,7 +14,7 @@ import { RTCOfferOptions } from 'react-native-webrtc/lib/typescript/RTCUtil';
 import { Icon } from 'react-native-paper';
 import { HomeStackParamList } from '../../../App';
 import { DARKHEADER } from '~/global/variables';
-import { CandidatePair, LocalCandidate, getIconForConnType } from '~/global/webrtc';
+import { CandidatePair, LocalCandidate, getConnStats, getIconForConnType } from '~/global/webrtc';
 
 const getRTCConfiguration = (turnCredentials: TURNCredentials): RTCConfiguration => {
     if (!turnCredentials.credential) {
@@ -48,12 +48,13 @@ const getRTCConfiguration = (turnCredentials: TURNCredentials): RTCConfiguration
 };
 
 class Call extends React.Component<Props, State> {
-    timer: NodeJS.Timeout | undefined;
+    callTimer: NodeJS.Timeout | undefined;
+    callStatsTimer: NodeJS.Timeout | undefined;
 
     constructor(props: Props) {
         super(props);
         this.state = {
-            peer_user: this.props.route?.params?.data?.peer_user || this.props.caller,
+            peerUser: this.props.route?.params?.data?.peer_user || this.props.caller,
             peerConnection: undefined,
             stream: undefined,
             peerStream: undefined,
@@ -67,11 +68,14 @@ class Call extends React.Component<Props, State> {
             callTime: Date.now(),
             startTime: Date.now(),
         };
-        this.timer = undefined;
+        this.callTimer = undefined;
+        this.callStatsTimer = undefined;
     }
 
     componentDidMount = () => {
-        this.timer = setInterval(() => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }), 1000);
+        this.callTimer = setInterval(() => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }), 1000);
+        this.callStatsTimer = setInterval(() => this.checkConnectionType, 4000);
+
         InCallManager.start({ media: 'video', auto: true });
         InCallManager.setSpeakerphoneOn(false)
         InCallManager.setKeepScreenOn(true);
@@ -82,7 +86,8 @@ class Call extends React.Component<Props, State> {
         InCallManager.setKeepScreenOn(false);
         InCallManager.stop();
         this.endCall();
-        if (this.timer) { clearInterval(this.timer); }
+        if (this.callTimer) { clearInterval(this.callTimer); }
+        if (this.callStatsTimer) { clearInterval(this.callStatsTimer); }
     };
 
     componentDidUpdate = async (prevProps: Readonly<Props>, _prevState: Readonly<State>) => {
@@ -90,6 +95,11 @@ class Call extends React.Component<Props, State> {
     };
 
     checkCallStatus = async (prevProps: Readonly<Props> | undefined) => {
+        // Check if peer has hanged up
+        if (this.props.callClosed && !prevProps?.callClosed) {
+            console.debug("Peer closed the call!")
+            this.endCall(true)
+        }
         // Check if peer has answered our call
         if (this.props.callAnswer && !prevProps?.callAnswer) {
             if (this.state.peerConnection) {
@@ -102,7 +112,6 @@ class Call extends React.Component<Props, State> {
                 });
             }
         }
-
         // Check if peer is calling us
         if (this.props.callOffer && !prevProps?.callOffer) {
             // Attempt to start local stream and answer the peer's call
@@ -126,10 +135,10 @@ class Call extends React.Component<Props, State> {
         const message: SocketData = {
             cmd: 'CALL_ANSWER',
             data: {
-                sender_id: this.props.user_data.id,
-                sender: this.props.user_data.phone_no,
-                reciever_id: this.state.peer_user.id,
-                reciever: this.state.peer_user.phone_no,
+                sender_id: this.props.userData.id,
+                sender: this.props.userData.phone_no,
+                reciever_id: this.state.peerUser.id,
+                reciever: this.state.peerUser.phone_no,
                 answer: answerDescription,
             },
         };
@@ -156,16 +165,16 @@ class Call extends React.Component<Props, State> {
         const message: SocketData = {
             cmd: 'CALL_OFFER',
             data: {
-                sender_id: this.props.user_data.id,
-                sender: this.props.user_data.phone_no,
-                reciever_id: this.state.peer_user.id,
-                reciever: this.state.peer_user.phone_no,
+                sender_id: this.props.userData.id,
+                sender: this.props.userData.phone_no,
+                reciever_id: this.state.peerUser.id,
+                reciever: this.state.peerUser.phone_no,
                 offer: offerDescription,
             },
         };
         this.props.socketConn?.send(JSON.stringify(message));
 
-        this.setState({ callStatus: `${this.state.peer_user?.phone_no} : Dialing` });
+        this.setState({ callStatus: `${this.state.peerUser?.phone_no} : Dialing` });
     };
 
     startStream = async () => {
@@ -192,10 +201,10 @@ class Call extends React.Component<Props, State> {
                 const message: SocketData = {
                     cmd: 'CALL_ICE_CANDIDATE',
                     data: {
-                        sender_id: this.props.user_data.id,
-                        sender: this.props.user_data.phone_no,
-                        reciever_id: this.state.peer_user.id,
-                        reciever: this.state.peer_user.phone_no,
+                        sender_id: this.props.userData.id,
+                        sender: this.props.userData.phone_no,
+                        reciever_id: this.state.peerUser.id,
+                        reciever: this.state.peerUser.phone_no,
                         candidate: event.candidate?.toJSON() || event.candidate,
                     },
                 };
@@ -203,7 +212,7 @@ class Call extends React.Component<Props, State> {
             });
             newConnection.addEventListener('connectionstatechange', _event => {
                 console.debug('WebRTC connection state change:', newConnection?.connectionState);
-                this.setState({ callStatus: `${this.state.peer_user?.phone_no} : ${newConnection?.connectionState}` });
+                this.setState({ callStatus: `${this.state.peerUser?.phone_no} : ${newConnection?.connectionState}` });
                 if (newConnection?.connectionState === 'disconnected') { this.endCall(); }
             });
             newConnection.addEventListener('iceconnectionstatechange', _event => {
@@ -234,12 +243,10 @@ class Call extends React.Component<Props, State> {
         }
     };
 
-    endCall = () => {
-        if (!this.state.stream) { return; }
-
+    endCall = (isEvent: boolean = false) => {
         // Close networking
-        this.state.stream.release();
-        this.state.peerConnection?.close();
+        this.state.stream?.release?.();
+        this.state.peerConnection?.close?.();
         // Reset local state
         this.setState({
             peerConnection: undefined,
@@ -247,40 +254,57 @@ class Call extends React.Component<Props, State> {
             peerStream: undefined,
             callStatus: '',
         });
+        // Let peer know we hung up, through websocket
+        if (!isEvent) {
+            const message: SocketData = {
+                cmd: 'CALL_CLOSED',
+                data: {
+                    reciever_id: this.state.peerUser.id,
+                    reciever: this.state.peerUser.phone_no,
+                    sender_id: this.props.userData.id,
+                    sender: this.props.userData.phone_no,
+                },
+            };
+            this.props.socketConn?.send(JSON.stringify(message));
+        }
         // Reset redux state
         this.props.resetCallState();
-        // TODO: Let peer know we hung up, through websocket
     };
 
     toggleVideoEnabled = async () => {
         if (!this.state.stream) { return; }
 
-        const videoTrack = await this.state.stream.getVideoTracks()[0];
-        videoTrack.enabled = !this.state.videoEnabled;
-        this.setState({ videoEnabled: !this.state.videoEnabled });
+        const newVideoEnabled = !this.state.videoEnabled
+        const videoTrack = this.state.stream.getVideoTracks()[0];
+        videoTrack.enabled = newVideoEnabled;
+        this.setState({ videoEnabled: newVideoEnabled });
     };
 
-    toggleVoiceEnabled = async () => {
+    toggleVoiceEnabled = () => {
         if (!this.state.stream) { return; }
 
-        const audioTrack = await this.state.stream.getAudioTracks()[0];
-        audioTrack.enabled = !this.state.voiceEnabled;
-        this.setState({ voiceEnabled: !this.state.voiceEnabled });
+        const newVoiceEnabled = !this.state.voiceEnabled
+        const audioTrack = this.state.stream.getAudioTracks()[0];
+        audioTrack.enabled = newVoiceEnabled;
+        InCallManager.setMicrophoneMute(newVoiceEnabled)
+        this.setState({ voiceEnabled: newVoiceEnabled });
     };
 
     toggleLoudSpeaker = () => {
         if (!this.state.stream) { return; }
 
-        InCallManager.setSpeakerphoneOn(!this.state.loudSpeaker);
-        this.setState({ loudSpeaker: !this.state.loudSpeaker });
+        const newLoudSpeaker = !this.state.loudSpeaker
+        InCallManager.setSpeakerphoneOn(newLoudSpeaker);
+        this.setState({ loudSpeaker: newLoudSpeaker });
     };
 
-    toggleCamera = async () => {
+    toggleCamera = () => {
         if (!this.state.stream) { return; }
 
-        const videoTrack = await this.state.stream.getVideoTracks()[0];
-        videoTrack._switchCamera();
-        this.setState({ isFrontCamera: !this.state.isFrontCamera });
+        const newIsFrontCamera = !this.state.isFrontCamera
+        const videoTrack = this.state.stream.getVideoTracks()[0];
+        videoTrack.applyConstraints({ facingMode: newIsFrontCamera ? 'user' : 'environment' })
+        this.setState({ isFrontCamera: newIsFrontCamera });
     };
 
     toggleMinimizedStream = () => {
@@ -299,11 +323,7 @@ class Call extends React.Component<Props, State> {
     checkConnectionType = async () => {
         if (!this.state.peerConnection) { return; }
         // Get all WebRTC connection stats
-        const stats = await this.state.peerConnection.getStats() as RTCStatsReport;
-        const reports: Array<CandidatePair | LocalCandidate> = [];
-        stats.forEach(report => {
-            reports.push(report);
-        });
+        const reports = await getConnStats(this.state.peerConnection)
         // Filter what we want
         const candidatePair = reports
             .find(rp => rp.type === 'candidate-pair' && rp.state === 'succeeded') as CandidatePair | undefined;
@@ -326,11 +346,10 @@ class Call extends React.Component<Props, State> {
                     <Text>{this.state.callStatus}</Text>
                     {this.state.stream && <View>
                         <Text>{this.printCallTime()}</Text>
-                        <Text>Network Type:{this.state.connectionInfo?.localCandidate.networkType}</Text>
-                        <Text>VPN:{this.state.connectionInfo?.localCandidate.vpn}</Text>
-                        <Text>Proto:{this.state.connectionInfo?.localCandidate.protocol}</Text>
-                        <Text>Type:{this.state.connectionInfo?.localCandidate.candidateType} {getIconForConnType(this.state.connectionInfo?.localCandidate?.candidateType || '')}</Text>
-                        <Text>RTT:{(this.state.connectionInfo?.candidatePair.currentRoundTripTime || 0) * 1000}ms</Text>
+                        <Text>Network Type:{this.state.connectionInfo?.localCandidate?.networkType}</Text>
+                        <Text>Proto:{this.state.connectionInfo?.localCandidate?.protocol}</Text>
+                        <Text>Type:{this.state.connectionInfo?.localCandidate?.candidateType} {getIconForConnType(this.state.connectionInfo?.localCandidate?.candidateType || '')}</Text>
+                        <Text>RTT:{(this.state.connectionInfo?.candidatePair?.currentRoundTripTime || 0) * 1000}ms</Text>
                     </View>
                     }
                 </View>
@@ -341,7 +360,8 @@ class Call extends React.Component<Props, State> {
                             mirror={true}
                             objectFit={'cover'}
                             zOrder={1} />
-                        : <Image style={[styles.stream, { backgroundColor: '#333333' }]} source={{ uri: this.state.peer_user?.pic }} />
+                        : <Image style={[styles.stream, { backgroundColor: '#333333' }]}
+                            source={{ uri: this.state.peerUser?.pic }} />
                     }
                     {this.state.stream && this.state.videoEnabled
                         ? <RTCView style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]}
@@ -349,7 +369,8 @@ class Call extends React.Component<Props, State> {
                             mirror={this.state.isFrontCamera}
                             objectFit={'cover'}
                             zOrder={2} onTouchEnd={this.toggleMinimizedStream} />
-                        : <Image style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]} source={{ uri: this.props.user_data.pic }} />
+                        : <Image style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]}
+                            source={{ uri: this.props.userData.pic }} />
                     }
                 </View>
                 <View style={[styles.footer, { paddingBottom: this.props.insets.bottom }]}>
@@ -373,7 +394,7 @@ class Call extends React.Component<Props, State> {
                                 <TouchableOpacity onPress={this.toggleCamera} style={styles.actionButton}>
                                     <Icon source="camera-switch" size={20} />
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={this.endCall} style={[styles.actionButton, styles.bgRed]}>
+                                <TouchableOpacity onPress={() => this.endCall()} style={[styles.actionButton, styles.bgRed]}>
                                     <Icon source="phone" size={20} />
                                 </TouchableOpacity>
                             </>
@@ -389,8 +410,9 @@ class Call extends React.Component<Props, State> {
 const mapStateToProps = (state: RootState) => ({
     callOffer: state.userReducer.callOffer,
     callAnswer: state.userReducer.callAnswer,
+    callClosed: state.userReducer.callClosed,
     iceCandidates: state.userReducer.iceCandidates,
-    user_data: state.userReducer.user_data,
+    userData: state.userReducer.user_data,
     caller: state.userReducer.caller,
     turnServerCreds: state.userReducer.turnServerCredentials,
     socketConn: state.userReducer.socketConn,
@@ -405,7 +427,7 @@ type PropsFromRedux = ConnectedProps<typeof connector>
 export default withSafeAreaInsets(connector(Call));
 
 interface State {
-    peer_user: UserData;
+    peerUser: UserData;
     peerConnection: RTCPeerConnection | undefined;
     stream: MediaStream | undefined;
     peerStream: MediaStream | undefined;
