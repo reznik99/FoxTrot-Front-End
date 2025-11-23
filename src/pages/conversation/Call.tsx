@@ -85,7 +85,7 @@ class Call extends React.Component<Props, State> {
     componentWillUnmount = () => {
         InCallManager.setKeepScreenOn(false);
         InCallManager.stop();
-        this.endCall();
+        this.endCall(true);
         if (this.callTimer) { clearInterval(this.callTimer); }
         if (this.callStatsTimer) { clearInterval(this.callStatsTimer); }
     };
@@ -213,7 +213,7 @@ class Call extends React.Component<Props, State> {
             newConnection.addEventListener('connectionstatechange', _event => {
                 console.debug('WebRTC connection state change:', newConnection?.connectionState);
                 this.setState({ callStatus: `${this.state.peerUser?.phone_no} : ${newConnection?.connectionState}` });
-                if (newConnection?.connectionState === 'disconnected') { this.endCall(); }
+                if (newConnection?.connectionState === 'disconnected') { this.endCall(true); }
             });
             newConnection.addEventListener('iceconnectionstatechange', _event => {
                 console.debug('ICE connection state change:', newConnection?.iceConnectionState);
@@ -339,19 +339,24 @@ class Call extends React.Component<Props, State> {
         });
     };
 
+    renderCallInfo = () => {
+        const localCandidate = this.state.connectionInfo?.localCandidate
+        const candidatePair = this.state.connectionInfo?.candidatePair
+        return (
+            this.state.stream && <View>
+                <Text>{this.printCallTime()} : {localCandidate?.protocol}({localCandidate?.networkType})</Text>
+                <Text>Connection : {localCandidate?.candidateType} {getIconForConnType(localCandidate?.candidateType || '')}</Text>
+                <Text>Delay(RTT) : {(candidatePair?.currentRoundTripTime || 0) * 1000}ms</Text>
+            </View>
+        )
+    }
+
     render = () => {
         return (
             <View style={styles.body}>
                 <View style={styles.header}>
                     <Text>{this.state.callStatus}</Text>
-                    {this.state.stream && <View>
-                        <Text>{this.printCallTime()}</Text>
-                        <Text>Network Type:{this.state.connectionInfo?.localCandidate?.networkType}</Text>
-                        <Text>Proto:{this.state.connectionInfo?.localCandidate?.protocol}</Text>
-                        <Text>Type:{this.state.connectionInfo?.localCandidate?.candidateType} {getIconForConnType(this.state.connectionInfo?.localCandidate?.candidateType || '')}</Text>
-                        <Text>RTT:{(this.state.connectionInfo?.candidatePair?.currentRoundTripTime || 0) * 1000}ms</Text>
-                    </View>
-                    }
+                    {this.renderCallInfo()}
                 </View>
                 <View style={{ width: '100%', flex: 1 }}>
                     {this.state.peerStream && this.state.peerConnection?.connectionState === 'connected'
@@ -394,7 +399,7 @@ class Call extends React.Component<Props, State> {
                                 <TouchableOpacity onPress={this.toggleCamera} style={styles.actionButton}>
                                     <Icon source="camera-switch" size={20} />
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={() => this.endCall()} style={[styles.actionButton, styles.bgRed]}>
+                                <TouchableOpacity onPress={() => this.endCall(false)} style={[styles.actionButton, styles.bgRed]}>
                                     <Icon source="phone" size={20} />
                                 </TouchableOpacity>
                             </>
