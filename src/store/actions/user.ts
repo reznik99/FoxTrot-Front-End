@@ -16,37 +16,16 @@ import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { AppDispatch, RootState } from '~/store/store';
 import { getAvatar } from '~/global/helper';
 
-
-async function migrateKeysToNewStandard(username: string) {
-    const credentials = await Keychain.getInternetCredentials(`${username}-keys`);
-    // We are good
-    if (!credentials || credentials.username !== `${username}-keys`) {
-        return;
-    }
-    console.debug('Migrating keypair in keychain ');
-    // Need to migrate
-    await Keychain.setInternetCredentials(API_URL, `${username}-keys`, credentials.password, {
-        storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
-        server: API_URL,
-        service: `${username}-keys`,
-    });
-    // Clear old one
-    await Keychain.resetInternetCredentials({
-        server: `${username}-keys`,
-    });
-}
-
 const createDefaultAsyncThunk = createAsyncThunk.withTypes<{ state: RootState, dispatch: AppDispatch }>();
 
 export const loadKeys = createDefaultAsyncThunk('loadKeys', async (_, thunkAPI): Promise<boolean> => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
 
-        let state = thunkAPI.getState().userReducer;
+        const state = thunkAPI.getState().userReducer;
         if (state.keys) { return true; }
 
         console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage for user ${state.user_data.phone_no}`);
-        await migrateKeysToNewStandard(state.user_data.phone_no);
         const credentials = await Keychain.getInternetCredentials(API_URL, {
             server: API_URL,
             service: `${state.user_data.phone_no}-keys`,
@@ -149,16 +128,15 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
 
         // Load new user messages
         const conversations = new Map(previousConversations);
-        const response = await axios.get(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token));
-        response.data = response.data.reverse();
+        const response = await axios.get<message[]>(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token));
 
-        response.data.forEach((msg: message) => {
-            let other = msg.sender === state.user_data.phone_no
+        response.data.toReversed().forEach((msg) => {
+            const other = msg.sender === state.user_data.phone_no
                 ? { phone_no: msg.reciever, id: msg.reciever_id, pic: getAvatar(msg.reciever_id) }
                 : { phone_no: msg.sender, id: msg.sender_id, pic: getAvatar(msg.sender_id) };
-            if (conversations.has(other.phone_no)) {
+            const convo = conversations.get(other.phone_no);
+            if (convo) {
                 // Have to do this instead of unshift() because of readonly property?
-                const convo = conversations.get(other.phone_no)!;
                 conversations.set(other.phone_no, {
                     other_user: convo.other_user,
                     messages: [msg, ...convo.messages],
@@ -170,17 +148,17 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
                 });
             }
         });
-        console.debug('Loaded', response.data?.length, 'new messages from api');
+        const newMessagesLoaded = response.data?.length
+        console.debug('Loaded', newMessagesLoaded, 'new messages from api');
 
         // Save all new conversations to redux state
         thunkAPI.dispatch(LOAD_CONVERSATIONS(conversations));
 
-        // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-        await Promise.all([
-            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries()))),
-            writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now())),
-        ]);
-
+        if (newMessagesLoaded > 0) {
+            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
+            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries())));
+        }
+        await writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
     } catch (err: any) {
         console.error('Error loading messages:', err);
         Toast.show({
@@ -200,9 +178,9 @@ export const loadContacts = createDefaultAsyncThunk('loadContacts', async ({ ato
         const state = thunkAPI.getState().userReducer;
 
         // Load contacts
-        const response = await axios.get(`${API_URL}/getContacts`, axiosBearerConfig(state.token));
+        const response = await axios.get<UserData[]>(`${API_URL}/getContacts`, axiosBearerConfig(state.token));
 
-        const contacts = await Promise.all(response.data.map(async (contact: any) => {
+        const contacts = await Promise.all(response.data.map(async (contact) => {
             try {
                 const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey);
                 console.debug('Generated session key for contact:', contact.phone_no);
@@ -230,7 +208,7 @@ export const loadContacts = createDefaultAsyncThunk('loadContacts', async ({ ato
 
 export const addContact = createDefaultAsyncThunk('addContact', async ({ user }: { user: UserData }, thunkAPI) => {
     try {
-        let state = thunkAPI.getState().userReducer;
+        const state = thunkAPI.getState().userReducer;
         const { data } = await axios.post(`${API_URL}/addContact`, { id: user.id }, axiosBearerConfig(state.token));
         const session_key = await generateSessionKeyECDH(data.public_key || '', state.keys?.privateKey);
 
@@ -253,10 +231,10 @@ export const searchUsers = createDefaultAsyncThunk<UserData[], { prefix: string 
         thunkAPI.dispatch({ type: 'SET_LOADING', payload: true });
         const state = thunkAPI.getState().userReducer;
 
-        const response = await axios.get(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token));
+        const response = await axios.get<UserData[]>(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token));
 
         // Append robot picture to users
-        const results = response.data.map((user: any) => (
+        const results = response.data.map((user) => (
             { ...user, pic: getAvatar(user.id), isContact: state.contacts.some(contact => contact.id === user.id) }
         ));
         console.debug('Action: searchUsers, Prefix:', prefix, 'Results:', results);
@@ -362,7 +340,7 @@ export const syncFromStorage = createDefaultAsyncThunk('syncFromStorage', async 
 
 export const registerPushNotifications = createDefaultAsyncThunk('registerPushNotifications', async (_, thunkAPI) => {
     try {
-        let state = thunkAPI.getState().userReducer;
+        const state = thunkAPI.getState().userReducer;
 
         console.debug('Registering for Push Notifications');
         const granted = await getPushNotificationPermission();
@@ -387,9 +365,9 @@ export const registerPushNotifications = createDefaultAsyncThunk('registerPushNo
 
 export const getTURNServerCreds = createDefaultAsyncThunk('getTURNServerCreds', async (_, thunkAPI) => {
     try {
-        let state = thunkAPI.getState().userReducer;
+        const state = thunkAPI.getState().userReducer;
 
-        console.debug('Registering for Push Notifications');
+        console.debug('Fetching TURN server credentials');
         const response = await axios.get(`${API_URL}/turnServerKey`, axiosBearerConfig(state.token));
         thunkAPI.dispatch(TURN_CREDS(response.data));
     } catch (err: any) {
