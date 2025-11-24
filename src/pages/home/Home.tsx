@@ -21,7 +21,7 @@ import { deleteFromStorage, readFromStorage } from '~/global/storage';
 type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
 
 export default function Home(props: IProps) {
-    const insets = useSafeAreaInsets()
+    const insets = useSafeAreaInsets();
     const { conversations, loading, refreshing, socketErr } = useSelector((state: RootState) => state.userReducer);
     const [loadingMsg, setLoadingMsg] = useState('');
     const convos: Array<Conversation> = useMemo(() => {

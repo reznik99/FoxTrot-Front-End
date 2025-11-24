@@ -19,7 +19,7 @@ export default function NewConversation(props: StackScreenProps<HomeStackParamLi
     const [results, setResults] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [prefix, setPrefix] = useState('');
-    const insets = useSafeAreaInsets()
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         setLoading(true);
