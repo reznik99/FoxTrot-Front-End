@@ -19,7 +19,7 @@ const FullScreenImage = (props: IProps) => {
 
     const download = useCallback(async () => {
         const granted = await getWriteExtPermission();
-        if (!granted) {return;}
+        if (!granted) { return; }
 
         const fullPath = RNFS.DownloadDirectoryPath + `/foxtrot-${Date.now()}.jpeg`;
         await RNFS.writeFile(fullPath, props.media, 'base64');
@@ -32,7 +32,11 @@ const FullScreenImage = (props: IProps) => {
         <View style={styles.container}>
             <GestureHandlerRootView style={{ flex: 1 }}>
                 <ImageZoom uri={`data:image/jpeg;base64,${props.media}`}
-                    resizeMode="contain" resizeMethod="auto" />
+                    resizeMode="cover"
+                    resizeMethod="auto"
+                    isDoubleTapEnabled={true}
+                    doubleTapScale={3}
+                />
             </GestureHandlerRootView>
             <View style={styles.surface}>
                 <IconButton icon="arrow-left-circle" size={25} onPress={props.onDismiss} />
@@ -42,7 +46,7 @@ const FullScreenImage = (props: IProps) => {
                     anchor={<IconButton icon="dots-vertical" size={25} onPress={() => setShowMenu(true)} />}>
                     <Menu.Item title="Report" leadingIcon="information" />
                     <Divider />
-                    <Menu.Item onPress={download} title="Download" leadingIcon="download"/>
+                    <Menu.Item onPress={download} title="Download" leadingIcon="download" />
                 </Menu>
             </View>
         </View>

@@ -11,7 +11,7 @@ import RNFS from 'react-native-fs';
 import { getCameraAndMicrophonePermissions } from '~/global/permissions';
 import { SECONDARY, SECONDARY_LITE } from '~/global/variables';
 import { sendMessage } from '~/store/actions/user';
-import { HomeStackParamList } from '../../../App';
+import { HomeStackParamList } from '~/../App';
 import { AppDispatch } from '~/store/store';
 
 export default function CameraView(props: StackScreenProps<HomeStackParamList, 'CameraView'>) {
@@ -21,7 +21,8 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     const camera = useRef<Camera>(null);
     const devices = useCameraDevices();
     const [device, setDevice] = useState(devices[0]);
-    const [isFront, setIsFront] = useState(false);
+    const [isFront, setIsFront] = useState(true);
+    const [isCameraActive, setIsCameraActive] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
     const [picture, setPicture] = useState(props.route.params?.data?.picturePath || '');
     const [loading, setLoading] = useState(false);
@@ -29,6 +30,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     useEffect(() => {
         if (props.route.params?.data?.picturePath) { return; }
         requestPermissions();
+        setIsCameraActive(true)
     }, []);
 
     useEffect(() => {
@@ -61,14 +63,21 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     }, [hasPermission, requestPermissions]);
 
     const swapCamera = useCallback(() => {
-        setDevice(isFront ? devices[0] : devices[1]);
+        setDevice(isFront ? devices[1] : devices[0]);
         setIsFront(!isFront);
     }, [devices, isFront]);
 
     const takePic = useCallback(async () => {
         if (!camera.current) { return; }
-        const pic = await camera.current.takeSnapshot({ quality: 30 });
-        setPicture(`file://${pic.path}`);
+        setLoading(true);
+        try {
+            const pic = await camera.current.takePhoto();
+            setPicture(`file://${pic.path}`);
+        } catch (err) {
+            console.error('Error taking image:', err);
+        } finally {
+            setLoading(false);
+        }
     }, [camera]);
 
     const send = useCallback(async () => {
@@ -92,7 +101,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     }, [picture, props.navigation, props.route.params?.data?.peer, dispatch]);
 
     return (
-        <View style={[styles.container, { paddingBottom: edgeInsets.top, paddingHorizontal: edgeInsets.left }]}>
+        <View style={[styles.container, { paddingBottom: edgeInsets.bottom, paddingHorizontal: edgeInsets.left }]}>
             {!device && !picture &&
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" />
@@ -106,9 +115,9 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
 
             {picture &&
                 <>
-                    <Image source={{ uri: picture }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                    <Image source={{ uri: picture }} style={{ flex: 1 }} resizeMode="cover" />
 
-                    <View style={styles.buttonContainer}>
+                    <View style={[styles.buttonContainer, { bottom: edgeInsets.bottom }]}>
                         <Button style={styles.button}
                             buttonColor={SECONDARY_LITE}
                             icon="refresh"
@@ -133,10 +142,14 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                     <Camera style={{ flex: 1 }}
                         ref={camera}
                         device={device}
-                        isActive={true}
+                        isActive={isCameraActive}
+                        isMirrored={isFront}
                         enableZoomGesture={true}
+                        photoQualityBalance={"speed"}
+                        resizeMode={'cover'}
+                        photo={true}
                     />
-                    <View style={styles.buttonContainer}>
+                    <View style={[styles.buttonContainer, { bottom: edgeInsets.bottom }]}>
                         <Button style={styles.button}
                             buttonColor={SECONDARY_LITE}
                             icon="camera-party-mode"
@@ -147,7 +160,9 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                         <Button style={styles.button}
                             icon="camera"
                             mode="contained"
-                            onPress={takePic}>
+                            onPress={takePic}
+                            loading={loading}
+                            disabled={loading}>
                             Take pic
                         </Button>
                     </View>
@@ -172,11 +187,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     }, buttonContainer: {
         position: 'absolute',
-        bottom: 30,
         width: '100%',
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'space-evenly',
+        paddingBottom: 15,
     }, button: {
         borderRadius: 100,
     },
