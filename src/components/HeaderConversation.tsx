@@ -52,7 +52,7 @@ export default function HeaderConversation(props: IProps) {
                 {
                     allowBack ?
                         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home', undefined, { pop: true })}>
-                            <Icon source="arrow-left" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
+                            <Icon source="arrow-left" color={styles.topBarText.color} size={20} />
                         </TouchableOpacity>
                         :
                         null
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     }, topBarText: {
         color: '#fff',
-        fontSize: 15,
+        fontSize: 16,
     }, buttonContainer: {
         flexDirection: 'row',
         alignItems: 'center',

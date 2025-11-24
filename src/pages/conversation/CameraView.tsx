@@ -9,7 +9,7 @@ import { useDispatch } from 'react-redux';
 import RNFS from 'react-native-fs';
 
 import { getCameraAndMicrophonePermissions } from '~/global/permissions';
-import { SECONDARY, SECONDARY_LITE } from '~/global/variables';
+import { DARKHEADER, SECONDARY, SECONDARY_LITE } from '~/global/variables';
 import { sendMessage } from '~/store/actions/user';
 import { HomeStackParamList } from '~/../App';
 import { AppDispatch } from '~/store/store';
@@ -103,7 +103,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     }, [picture, props.navigation, props.route.params?.data?.peer, dispatch]);
 
     return (
-        <View style={[styles.container, { paddingBottom: edgeInsets.bottom }]}>
+        <View style={[styles.container, { paddingTop: edgeInsets.top, paddingBottom: edgeInsets.bottom }]}>
             {!device && !picture &&
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" />
@@ -116,32 +116,35 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
             }
 
             {picture &&
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, backgroundColor: DARKHEADER }}>
                     <Image style={{ width: '100%', height: '100%' }}
                         source={{ uri: picture }}
                         resizeMode="cover" />
-                    <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
-                        <Button style={styles.button}
-                            buttonColor={SECONDARY_LITE}
-                            icon="refresh"
-                            mode="contained"
-                            onPress={reset}>
-                            Take again
-                        </Button>
-                        <Button style={styles.button}
-                            icon="send"
-                            mode="contained"
-                            onPress={send}
-                            loading={loading}
-                            disabled={loading}>
-                            Send
-                        </Button>
-                    </View>
+                </View>
+            }
+
+            {picture &&
+                <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
+                    <Button style={styles.button}
+                        buttonColor={SECONDARY_LITE}
+                        icon="refresh"
+                        mode="contained"
+                        onPress={reset}>
+                        Take again
+                    </Button>
+                    <Button style={styles.button}
+                        icon="send"
+                        mode="contained"
+                        onPress={send}
+                        loading={loading}
+                        disabled={loading}>
+                        Send
+                    </Button>
                 </View>
             }
 
             {device && hasPermission && !picture &&
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, backgroundColor: DARKHEADER }}>
                     <Camera style={{ width: '100%', height: '100%' }}
                         ref={cameraRef}
                         device={device}

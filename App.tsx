@@ -8,8 +8,9 @@ import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions, S
 import { createDrawerNavigator, DrawerContentComponentProps, DrawerNavigationOptions } from '@react-navigation/drawer';
 import Toast from 'react-native-toast-message';
 import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging'; // Push Notifications
-import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
+import RNNotificationCall, { DeclinePayload } from 'react-native-full-screen-notification-incoming-call';
 import InCallManager from 'react-native-incall-manager';
+import PushNotification from 'react-native-push-notification';
 
 // Crypto
 import 'react-native-get-random-values';
@@ -23,7 +24,8 @@ import { PRIMARY, SECONDARY, ACCENT, DARKHEADER, VibratePattern } from '~/global
 import Drawer from '~/components/Drawer';
 import HeaderConversation from '~/components/HeaderConversation';
 import { UserData } from '~/store/reducers/user';
-import { writeToStorage } from '~/global/storage';
+import { deleteFromStorage, writeToStorage } from '~/global/storage';
+import { getAvatar } from '~/global/helper';
 
 const defaultHeaderOptions: StackNavigationOptions & DrawerNavigationOptions = {
     headerStyle: {
@@ -145,12 +147,36 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
     RNNotificationCall.addEventListener('endCall', (payload) => {
         console.debug('RNNotificationCall: User ended call', payload);
         InCallManager.stopRingtone();
+        const data = payload as DeclinePayload;
+        // If call was missed, show push notification of missed call
+        PushNotification.createChannel(
+            {
+                channelId: 'Calls',
+                channelName: 'Notifications for missed calls',
+                channelDescription: 'Notifications for missed calls',
+            },
+            () => { },
+        );
+        if (data.endAction === 'ACTION_HIDE_CALL') {
+            PushNotification.localNotification({
+                channelId: 'Calls',
+                title: 'Missed Call',
+                message: `You missed a call from ${caller.phone_no}`,
+                when: Date.now() - 20000,
+                visibility: 'public',
+                picture: getAvatar(caller.id),
+                largeIcon: 'foxtrot',
+                smallIcon: 'foxtrot',
+            });
+        }
+        // Delete storage info about caller so they don't get routed to call screen on next app open
+        deleteFromStorage('call_answered_in_background')
     });
     InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
     RNNotificationCall.displayNotification(
         '22221a99-8eb4-4ac2-b2cf-0a3c0b9100af',
         caller.pic || '',
-        30000,
+        20000,
         {
             channelId: 'com.foxtrot.callNotifications',
             channelName: 'Notifications for incoming calls',
