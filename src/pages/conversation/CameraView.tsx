@@ -112,11 +112,11 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
 
             {picture &&
                 <>
-                    <Image style={{ flex: 1 }}
+                    <Image style={{ width: '100%', height: '100%' }}
                         source={{ uri: picture }}
                         resizeMode="contain" />
 
-                    <View style={[styles.buttonContainer, { bottom: edgeInsets.bottom }]}>
+                    <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
                         <Button style={styles.button}
                             buttonColor={SECONDARY_LITE}
                             icon="refresh"
@@ -138,7 +138,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
 
             {device && hasPermission && !picture &&
                 <>
-                    <Camera style={{ flex: 1 }}
+                    <Camera style={{ width: '100%', height: '100%' }}
                         ref={camera}
                         device={device}
                         isActive={true}
@@ -149,7 +149,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                         photo={true}
                         format={format}
                     />
-                    <View style={[styles.buttonContainer, { bottom: edgeInsets.bottom }]}>
+                    <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
                         <Button style={styles.button}
                             buttonColor={SECONDARY_LITE}
                             icon="camera-party-mode"
@@ -192,6 +192,7 @@ const styles = StyleSheet.create({
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'space-evenly',
+        bottom: 0,
         paddingBottom: 15,
     }, button: {
         borderRadius: 100,
