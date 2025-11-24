@@ -30,10 +30,6 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
         requestPermissions();
     }, []);
 
-    useEffect(() => {
-        setDevice(devices[0]);
-    }, [devices]);
-
     const requestPermissions = useCallback(async () => {
         try {
             console.debug('Requesting camera permissions');
@@ -71,7 +67,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
         if (!camera.current) { return; }
         setLoading(true);
         try {
-            const pic = await camera.current.takePhoto();
+            const pic = await camera.current.takePhoto({ enableAutoDistortionCorrection: true });
             setPicture(`file://${pic.path}`);
         } catch (err) {
             console.error('Error taking image:', err);
@@ -115,7 +111,9 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
 
             {picture &&
                 <>
-                    <Image source={{ uri: picture }} style={{ flex: 1 }} resizeMode="cover" />
+                    <Image style={{ flex: 1 }}
+                        source={{ uri: picture }}
+                        resizeMode="contain" />
 
                     <View style={[styles.buttonContainer, { bottom: edgeInsets.bottom }]}>
                         <Button style={styles.button}
@@ -146,7 +144,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                         isMirrored={device.position === "front"}
                         enableZoomGesture={true}
                         photoQualityBalance={"speed"}
-                        resizeMode={'cover'}
+                        resizeMode={'contain'}
                         photo={true}
                     />
                     <View style={[styles.buttonContainer, { bottom: edgeInsets.bottom }]}>
