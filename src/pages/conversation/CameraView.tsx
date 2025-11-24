@@ -20,9 +20,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     const edgeInsets = useSafeAreaInsets();
     const camera = useRef<Camera>(null);
     const devices = useCameraDevices();
-    const [device, setDevice] = useState(devices[0]);
-    const [isFront, setIsFront] = useState(true);
-    const [isCameraActive, setIsCameraActive] = useState(false);
+    const [device, setDevice] = useState(devices.find(dev => dev.position === "front") || devices[0]);
     const [hasPermission, setHasPermission] = useState(false);
     const [picture, setPicture] = useState(props.route.params?.data?.picturePath || '');
     const [loading, setLoading] = useState(false);
@@ -30,7 +28,6 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     useEffect(() => {
         if (props.route.params?.data?.picturePath) { return; }
         requestPermissions();
-        setIsCameraActive(true)
     }, []);
 
     useEffect(() => {
@@ -63,9 +60,12 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     }, [hasPermission, requestPermissions]);
 
     const swapCamera = useCallback(() => {
-        setDevice(isFront ? devices[1] : devices[0]);
-        setIsFront(!isFront);
-    }, [devices, isFront]);
+        const newDevice = device.position === "front"
+            ? devices.find(dev => dev.position === "back")
+            : devices.find(dev => dev.position === "front")
+
+        setDevice(newDevice!);
+    }, [device, devices]);
 
     const takePic = useCallback(async () => {
         if (!camera.current) { return; }
@@ -142,8 +142,8 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                     <Camera style={{ flex: 1 }}
                         ref={camera}
                         device={device}
-                        isActive={isCameraActive}
-                        isMirrored={isFront}
+                        isActive={true}
+                        isMirrored={device.position === "front"}
                         enableZoomGesture={true}
                         photoQualityBalance={"speed"}
                         resizeMode={'cover'}
