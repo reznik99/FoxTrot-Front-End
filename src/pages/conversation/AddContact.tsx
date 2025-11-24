@@ -14,8 +14,8 @@ import { HomeStackParamList } from '../../../App';
 export default function AddContact(props: StackScreenProps<HomeStackParamList, 'AddContact'>) {
 
     const { navigation } = props;
-    const loading = useSelector((state: RootState) => state.userReducer.loading);
-    const contact_ids = useSelector((state: RootState) => state.userReducer.contacts.map(c => c.id));
+    const loading = useSelector<RootState, boolean>(state => state.userReducer.loading);
+    const contact_ids = useSelector<RootState, UserData[]>(state => state.userReducer.contacts).map(c => c.id);
     const dispatch = useDispatch<AppDispatch>();
 
     const [results, setResults] = useState<UserData[] | undefined>(undefined);

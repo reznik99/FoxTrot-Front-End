@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         backgroundColor: SECONDARY,
+        padding: 5,
     }, loaderContainer: {
         position: 'absolute',
         width: '100%',

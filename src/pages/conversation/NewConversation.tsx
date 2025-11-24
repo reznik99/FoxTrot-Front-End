@@ -3,6 +3,7 @@ import { Text, View, ScrollView } from 'react-native';
 import { Searchbar, FAB, ActivityIndicator } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { StackScreenProps } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import globalStyle from '~/global/style';
 import { RootState } from '~/store/store';
@@ -18,6 +19,7 @@ export default function NewConversation(props: StackScreenProps<HomeStackParamLi
     const [results, setResults] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [prefix, setPrefix] = useState('');
+    const insets = useSafeAreaInsets()
 
     useEffect(() => {
         setLoading(true);
@@ -58,7 +60,7 @@ export default function NewConversation(props: StackScreenProps<HomeStackParamLi
                 </ScrollView>
             }
 
-            <FAB style={globalStyle.fab}
+            <FAB style={[globalStyle.fab, { marginBottom: globalStyle.fab.margin + insets.bottom }]}
                 onPress={() => navigation.replace('AddContact')}
                 icon="account-plus"
                 color="#fff"

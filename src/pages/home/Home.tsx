@@ -5,6 +5,7 @@ import RNNotificationCall from 'react-native-full-screen-notification-incoming-c
 import { StackScreenProps } from '@react-navigation/stack';
 import InCallManager from 'react-native-incall-manager';
 import { useSelector } from 'react-redux';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications, getTURNServerCreds } from '~/store/actions/user';
@@ -20,6 +21,7 @@ import { deleteFromStorage, readFromStorage } from '~/global/storage';
 type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
 
 export default function Home(props: IProps) {
+    const insets = useSafeAreaInsets()
     const { conversations, loading, refreshing, socketErr } = useSelector((state: RootState) => state.userReducer);
     const [loadingMsg, setLoadingMsg] = useState('');
     const convos: Array<Conversation> = useMemo(() => {
@@ -158,8 +160,8 @@ export default function Home(props: IProps) {
                             }
                         </ScrollView>
 
-                        <FAB
-                            style={[globalStyle.fab, { backgroundColor: PRIMARY }]} color="#fff"
+                        <FAB color="#fff"
+                            style={[globalStyle.fab, { backgroundColor: PRIMARY, marginBottom: globalStyle.fab.margin + insets.bottom }]}
                             onPress={() => props.navigation.navigate('NewConversation')}
                             icon={renderFABIcon}
                         />
