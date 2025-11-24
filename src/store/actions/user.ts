@@ -148,7 +148,7 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
                 });
             }
         });
-        const newMessagesLoaded = response.data?.length
+        const newMessagesLoaded = response.data?.length;
         console.debug('Loaded', newMessagesLoaded, 'new messages from api');
 
         // Save all new conversations to redux state
@@ -158,7 +158,7 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
             writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries())));
         }
-        await writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()))
+        await writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
     } catch (err: any) {
         console.error('Error loading messages:', err);
         Toast.show({

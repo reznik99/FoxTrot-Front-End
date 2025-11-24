@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ActivityIndicator, Button, Text } from 'react-native-paper';
-import { Camera, useCameraDevices } from 'react-native-vision-camera';
+import { Camera, Templates, useCameraDevices, useCameraFormat } from 'react-native-vision-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackScreenProps } from '@react-navigation/stack';
 import { View, Image, StyleSheet } from 'react-native';
@@ -20,7 +20,8 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     const edgeInsets = useSafeAreaInsets();
     const camera = useRef<Camera>(null);
     const devices = useCameraDevices();
-    const [device, setDevice] = useState(devices.find(dev => dev.position === "front") || devices[0]);
+    const [device, setDevice] = useState(devices.find(dev => dev.position === 'front') || devices[0]);
+    const format = useCameraFormat(device, Templates.Snapchat);
     const [hasPermission, setHasPermission] = useState(false);
     const [picture, setPicture] = useState(props.route.params?.data?.picturePath || '');
     const [loading, setLoading] = useState(false);
@@ -56,9 +57,9 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     }, [hasPermission, requestPermissions]);
 
     const swapCamera = useCallback(() => {
-        const newDevice = device.position === "front"
-            ? devices.find(dev => dev.position === "back")
-            : devices.find(dev => dev.position === "front")
+        const newDevice = device.position === 'front'
+            ? devices.find(dev => dev.position === 'back')
+            : devices.find(dev => dev.position === 'front');
 
         setDevice(newDevice!);
     }, [device, devices]);
@@ -141,11 +142,12 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                         ref={camera}
                         device={device}
                         isActive={true}
-                        isMirrored={device.position === "front"}
+                        isMirrored={device.position === 'front'}
                         enableZoomGesture={true}
-                        photoQualityBalance={"speed"}
+                        photoQualityBalance={'speed'}
                         resizeMode={'contain'}
                         photo={true}
+                        format={format}
                     />
                     <View style={[styles.buttonContainer, { bottom: edgeInsets.bottom }]}>
                         <Button style={styles.button}

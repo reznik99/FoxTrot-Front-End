@@ -72,7 +72,7 @@ export const getConnStats = async (peerConnection: RTCPeerConnection) => {
         reports.push(report);
     });
     return reports;
-}
+};
 
 export const getIconForConnType = (connType: 'host' | 'srflx' | 'prflx' | 'relay' | '') => {
     switch (connType) {

@@ -77,7 +77,7 @@ class Call extends React.Component<Props, State> {
         this.callStatsTimer = setInterval(() => this.checkConnectionType, 4000);
 
         InCallManager.start({ media: 'video', auto: true });
-        InCallManager.setSpeakerphoneOn(false)
+        InCallManager.setSpeakerphoneOn(false);
         InCallManager.setKeepScreenOn(true);
         this.checkCallStatus(undefined);
     };
@@ -97,8 +97,8 @@ class Call extends React.Component<Props, State> {
     checkCallStatus = async (prevProps: Readonly<Props> | undefined) => {
         // Check if peer has hanged up
         if (this.props.callClosed && !prevProps?.callClosed) {
-            console.debug("Peer closed the call!")
-            this.endCall(true)
+            console.debug('Peer closed the call!');
+            this.endCall(true);
         }
         // Check if peer has answered our call
         if (this.props.callAnswer && !prevProps?.callAnswer) {
@@ -274,7 +274,7 @@ class Call extends React.Component<Props, State> {
     toggleVideoEnabled = async () => {
         if (!this.state.stream) { return; }
 
-        const newVideoEnabled = !this.state.videoEnabled
+        const newVideoEnabled = !this.state.videoEnabled;
         const videoTrack = this.state.stream.getVideoTracks()[0];
         videoTrack.enabled = newVideoEnabled;
         this.setState({ videoEnabled: newVideoEnabled });
@@ -283,17 +283,17 @@ class Call extends React.Component<Props, State> {
     toggleVoiceEnabled = () => {
         if (!this.state.stream) { return; }
 
-        const newVoiceEnabled = !this.state.voiceEnabled
+        const newVoiceEnabled = !this.state.voiceEnabled;
         const audioTrack = this.state.stream.getAudioTracks()[0];
         audioTrack.enabled = newVoiceEnabled;
-        InCallManager.setMicrophoneMute(newVoiceEnabled)
+        InCallManager.setMicrophoneMute(newVoiceEnabled);
         this.setState({ voiceEnabled: newVoiceEnabled });
     };
 
     toggleLoudSpeaker = () => {
         if (!this.state.stream) { return; }
 
-        const newLoudSpeaker = !this.state.loudSpeaker
+        const newLoudSpeaker = !this.state.loudSpeaker;
         InCallManager.setSpeakerphoneOn(newLoudSpeaker);
         this.setState({ loudSpeaker: newLoudSpeaker });
     };
@@ -301,9 +301,9 @@ class Call extends React.Component<Props, State> {
     toggleCamera = () => {
         if (!this.state.stream) { return; }
 
-        const newIsFrontCamera = !this.state.isFrontCamera
+        const newIsFrontCamera = !this.state.isFrontCamera;
         const videoTrack = this.state.stream.getVideoTracks()[0];
-        videoTrack.applyConstraints({ facingMode: newIsFrontCamera ? 'user' : 'environment' })
+        videoTrack.applyConstraints({ facingMode: newIsFrontCamera ? 'user' : 'environment' });
         this.setState({ isFrontCamera: newIsFrontCamera });
     };
 
@@ -323,7 +323,7 @@ class Call extends React.Component<Props, State> {
     checkConnectionType = async () => {
         if (!this.state.peerConnection) { return; }
         // Get all WebRTC connection stats
-        const reports = await getConnStats(this.state.peerConnection)
+        const reports = await getConnStats(this.state.peerConnection);
         // Filter what we want
         const candidatePair = reports
             .find(rp => rp.type === 'candidate-pair' && rp.state === 'succeeded') as CandidatePair | undefined;
@@ -340,16 +340,16 @@ class Call extends React.Component<Props, State> {
     };
 
     renderCallInfo = () => {
-        const localCandidate = this.state.connectionInfo?.localCandidate
-        const candidatePair = this.state.connectionInfo?.candidatePair
+        const localCandidate = this.state.connectionInfo?.localCandidate;
+        const candidatePair = this.state.connectionInfo?.candidatePair;
         return (
             this.state.stream && <View>
                 <Text>{this.printCallTime()} : {localCandidate?.protocol}({localCandidate?.networkType})</Text>
                 <Text>Connection : {localCandidate?.candidateType} {getIconForConnType(localCandidate?.candidateType || '')}</Text>
                 <Text>Delay(RTT) : {(candidatePair?.currentRoundTripTime || 0) * 1000}ms</Text>
             </View>
-        )
-    }
+        );
+    };
 
     render = () => {
         return (
