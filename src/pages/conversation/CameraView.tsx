@@ -4,6 +4,7 @@ import { Camera, Templates, useCameraDevice, useCameraFormat } from 'react-nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackScreenProps } from '@react-navigation/stack';
 import { View, Image, StyleSheet } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
 import RNFS from 'react-native-fs';
@@ -13,14 +14,13 @@ import { DARKHEADER, SECONDARY, SECONDARY_LITE } from '~/global/variables';
 import { sendMessage } from '~/store/actions/user';
 import { HomeStackParamList } from '~/../App';
 import { AppDispatch } from '~/store/store';
-import { useIsFocused } from '@react-navigation/native';
 
 export default function CameraView(props: StackScreenProps<HomeStackParamList, 'CameraView'>) {
 
     const dispatch = useDispatch<AppDispatch>();
     const edgeInsets = useSafeAreaInsets();
     const isActive = useIsFocused();
-
+    const [initialized, setInitialized] = useState(false)
     const cameraRef = useRef<Camera>(null);
     const [cameraType, setCameraType] = useState<'front' | 'back'>('front');
     const device = useCameraDevice(cameraType);
@@ -57,6 +57,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
 
     const reset = useCallback(() => {
         setPicture('');
+        setInitialized(false);
         if (!hasPermission) { requestPermissions(); }
     }, [hasPermission, requestPermissions]);
 
@@ -102,81 +103,84 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
         }
     }, [picture, props.navigation, props.route.params?.data?.peer, dispatch]);
 
+
     return (
         <View style={[styles.container, { paddingTop: edgeInsets.top, paddingBottom: edgeInsets.bottom }]}>
+            {/* Loading screen */}
             {!device && !picture &&
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" />
                 </View>
             }
+            {/* Permission error screen */}
             {device && !picture && !hasPermission &&
                 <View style={styles.loaderContainer}>
                     <Text variant="titleLarge">Permission to use camera denied</Text>
                 </View>
             }
-
+            {/* Image preview and actions */}
             {picture &&
-                <View style={{ flex: 1, backgroundColor: DARKHEADER }}>
-                    <Image style={{ width: '100%', height: '100%' }}
-                        source={{ uri: picture }}
-                        resizeMode="cover" />
-                </View>
+                <>
+                    <View style={{ flex: 1, backgroundColor: DARKHEADER }}>
+                        <Image style={{ width: '100%', height: '100%' }}
+                            source={{ uri: picture }}
+                            resizeMode="cover" />
+                    </View>
+                    <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
+                        <Button style={styles.button}
+                            buttonColor={SECONDARY_LITE}
+                            icon="refresh"
+                            mode="contained"
+                            onPress={reset}>
+                            Take again
+                        </Button>
+                        <Button style={styles.button}
+                            icon="send"
+                            mode="contained"
+                            onPress={send}
+                            loading={loading}
+                            disabled={loading}>
+                            Send
+                        </Button>
+                    </View>
+                </>
             }
-
-            {picture &&
-                <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
-                    <Button style={styles.button}
-                        buttonColor={SECONDARY_LITE}
-                        icon="refresh"
-                        mode="contained"
-                        onPress={reset}>
-                        Take again
-                    </Button>
-                    <Button style={styles.button}
-                        icon="send"
-                        mode="contained"
-                        onPress={send}
-                        loading={loading}
-                        disabled={loading}>
-                        Send
-                    </Button>
-                </View>
-            }
-
+            {/* Camera View and actions */}
             {device && hasPermission && !picture &&
-                <View style={{ flex: 1, backgroundColor: DARKHEADER }}>
-                    <Camera style={{ width: '100%', height: '100%' }}
-                        ref={cameraRef}
-                        device={device}
-                        isActive={isActive}
-                        isMirrored={device.position === 'front'}
-                        enableZoomGesture={true}
-                        photoQualityBalance={'speed'}
-                        resizeMode={'cover'}
-                        format={format}
-                        photo={true}
-                    />
-                </View>
-            }
-
-            {device && hasPermission && !picture &&
-                <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
-                    <Button style={styles.button}
-                        buttonColor={SECONDARY_LITE}
-                        icon="camera-party-mode"
-                        mode="contained"
-                        onPress={swapCamera}>
-                        Swap Camera
-                    </Button>
-                    <Button style={styles.button}
-                        icon="camera"
-                        mode="contained"
-                        onPress={takePic}
-                        loading={loading}
-                        disabled={loading}>
-                        Take pic
-                    </Button>
-                </View>
+                <>
+                    <View style={{ flex: 1, backgroundColor: DARKHEADER }}>
+                        <Camera style={initialized && { width: '100%', height: '100%' }}
+                            ref={cameraRef}
+                            device={device}
+                            isActive={isActive}
+                            isMirrored={device.position === 'front'}
+                            enableZoomGesture={true}
+                            photoQualityBalance={'speed'}
+                            resizeMode={'cover'}
+                            format={format}
+                            photo={true}
+                            onPreviewStarted={() => setInitialized(true)}
+                            onPreviewStopped={() => setInitialized(false)}
+                        />
+                    </View>
+                    <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
+                        <Button style={styles.button}
+                            buttonColor={SECONDARY_LITE}
+                            icon="camera-party-mode"
+                            mode="contained"
+                            onPress={swapCamera}>
+                            Swap Camera
+                        </Button>
+                        <Button style={styles.button}
+                            icon="camera"
+                            mode="contained"
+                            onPress={takePic}
+                            loading={loading}
+                            disabled={loading}>
+                            Take pic
+                        </Button>
+                    </View>
+                </>
             }
         </View>
     );
