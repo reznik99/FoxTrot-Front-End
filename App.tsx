@@ -170,7 +170,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
             });
         }
         // Delete storage info about caller so they don't get routed to call screen on next app open
-        deleteFromStorage('call_answered_in_background')
+        deleteFromStorage('call_answered_in_background');
     });
     InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
     RNNotificationCall.displayNotification(

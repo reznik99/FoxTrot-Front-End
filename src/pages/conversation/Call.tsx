@@ -369,12 +369,13 @@ class Call extends React.Component<Props, State> {
                             source={{ uri: this.state.peerUser?.pic }} />
                     }
                     {this.state.stream && this.state.videoEnabled
-                        ? <RTCView style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]}
+                        ? <RTCView style={[styles.userCamera, { bottom: this.props.insets.bottom }, this.state.minimizeLocalStream && styles.userCameraSmall]}
                             streamURL={this.state.stream.toURL()}
                             mirror={this.state.isFrontCamera}
                             objectFit={'cover'}
-                            zOrder={2} onTouchEnd={this.toggleMinimizedStream} />
-                        : <Image style={[styles.cameraDisabled, this.state.minimizeLocalStream && styles.cameraDisabledSmall]}
+                            zOrder={2}
+                            onTouchEnd={this.toggleMinimizedStream} />
+                        : <Image style={[styles.userCamera, { bottom: this.props.insets.bottom }, this.state.minimizeLocalStream && styles.userCameraSmall]}
                             source={{ uri: this.props.userData.pic }} />
                     }
                 </View>
@@ -388,7 +389,7 @@ class Call extends React.Component<Props, State> {
                         {this.state.stream &&
                             <>
                                 <TouchableOpacity onPress={this.toggleLoudSpeaker} style={[styles.actionButton, this.state.loudSpeaker && styles.bgWhite]}>
-                                    <Icon source="volume-high" size={20} />
+                                    <Icon source="volume-high" size={20} color={this.state.loudSpeaker ? 'black' : undefined} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={this.toggleVoiceEnabled} style={styles.actionButton}>
                                     <Icon source={this.state.voiceEnabled ? 'microphone' : 'microphone-off'} size={20} />
@@ -409,7 +410,6 @@ class Call extends React.Component<Props, State> {
             </View>
         );
     };
-
 }
 
 const mapStateToProps = (state: RootState) => ({
@@ -485,17 +485,17 @@ const styles = StyleSheet.create({
         padding: 15,
         margin: 5,
         backgroundColor: 'gray',
-    }, cameraDisabled: {
+    }, userCamera: {
         position: 'absolute',
-        height: 275,
         width: 225,
-        bottom: 80,
+        aspectRatio: 9 / 16,
         right: 0,
         borderRadius: 5,
         backgroundColor: '#333333f0',
-    }, cameraDisabledSmall: {
-        height: 175,
+        marginBottom: 80,
+    }, userCameraSmall: {
         width: 125,
+        aspectRatio: 9 / 16,
     }, bgRed: {
         backgroundColor: 'red',
     }, bgGreen: {

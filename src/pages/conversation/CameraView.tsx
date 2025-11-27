@@ -20,7 +20,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     const dispatch = useDispatch<AppDispatch>();
     const edgeInsets = useSafeAreaInsets();
     const isActive = useIsFocused();
-    const [initialized, setInitialized] = useState(false)
+    const [initialized, setInitialized] = useState(false);
     const cameraRef = useRef<Camera>(null);
     const [cameraType, setCameraType] = useState<'front' | 'back'>('front');
     const device = useCameraDevice(cameraType);
