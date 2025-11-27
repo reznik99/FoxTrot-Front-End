@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         width: '100%',
-        backgroundColor: '#777777a0'
+        backgroundColor: '#777777a0',
     }, actionButton: {
         borderRadius: 50,
         padding: 15,
