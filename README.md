@@ -17,17 +17,19 @@ FoxTrot, Mobile App offering end-to-end encrypted communication built in React-N
 - [SubtleCrypto](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto)
 - [Websockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
 - [WebRTC](https://webrtc.org/)
+- [Firebase Push Notifications](https://firebase.google.com/docs/cloud-messaging/)
 
 <!-- ROADMAP -->
 ## Roadmap
 
 - [x] __Messaging__ End-To-End Encrypted text messaging and pictures.
-- [x] __Notifications__ Push Notifications for messages.
+- [x] __Calling__ Peer-To-Peer End-To-End Encrypted Audio/Video Calls.
+- [x] __Notifications__ Push Notifications for messages and missed calls.
+- [x] __Call Screen__ Push Notification triggered call screen.
 - [x] __Device Migration__ Key Archival.
-- [x] __Calling__ Peer-To-Peer Encrypted Audio Calls.
-- [x] __Calling__ Peer-To-Peer Encrypted Video Calls.
-- [ ] __Messaging__ End-To-End Encrypted GIFs/Audio/Video messages.
-- [ ] __Calling__ Push Notifications for calls.
+- [ ] __GIF support__.
+- [ ] __Messaging__ Audio & video messages.
+- [ ] __Messaging__ Group messaging support.
 
 See the [open issues](https://github.com/reznik99/FoxTrot-Front-End/issues) for a full list of proposed features (and known issues).
 <br>
