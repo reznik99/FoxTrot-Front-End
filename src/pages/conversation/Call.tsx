@@ -354,10 +354,12 @@ class Call extends React.Component<Props, State> {
     render = () => {
         return (
             <View style={styles.body}>
+                {/* Header */}
                 <View style={styles.header}>
                     <Text>{this.state.callStatus}</Text>
                     {this.renderCallInfo()}
                 </View>
+                {/* Remote camera view or placeholder */}
                 <View style={{ width: '100%', flex: 1 }}>
                     {this.state.peerStream && this.state.peerConnection?.connectionState === 'connected'
                         ? <RTCView style={styles.stream}
@@ -368,24 +370,27 @@ class Call extends React.Component<Props, State> {
                         : <Image style={[styles.stream, { backgroundColor: '#333333' }]}
                             source={{ uri: this.state.peerUser?.pic }} />
                     }
+                </View>
+                <View style={[styles.footer]}>
+                    {/* Local camera view or placeholder */}
                     {this.state.stream && this.state.videoEnabled
-                        ? <RTCView style={[styles.userCamera, { bottom: this.props.insets.bottom }, this.state.minimizeLocalStream && styles.userCameraSmall]}
+                        ? <RTCView style={[styles.userCamera, this.state.minimizeLocalStream && styles.userCameraSmall]}
                             streamURL={this.state.stream.toURL()}
                             mirror={this.state.isFrontCamera}
                             objectFit={'cover'}
                             zOrder={2}
                             onTouchEnd={this.toggleMinimizedStream} />
-                        : <Image style={[styles.userCamera, { bottom: this.props.insets.bottom }, this.state.minimizeLocalStream && styles.userCameraSmall]}
+                        : <Image style={[styles.userCamera, this.state.minimizeLocalStream && styles.userCameraSmall]}
                             source={{ uri: this.props.userData.pic }} />
                     }
-                </View>
-                <View style={[styles.footer, { paddingBottom: this.props.insets.bottom }]}>
-                    <View style={{ flexDirection: 'row' }}>
+                    <View style={[styles.actionContainer, { paddingBottom: this.props.insets.bottom }]}>
+                        {/* Inactive call controls */}
                         {!this.state.stream &&
                             <TouchableOpacity onPress={this.startStream} style={[styles.actionButton, styles.bgGreen]}>
                                 <Icon source="phone" size={20} />
                             </TouchableOpacity>
                         }
+                        {/* Active call controls */}
                         {this.state.stream &&
                             <>
                                 <TouchableOpacity onPress={this.toggleLoudSpeaker} style={[styles.actionButton, this.state.loudSpeaker && styles.bgWhite]}>
@@ -474,25 +479,25 @@ const styles = StyleSheet.create({
     }, footer: {
         flexDirection: 'column',
         justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#777777a0',
         position: 'absolute',
         width: '100%',
         bottom: 0,
-        zIndex: 2,
+    }, actionContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        width: '100%',
+        backgroundColor: '#777777a0'
     }, actionButton: {
         borderRadius: 50,
         padding: 15,
         margin: 5,
         backgroundColor: 'gray',
     }, userCamera: {
-        position: 'absolute',
         width: 225,
         aspectRatio: 9 / 16,
-        right: 0,
+        alignSelf: 'flex-end',
         borderRadius: 5,
         backgroundColor: '#333333f0',
-        marginBottom: 80,
     }, userCameraSmall: {
         width: 125,
         aspectRatio: 9 / 16,
