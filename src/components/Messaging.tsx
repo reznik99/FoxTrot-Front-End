@@ -1,0 +1,214 @@
+import React, { useCallback, useState } from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Icon, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Sound, { AudioSet } from 'react-native-nitro-sound';
+import RNFS from 'react-native-fs';
+
+import CustomKeyboardAvoidingView from '~/components/CustomKeyboardAvoidingView';
+import { getMicrophoneRecordingPermission, getReadExtPermission } from '~/global/permissions';
+import { DARKHEADER, PRIMARY, SECONDARY, SECONDARY_LITE } from '~/global/variables';
+
+type IProps = {
+    inputMessage: string;
+    loading: boolean;
+    setInputMessage: (text: string) => void;
+    handleCameraSelect: () => Promise<void>;
+    handleImageSelect: () => Promise<void>;
+    handleSend: () => Promise<void>;
+    handleSendAudio: (data: string) => Promise<void>;
+}
+
+export default function Messaging(props: IProps) {
+    const edgeInsets = useSafeAreaInsets();
+    const [expandActions, setExpandActions] = useState(false);
+    const [audioFilePath, setAudioFilePath] = useState('');
+    const [audioRecordTime, setAudioRecordTime] = useState(0);
+    const [audioPlaybackTime, setAudioPlaybackTime] = useState(0);
+    const [playingAudio, setPlayingAudio] = useState(false);
+
+    const setInputMessage = useCallback((text: string) => {
+        props.setInputMessage(text);
+        if (expandActions) setExpandActions(false);
+    }, [expandActions, props.setInputMessage]);
+
+    const resetAudio = useCallback(() => {
+        setAudioFilePath('');
+        setAudioRecordTime(0);
+        setAudioPlaybackTime(0);
+        Sound.removeRecordBackListener();
+        Sound.removePlayBackListener();
+        Sound.removePlaybackEndListener();
+    }, []);
+
+    const onMicPress = useCallback(async () => {
+        try {
+            resetAudio();
+            // Get permissions if necessary
+            const hasPermission = await getMicrophoneRecordingPermission()
+            if (!hasPermission) return // Show error
+            const hasPermission2 = await getReadExtPermission()
+            if (!hasPermission2) return // Show error
+            // Start recording
+            Sound.addRecordBackListener((e) => setAudioRecordTime(e.currentPosition));
+            await Sound.setVolume(100)
+            const audioConfig: AudioSet = { AudioQuality: 'low' }
+            const result = await Sound.startRecorder(undefined, audioConfig);
+            setAudioFilePath(result)
+            console.log('Recording started:', result);
+        } catch (err) {
+            console.error(err); // Show error
+        }
+    }, []);
+
+    const onMicRelease = useCallback(async () => {
+        try {
+            // Stop recording
+            await Sound.stopRecorder();
+            Sound.removeRecordBackListener();
+        } catch (err) {
+            console.error(err); // Show error
+        }
+    }, []);
+
+    const playAudio = useCallback(async () => {
+        try {
+            const res = await Sound.startPlayer(audioFilePath)
+            Sound.addPlayBackListener((e) => setAudioPlaybackTime(e.currentPosition));
+            Sound.addPlaybackEndListener(() => setPlayingAudio(false));
+            setPlayingAudio(true)
+            console.log("playAudio:", res)
+        } catch (err) {
+            console.error(err); // Show error
+        }
+    }, [audioFilePath]);
+
+    const stopAudio = useCallback(async () => {
+        try {
+            const res = await Sound.stopPlayer();
+            console.log("stopAudio:", res);
+            setPlayingAudio(false);
+            Sound.removePlayBackListener();
+            Sound.removePlaybackEndListener();
+        } catch (err) {
+            console.error(err); // Show error
+        }
+    }, []);
+
+    const sendAudio = useCallback(async () => {
+        try {
+            // Read sound file
+            const audioData = await RNFS.readFile(audioFilePath, 'base64');
+            console.log("Size:", 4 * (audioData.length / 3), "Bytes");
+            await props.handleSendAudio(audioData)
+            resetAudio()
+        } catch (err) {
+            console.error(err); // Show error
+        }
+    }, [audioFilePath]);
+
+    return (
+        <CustomKeyboardAvoidingView>
+            {/* Audio data controls */}
+            {audioFilePath &&
+                <View style={styles.audioContainer}>
+                    <View style={styles.inputContainer}>
+                        <TouchableOpacity style={styles.button} onPress={resetAudio}>
+                            <Icon source="close"
+                                color={SECONDARY_LITE}
+                                size={20} />
+                        </TouchableOpacity>
+                        <Text>Duration: {Sound.mmssss(audioPlaybackTime ? ~~audioPlaybackTime : ~~audioRecordTime)}</Text>
+                        {playingAudio
+                            ? <TouchableOpacity style={styles.button} onPress={stopAudio}>
+                                <Icon source="pause"
+                                    color={PRIMARY}
+                                    size={20} />
+                            </TouchableOpacity>
+                            : <TouchableOpacity style={styles.button} onPress={playAudio}>
+                                <Icon source="play"
+                                    color={PRIMARY}
+                                    size={20} />
+                            </TouchableOpacity>
+                        }
+                    </View>
+                    {/* Audio playback indicator */}
+                    <View style={{ width: '75%' }}>
+                        <View style={{
+                            width: `${(audioPlaybackTime / audioRecordTime) * 100}%`,
+                            height: 1,
+                            backgroundColor: playingAudio ? PRIMARY : 'transparent'
+                        }
+                        }></View>
+                    </View>
+                </View>
+            }
+            {/* Messaging controls */}
+            <View style={[styles.inputContainer, { paddingBottom: edgeInsets.bottom, paddingHorizontal: edgeInsets.left }]} >
+                <TouchableOpacity style={styles.button} onPress={props.handleCameraSelect}>
+                    <Icon source="camera"
+                        color={PRIMARY}
+                        size={20} />
+                </TouchableOpacity>
+                {expandActions &&
+                    <TouchableOpacity style={styles.button} onPress={props.handleImageSelect}>
+                        <Icon source="image"
+                            color={PRIMARY}
+                            size={20} />
+                    </TouchableOpacity>
+                }
+                {expandActions &&
+                    <TouchableOpacity style={styles.button}
+                        onPressIn={onMicPress}
+                        onPressOut={onMicRelease}>
+                        <Icon source="microphone"
+                            color={PRIMARY}
+                            size={20} />
+                    </TouchableOpacity>
+                }
+                {!expandActions &&
+                    <TouchableOpacity style={styles.button} onPress={() => setExpandActions(true)}>
+                        <Icon source="chevron-right" color={PRIMARY} size={20} />
+                    </TouchableOpacity>
+                }
+                <View style={{ flex: 1 }}>
+                    <TextInput placeholder="Type a message"
+                        multiline={true}
+                        value={props.inputMessage}
+                        onChangeText={setInputMessage}
+                        style={styles.input}
+                        clearButtonMode="always"
+                    />
+                </View>
+
+                {props.loading
+                    ? <ActivityIndicator style={{ marginHorizontal: 5 }} />
+                    : <TouchableOpacity style={styles.button} onPress={audioFilePath ? sendAudio : props.handleSend}>
+                        <Icon source="send-lock" color={PRIMARY} size={20} />
+                    </TouchableOpacity>
+                }
+            </View>
+        </CustomKeyboardAvoidingView>
+    )
+}
+
+const styles = StyleSheet.create({
+    audioContainer: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        paddingVertical: 2,
+        backgroundColor: DARKHEADER
+    }, inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+    }, input: {
+        maxHeight: 100,
+        borderRadius: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        backgroundColor: '#faf1e6',
+    }, button: {
+        padding: 10,
+    },
+});

@@ -1,5 +1,5 @@
 import React, { PureComponent, useState, useCallback, useMemo } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, Pressable, View, Linking, ToastAndroid, Image, Vibration } from 'react-native';
+import { StyleSheet, Text, Pressable, View, Linking, ToastAndroid, Image, Vibration } from 'react-native';
 import { ActivityIndicator, Icon, Modal, Portal } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -7,9 +7,7 @@ import { FlashList } from '@shopify/flash-list';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 import { StackScreenProps } from '@react-navigation/stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import CustomKeyboardAvoidingView from '~/components/CustomKeyboardAvoidingView';
 import FullScreenImage from '~/components/FullScreenImage';
 import { decrypt } from '~/global/crypto';
 import { PRIMARY, SECONDARY } from '~/global/variables';
@@ -17,6 +15,7 @@ import { HomeStackParamList } from '../../../App';
 import { message, UserData } from '~/store/reducers/user';
 import { AppDispatch, RootState } from '~/store/store';
 import { sendMessage } from '~/store/actions/user';
+import Messaging from '~/components/Messaging';
 
 const todaysDate = new Date().toLocaleDateString();
 
@@ -35,7 +34,6 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     const [loading, setLoading] = useState(false);
     const [inputMessage, setInputMessage] = useState('');
     const [zoomMedia, setZoomMedia] = useState('');
-    const edgeInsets = useSafeAreaInsets();
 
     // Memoize the reversed messages
     const reversedMessages = useMemo(() => {
@@ -60,6 +58,24 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
             setLoading(false);
         }
     }, [inputMessage, peer, dispatch]);
+
+    const handleSendAudio = useCallback(async (data: string) => {
+        if (data.trim() === '') { return; }
+
+        try {
+            setLoading(true);
+
+            const toSend = JSON.stringify({
+                type: 'AUDIO',
+                message: data,
+            });
+            await dispatch(sendMessage({ message: toSend, to_user: peer }));
+        } catch (err) {
+            console.error('Error sending message:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [peer, dispatch]);
 
     const handleImageSelect = useCallback(async () => {
         try {
@@ -94,6 +110,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
 
     return (
         <View style={styles.container}>
+            {/* Message list */}
             <FlashList
                 removeClippedSubviews={false}
                 contentContainerStyle={styles.messageList}
@@ -115,34 +132,16 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                         zoomMedia={(data) => setZoomMedia(data)} />
                 )}
             />
-
-            <CustomKeyboardAvoidingView>
-                <View style={[styles.inputContainer, { paddingBottom: edgeInsets.bottom, paddingHorizontal: edgeInsets.left }]} >
-                    <TouchableOpacity style={styles.button} onPress={handleCameraSelect}>
-                        <Icon source="camera" color={styles.buttonIcon.color} size={20} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.button} onPress={handleImageSelect}>
-                        <Icon source="image" color={styles.buttonIcon.color} size={20} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <TextInput placeholder="Type a message"
-                            multiline={true}
-                            value={inputMessage}
-                            onChangeText={setInputMessage}
-                            style={styles.input}
-                            clearButtonMode="always"
-                        />
-                    </View>
-
-                    {loading
-                        ? <ActivityIndicator style={{ marginHorizontal: 5 }} />
-                        : <TouchableOpacity style={styles.button} onPress={handleSend}>
-                            <Icon source="send-lock" color={styles.buttonIcon.color} size={20} />
-                        </TouchableOpacity>
-                    }
-                </View>
-            </CustomKeyboardAvoidingView>
-
+            {/* Messaging controls */}
+            <Messaging loading={loading}
+                inputMessage={inputMessage}
+                setInputMessage={setInputMessage}
+                handleCameraSelect={handleCameraSelect}
+                handleImageSelect={handleImageSelect}
+                handleSend={handleSend}
+                handleSendAudio={handleSendAudio}
+            />
+            {/* Media viewer */}
             <Portal>
                 <Modal visible={!!zoomMedia}
                     onDismiss={() => setZoomMedia('')}
@@ -225,6 +224,13 @@ class Message extends PureComponent<MProps, MState> {
                         <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(' ')}</Text>
                     </Text>
                 );
+            case 'AUDIO': {
+                return (
+                    <Text style={[isSent ? styles.sentText : styles.receivedText]}>
+                        Audio data: {Number(~~(4 * (item.message.length / 3))).toLocaleString()}Bytes
+                    </Text>
+                );
+            }
             default:
                 console.warn('Unrecognized message type:', item.type);
                 return null;
@@ -357,19 +363,5 @@ const styles = StyleSheet.create({
         marginVertical: 5,
         backgroundColor: '#333333a0',
         borderRadius: 10,
-    }, inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-    }, input: {
-        maxHeight: 100,
-        borderRadius: 20,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        backgroundColor: '#faf1e6',
-    }, buttonIcon: {
-        color: PRIMARY,
-    }, button: {
-        padding: 10,
-    },
+    }
 });
