@@ -253,20 +253,15 @@ class Message extends PureComponent<MProps, MState> {
                 const decryptedMessage = await this.decryptMessage(item);
                 return this.setState({ decryptedMessage: decryptedMessage });
             }
-
+            // Message is decrypted so behaviour depends on content
             switch (msgObject?.type) {
-                case 'IMG':
-                    // Image is contained in message, then zoom in
+                case 'IMG': // Image is contained in message, then zoom in
                     this.props.zoomMedia(this.state.decryptedMessage!.message);
                     break;
-                case 'MSG':
-                    // If message contains URL open it in browser
+                case 'MSG': // If message contains URL open it in browser
                     const messageChunks = this.state.decryptedMessage?.message?.split(' ') || [];
                     const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'));
                     if (link) { Linking.openURL(link); }
-                    break;
-                default:
-                    console.warn('Unrecognized message type:', msgObject?.type);
                     break;
             }
         } catch (err: any) {

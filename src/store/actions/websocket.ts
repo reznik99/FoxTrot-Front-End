@@ -154,7 +154,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 console.debug('Websocket CALL_ANSWER Recieved', parsedData.data?.sender);
                 dispatch({ type: 'user/RECV_CALL_ANSWER', payload: parsedData.data?.answer });
                 break;
-            case 'CALL_CLOSED':
+            case 'CALL_CLOSED': // TODO: maybe move to webrtc datachannel (also send camera swapping, muting and camera disable for instant feedback)
                 console.debug('Websocket CALL_CLOSED Recieved', parsedData.data?.sender);
                 dispatch({ type: 'user/RECV_CALL_CLOSED', payload: true });
                 break;

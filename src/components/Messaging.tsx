@@ -103,7 +103,7 @@ export default function Messaging(props: IProps) {
         } catch (err) {
             console.error(err); // Show error
         }
-    }, [audioFilePath]);
+    }, [audioFilePath, audioRecordTime]);
 
     return (
         <CustomKeyboardAvoidingView>
