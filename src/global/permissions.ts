@@ -62,3 +62,15 @@ export async function getCameraAndMicrophonePermissions() {
 
   return true;
 }
+
+export async function getMicrophoneRecordingPermission() {
+  const permission = PermissionsAndroid.PERMISSIONS.RECORD_AUDIO;
+
+  const hasPermission = await PermissionsAndroid.check(permission);
+  if (hasPermission) {
+    return true;
+  }
+
+  const status = await PermissionsAndroid.request(permission);
+  return status === PermissionsAndroid.RESULTS.GRANTED;
+}
