@@ -16,6 +16,7 @@ import { message, UserData } from '~/store/reducers/user';
 import { AppDispatch, RootState } from '~/store/store';
 import { sendMessage } from '~/store/actions/user';
 import Messaging from '~/components/Messaging';
+import AudioPlayer from '~/components/AudioPlayer';
 
 const todaysDate = new Date().toLocaleDateString();
 
@@ -59,7 +60,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
         }
     }, [inputMessage, peer, dispatch]);
 
-    const handleSendAudio = useCallback(async (data: string) => {
+    const handleSendAudio = useCallback(async (data: string, duration: number) => {
         if (data.trim() === '') { return; }
 
         try {
@@ -68,6 +69,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
             const toSend = JSON.stringify({
                 type: 'AUDIO',
                 message: data,
+                duration: duration,
             });
             await dispatch(sendMessage({ message: toSend, to_user: peer }));
         } catch (err) {
@@ -154,18 +156,19 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
 }
 
 type decryptedMessage = {
-    type: string,
-    message: string,
+    type: string;
+    message: string;
+    duration?: number;
 }
 type MProps = {
-    item: message,
-    isSent: boolean,
-    peer: UserData,
-    zoomMedia: (data: string) => void,
+    item: message;
+    isSent: boolean;
+    peer: UserData;
+    zoomMedia: (data: string) => void;
 }
 type MState = {
-    loading: boolean,
-    decryptedMessage?: decryptedMessage
+    loading: boolean;
+    decryptedMessage?: decryptedMessage;
 }
 class Message extends PureComponent<MProps, MState> {
     constructor(props: MProps) {
@@ -214,11 +217,11 @@ class Message extends PureComponent<MProps, MState> {
                 const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'));
 
                 if (linkIndex < 0) {
-                    return <Text style={[isSent ? styles.sentText : styles.receivedText]} selectable>{item.message}</Text>;
+                    return <Text style={styles.text} selectable>{item.message}</Text>;
                 }
 
                 return (
-                    <Text style={[isSent ? styles.sentText : styles.receivedText]}>
+                    <Text style={styles.text}>
                         <Text selectable>{messageChunks.slice(0, linkIndex).join(' ')}</Text>
                         <Text selectable style={{ color: 'blue' }}>{linkIndex > 0 ? ' ' : ''}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? ' ' : ''}</Text>
                         <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(' ')}</Text>
@@ -226,9 +229,12 @@ class Message extends PureComponent<MProps, MState> {
                 );
             case 'AUDIO': {
                 return (
-                    <Text style={[isSent ? styles.sentText : styles.receivedText]}>
-                        Audio data: {Number(~~(4 * (item.message.length / 3))).toLocaleString()}Bytes
-                    </Text>
+                    <>
+                        <Text style={styles.text}>
+                            Audio data: {Number(~~(4 * (item.message.length / 3))).toLocaleString()}Bytes
+                        </Text>
+                        <AudioPlayer audioData={item.message} audioDuration={item.duration || 10} />
+                    </>
                 );
             }
             default:
@@ -290,7 +296,7 @@ class Message extends PureComponent<MProps, MState> {
                     {/* Message preview */}
                     {isEncrypted &&
                         <>
-                            <Text selectable style={[isSent ? styles.sentText : styles.receivedText]}>
+                            <Text selectable style={styles.text}>
                                 {item.message?.length < 200 ? item.message : item.message?.substring(0, 197).padEnd(200, '...')}
                             </Text>
                             <View style={{ position: 'absolute', zIndex: 10 }}>
@@ -337,15 +343,12 @@ const styles = StyleSheet.create({
     }, received: {
         alignSelf: 'flex-start',
         backgroundColor: '#333333a0',
-    }, receivedText: {
+    }, text: {
         color: '#f2f0f0',
         fontFamily: 'Roboto',
     }, sent: {
         alignSelf: 'flex-end',
         backgroundColor: PRIMARY,
-    }, sentText: {
-        color: '#f2f0f0',
-        fontFamily: 'Roboto',
     }, system: {
         alignSelf: 'center',
         backgroundColor: 'gray',

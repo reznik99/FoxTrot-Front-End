@@ -16,7 +16,7 @@ type IProps = {
     handleCameraSelect: () => Promise<void>;
     handleImageSelect: () => Promise<void>;
     handleSend: () => Promise<void>;
-    handleSendAudio: (data: string) => Promise<void>;
+    handleSendAudio: (data: string, duration: number) => Promise<void>;
 }
 
 export default function Messaging(props: IProps) {
@@ -73,11 +73,10 @@ export default function Messaging(props: IProps) {
 
     const playAudio = useCallback(async () => {
         try {
-            const res = await Sound.startPlayer(audioFilePath)
+            await Sound.startPlayer(audioFilePath)
             Sound.addPlayBackListener((e) => setAudioPlaybackTime(e.currentPosition));
             Sound.addPlaybackEndListener(() => setPlayingAudio(false));
             setPlayingAudio(true)
-            console.log("playAudio:", res)
         } catch (err) {
             console.error(err); // Show error
         }
@@ -85,8 +84,7 @@ export default function Messaging(props: IProps) {
 
     const stopAudio = useCallback(async () => {
         try {
-            const res = await Sound.stopPlayer();
-            console.log("stopAudio:", res);
+            await Sound.stopPlayer();
             setPlayingAudio(false);
             Sound.removePlayBackListener();
             Sound.removePlaybackEndListener();
@@ -99,8 +97,8 @@ export default function Messaging(props: IProps) {
         try {
             // Read sound file
             const audioData = await RNFS.readFile(audioFilePath, 'base64');
-            console.log("Size:", 4 * (audioData.length / 3), "Bytes");
-            await props.handleSendAudio(audioData)
+            console.debug("Size:", 4 * (audioData.length / 3), "Bytes");
+            await props.handleSendAudio(audioData, audioRecordTime)
             resetAudio()
         } catch (err) {
             console.error(err); // Show error
