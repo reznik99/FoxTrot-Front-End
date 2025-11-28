@@ -7,7 +7,7 @@ import RNFS from 'react-native-fs';
 
 import CustomKeyboardAvoidingView from '~/components/CustomKeyboardAvoidingView';
 import { getMicrophoneRecordingPermission, getReadExtPermission } from '~/global/permissions';
-import { DARKHEADER, PRIMARY, SECONDARY, SECONDARY_LITE } from '~/global/variables';
+import { DARKHEADER, PRIMARY, SECONDARY_LITE } from '~/global/variables';
 
 type IProps = {
     inputMessage: string;
@@ -29,7 +29,7 @@ export default function Messaging(props: IProps) {
 
     const setInputMessage = useCallback((text: string) => {
         props.setInputMessage(text);
-        if (expandActions) setExpandActions(false);
+        if (expandActions) {setExpandActions(false);}
     }, [expandActions, props.setInputMessage]);
 
     const resetAudio = useCallback(() => {
@@ -45,16 +45,16 @@ export default function Messaging(props: IProps) {
         try {
             resetAudio();
             // Get permissions if necessary
-            const hasPermission = await getMicrophoneRecordingPermission()
-            if (!hasPermission) return // Show error
-            const hasPermission2 = await getReadExtPermission()
-            if (!hasPermission2) return // Show error
+            const hasPermission = await getMicrophoneRecordingPermission();
+            if (!hasPermission) {return;} // Show error
+            const hasPermission2 = await getReadExtPermission();
+            if (!hasPermission2) {return;} // Show error
             // Start recording
             Sound.addRecordBackListener((e) => setAudioRecordTime(e.currentPosition));
-            await Sound.setVolume(100)
-            const audioConfig: AudioSet = { AudioQuality: 'low' }
+            await Sound.setVolume(100);
+            const audioConfig: AudioSet = { AudioQuality: 'low' };
             const result = await Sound.startRecorder(undefined, audioConfig);
-            setAudioFilePath(result)
+            setAudioFilePath(result);
             console.log('Recording started:', result);
         } catch (err) {
             console.error(err); // Show error
@@ -73,10 +73,10 @@ export default function Messaging(props: IProps) {
 
     const playAudio = useCallback(async () => {
         try {
-            await Sound.startPlayer(audioFilePath)
+            await Sound.startPlayer(audioFilePath);
             Sound.addPlayBackListener((e) => setAudioPlaybackTime(e.currentPosition));
             Sound.addPlaybackEndListener(() => setPlayingAudio(false));
-            setPlayingAudio(true)
+            setPlayingAudio(true);
         } catch (err) {
             console.error(err); // Show error
         }
@@ -97,9 +97,9 @@ export default function Messaging(props: IProps) {
         try {
             // Read sound file
             const audioData = await RNFS.readFile(audioFilePath, 'base64');
-            console.debug("Size:", 4 * (audioData.length / 3), "Bytes");
-            await props.handleSendAudio(audioData, audioRecordTime)
-            resetAudio()
+            console.debug('Size:', 4 * (audioData.length / 3), 'Bytes');
+            await props.handleSendAudio(audioData, audioRecordTime);
+            resetAudio();
         } catch (err) {
             console.error(err); // Show error
         }
@@ -135,9 +135,9 @@ export default function Messaging(props: IProps) {
                         <View style={{
                             width: `${(audioPlaybackTime / audioRecordTime) * 100}%`,
                             height: 1,
-                            backgroundColor: playingAudio ? PRIMARY : 'transparent'
+                            backgroundColor: playingAudio ? PRIMARY : 'transparent',
                         }
-                        }></View>
+                        } />
                     </View>
                 </View>
             }
@@ -187,7 +187,7 @@ export default function Messaging(props: IProps) {
                 }
             </View>
         </CustomKeyboardAvoidingView>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         alignItems: 'center',
         paddingVertical: 2,
-        backgroundColor: DARKHEADER
+        backgroundColor: DARKHEADER,
     }, inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',

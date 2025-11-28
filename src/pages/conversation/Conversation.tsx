@@ -201,7 +201,7 @@ class Message extends PureComponent<MProps, MState> {
         }
     };
 
-    renderMessage = (item: decryptedMessage | undefined, isSent: boolean) => {
+    renderMessage = (item: decryptedMessage | undefined, _isSent: boolean) => {
         if (!item || !item?.message) { return; }
 
         switch (item.type) {
@@ -366,5 +366,5 @@ const styles = StyleSheet.create({
         marginVertical: 5,
         backgroundColor: '#333333a0',
         borderRadius: 10,
-    }
+    },
 });

@@ -5,7 +5,7 @@ import Sound from 'react-native-nitro-sound';
 import RNFS, { CachesDirectoryPath } from 'react-native-fs';
 
 import CustomKeyboardAvoidingView from '~/components/CustomKeyboardAvoidingView';
-import { DARKHEADER, PRIMARY, SECONDARY, SECONDARY_LITE } from '~/global/variables';
+import { DARKHEADER, PRIMARY, SECONDARY } from '~/global/variables';
 
 type IProps = {
     audioData: string;
@@ -18,31 +18,31 @@ export default function AudioPlayer(props: IProps) {
     const [audioFilePath, setAudioFilePath] = useState('');
 
     useEffect(() => {
-        const filePath = CachesDirectoryPath + Date.now()
+        const filePath = CachesDirectoryPath + Date.now();
         async function writeAudioToCache() {
             try {
-                await RNFS.writeFile(filePath, props.audioData, 'base64')
-                setAudioFilePath(filePath)
+                await RNFS.writeFile(filePath, props.audioData, 'base64');
+                setAudioFilePath(filePath);
             } catch (err) {
-                console.error('write audio message err:', err)
+                console.error('write audio message err:', err);
             }
         }
         if (props.audioData) {
-            writeAudioToCache()
+            writeAudioToCache();
         }
         return () => {
             RNFS.unlink(filePath)
                 .then(() => console.debug('Cleaned up temp audio message file'))
-                .catch(err => console.error("audio message file cleanup err:", err))
-        }
-    }, [])
+                .catch(err => console.error('audio message file cleanup err:', err));
+        };
+    }, []);
 
     const playAudio = useCallback(async () => {
         try {
-            await Sound.startPlayer(audioFilePath)
+            await Sound.startPlayer(audioFilePath);
             Sound.addPlayBackListener((e) => setAudioPlaybackTime(e.currentPosition));
             Sound.addPlaybackEndListener(() => setPlayingAudio(false));
-            setPlayingAudio(true)
+            setPlayingAudio(true);
         } catch (err) {
             console.error(err); // Show error
         }
@@ -83,13 +83,13 @@ export default function AudioPlayer(props: IProps) {
                     <View style={{
                         width: `${(audioPlaybackTime / props.audioDuration) * 100}%`, // TODO: send length
                         height: 1,
-                        backgroundColor: playingAudio ? SECONDARY : 'transparent'
+                        backgroundColor: playingAudio ? SECONDARY : 'transparent',
                     }
-                    }></View>
+                    } />
                 </View>
             </View>
         </CustomKeyboardAvoidingView>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         width: '100%',
         paddingHorizontal: 10,
-        backgroundColor: DARKHEADER
+        backgroundColor: DARKHEADER,
     }, inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
