@@ -51,7 +51,7 @@ export default function Messaging(props: IProps) {
             if (!hasPermission2) {return;} // Show error
             // Start recording
             Sound.addRecordBackListener((e) => setAudioRecordTime(e.currentPosition));
-            await Sound.setVolume(100);
+            await Sound.setVolume(1.0);
             const audioConfig: AudioSet = { AudioQuality: 'low' };
             const result = await Sound.startRecorder(undefined, audioConfig);
             setAudioFilePath(result);

@@ -39,7 +39,7 @@ export default function AudioPlayer(props: IProps) {
 
     const playAudio = useCallback(async () => {
         try {
-            await Sound.setVolume(100);
+            await Sound.setVolume(1.0);
             await Sound.startPlayer(audioFilePath);
             Sound.addPlayBackListener((e) => setAudioPlaybackTime(e.currentPosition));
             Sound.addPlaybackEndListener(() => setPlayingAudio(false));
