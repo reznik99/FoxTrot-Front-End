@@ -175,7 +175,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
     InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
     RNNotificationCall.displayNotification(
         '22221a99-8eb4-4ac2-b2cf-0a3c0b9100af',
-        caller.pic || '',
+        caller.pic || getAvatar(caller.id),
         20000,
         {
             channelId: 'com.foxtrot.callNotifications',

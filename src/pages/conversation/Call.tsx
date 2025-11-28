@@ -1,51 +1,21 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { connect, ConnectedProps } from 'react-redux';
+import { Icon } from 'react-native-paper';
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCSessionDescription, RTCView } from 'react-native-webrtc';
 import InCallManager from 'react-native-incall-manager';
 import Toast from 'react-native-toast-message';
 import { StackScreenProps } from '@react-navigation/stack';
 import { withSafeAreaInsets, WithSafeAreaInsetsProps } from 'react-native-safe-area-context';
-
-import { TURNCredentials, UserData } from '~/store/reducers/user';
-import { RootState } from '~/store/store';
-import { resetCallState, SocketData } from '~/store/actions/websocket';
 import { RTCOfferOptions } from 'react-native-webrtc/lib/typescript/RTCUtil';
-import { Icon } from 'react-native-paper';
-import { HomeStackParamList } from '../../../App';
-import { DARKHEADER } from '~/global/variables';
-import { CandidatePair, LocalCandidate, getConnStats, getIconForConnType } from '~/global/webrtc';
 
-const getRTCConfiguration = (turnCredentials: TURNCredentials): RTCConfiguration => {
-    if (!turnCredentials.credential) {
-        return {
-            iceTransportPolicy: 'all',
-            iceCandidatePoolSize: 0,
-            iceServers: [
-                // STUN peer-to-peer
-                { urls: 'stun:turn.francescogorini.com:3478' },
-                { urls: 'stun:stun.l.google.com:19302' },
-            ],
-        };
-    }
-    const username = turnCredentials.username;
-    const credential = turnCredentials.credential;
-    return {
-        iceTransportPolicy: 'all',
-        iceCandidatePoolSize: 0,
-        iceServers: [
-            // STUN peer-to-peer
-            { urls: 'stun:turn.francescogorini.com:3478' },
-            { urls: 'stun:stun.l.google.com:19302' },
-            // TURN over UDP (fastest)
-            { urls: ['turn:turn.francescogorini.com:3478?transport=udp'], username, credential },
-            // TURN over TCP (fallback for UDP-restricted networks)
-            { urls: ['turn:turn.francescogorini.com:3478?transport=tcp'], username, credential },
-            // TURN over TLS (best for strict firewalls/proxies)
-            { urls: ['turn:turn.francescogorini.com:5349?transport=tcp'], username, credential },
-        ],
-    };
-};
+import { CandidatePair, LocalCandidate, getConnStats, getIconForConnType, getRTCConfiguration } from '~/global/webrtc';
+import { DARKHEADER } from '~/global/variables';
+import { resetCallState, SocketData } from '~/store/actions/websocket';
+import { UserData } from '~/store/reducers/user';
+import { RootState } from '~/store/store';
+import { HomeStackParamList } from '../../../App';
+
 
 class Call extends React.Component<Props, State> {
     callTimer: NodeJS.Timeout | undefined;

@@ -1,5 +1,6 @@
 import { Icon } from 'react-native-paper';
 import { RTCPeerConnection } from 'react-native-webrtc';
+import { TURNCredentials } from '~/store/reducers/user';
 
 export interface LocalCandidate {
     timestamp: number;
@@ -91,4 +92,35 @@ export const getIconForConnType = (connType: 'host' | 'srflx' | 'prflx' | 'relay
             return <Icon source="server" color="#380793" size={20} />;
         // "relay" The candidate is a relay candidate, obtained from a TURN server. The relay candidate's IP address is an address the TURN server uses to forward the media between the two peers.
     }
+};
+
+export const getRTCConfiguration = (turnCredentials: TURNCredentials): RTCConfiguration => {
+    if (!turnCredentials.credential) {
+        return {
+            iceTransportPolicy: 'all',
+            iceCandidatePoolSize: 0,
+            iceServers: [
+                // STUN peer-to-peer
+                { urls: 'stun:turn.francescogorini.com:3478' },
+                { urls: 'stun:stun.l.google.com:19302' },
+            ],
+        };
+    }
+    const username = turnCredentials.username;
+    const credential = turnCredentials.credential;
+    return {
+        iceTransportPolicy: 'all',
+        iceCandidatePoolSize: 0,
+        iceServers: [
+            // STUN peer-to-peer
+            { urls: 'stun:turn.francescogorini.com:3478' },
+            { urls: 'stun:stun.l.google.com:19302' },
+            // TURN over UDP (fastest)
+            { urls: ['turn:turn.francescogorini.com:3478?transport=udp'], username, credential },
+            // TURN over TCP (fallback for UDP-restricted networks)
+            { urls: ['turn:turn.francescogorini.com:3478?transport=tcp'], username, credential },
+            // TURN over TLS (best for strict firewalls/proxies)
+            { urls: ['turn:turn.francescogorini.com:5349?transport=tcp'], username, credential },
+        ],
+    };
 };
