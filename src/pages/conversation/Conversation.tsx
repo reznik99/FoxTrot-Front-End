@@ -362,9 +362,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
     }, input: {
-        flex: 1,
+        maxHeight: 100,
         borderRadius: 20,
-        paddingVertical: 6,
+        paddingVertical: 10,
         paddingHorizontal: 12,
         backgroundColor: '#faf1e6',
     }, buttonIcon: {
