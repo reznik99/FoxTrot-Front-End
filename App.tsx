@@ -126,6 +126,7 @@ const darkTheme = {
 // Register background handler
 const messaging = getMessaging();
 setBackgroundMessageHandler(messaging, async remoteMessage => {
+    InCallManager.stopRingtone()
     console.log('Message handled in the background!', remoteMessage);
     const callerRaw = remoteMessage.data?.caller as string;
     if (!callerRaw) {
