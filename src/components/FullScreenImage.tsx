@@ -32,7 +32,7 @@ const FullScreenImage = (props: IProps) => {
         <View style={styles.container}>
             <GestureHandlerRootView style={{ flex: 1 }}>
                 <ImageZoom uri={`data:image/jpeg;base64,${props.media}`}
-                    resizeMode="cover"
+                    resizeMode="contain"
                     resizeMethod="auto"
                     isDoubleTapEnabled={true}
                     doubleTapScale={3}
