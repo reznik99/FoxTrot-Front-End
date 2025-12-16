@@ -55,7 +55,9 @@ class Call extends React.Component<Props, State> {
     componentWillUnmount = () => {
         InCallManager.setKeepScreenOn(false);
         InCallManager.stop();
-        this.endCall(true);
+        // If call is active then let peer know we closed the call page
+        const callIsActive = !this.state.peerStream
+        this.endCall(callIsActive);
         if (this.callTimer) { clearInterval(this.callTimer); }
         if (this.callStatsTimer) { clearInterval(this.callStatsTimer); }
     };
