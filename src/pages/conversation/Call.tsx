@@ -24,11 +24,11 @@ class Call extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {
-            peerUser: this.props.route?.params?.data?.peer_user || this.props.caller,
+            peerUser: props.route.params.data?.peer_user || this.props.caller,
             peerConnection: undefined,
             stream: undefined,
             peerStream: undefined,
-            videoEnabled: true,
+            videoEnabled: props.route.params.data?.video_enabled,
             voiceEnabled: true,
             loudSpeaker: false,
             isFrontCamera: true,
@@ -47,8 +47,9 @@ class Call extends React.Component<Props, State> {
         this.callStatsTimer = setInterval(() => this.checkConnectionType, 4000);
 
         InCallManager.start({ media: 'video', auto: true });
-        InCallManager.setSpeakerphoneOn(false);
-        InCallManager.setKeepScreenOn(true);
+        // Loudspeaker and keep screen on if its a video call
+        InCallManager.setSpeakerphoneOn(this.state.videoEnabled);
+        InCallManager.setKeepScreenOn(this.state.videoEnabled);
         this.checkCallStatus(undefined);
     };
 
@@ -201,6 +202,8 @@ class Call extends React.Component<Props, State> {
 
             console.debug('startStream - Loading tracks');
             newStream.getTracks().forEach(track => newConnection.addTrack(track, newStream));
+            // Disable video if it's an audio call (can be enabled later)
+            newStream.getVideoTracks()[0].enabled = this.state.videoEnabled
 
             this.setState({
                 startTime: Date.now(),

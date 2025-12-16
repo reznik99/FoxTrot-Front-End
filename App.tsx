@@ -67,7 +67,7 @@ export type HomeStackParamList = {
     Conversation: { data: { peer_user: UserData; } };
     NewConversation: undefined;
     AddContact: undefined;
-    Call: { data: { peer_user: UserData } };
+    Call: { data: { peer_user: UserData; video_enabled: boolean } };
     CameraView: { data: { peer: UserData, picturePath: string } };
     Settings: undefined;
 };

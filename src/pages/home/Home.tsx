@@ -61,7 +61,8 @@ export default function Home(props: IProps) {
                 console.debug('RNNotificationCall: User answered call', info);
                 RNNotificationCall.backToApp();
                 const caller = JSON.parse(info.payload || '{}') as UserData;
-                props.navigation.navigate('Call', { data: { peer_user: caller } });
+                // TODO: figure out if video or audio call
+                props.navigation.navigate('Call', { data: { peer_user: caller, video_enabled: true } });
             });
             RNNotificationCall.addEventListener('endCall', (payload) => {
                 console.debug('RNNotificationCall: User ended call', payload);
@@ -73,7 +74,8 @@ export default function Home(props: IProps) {
             if (callerRaw) {
                 const caller = JSON.parse(callerRaw) as UserData;
                 await deleteFromStorage('call_answered_in_background');
-                props.navigation.navigate('Call', { data: { peer_user: caller } });
+                // TODO: figure out if video or audio call
+                props.navigation.navigate('Call', { data: { peer_user: caller, video_enabled: true } });
             }
             setLoadingMsg('');
         };

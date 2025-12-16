@@ -67,10 +67,10 @@ export default function HeaderConversation(props: IProps) {
                 </TouchableOpacity>
             </View>
             <View style={[styles.buttonContainer]}>
-                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user } })}>
+                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user, video_enabled: true } })}>
                     <Icon source="video" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user } })}>
+                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user, video_enabled: false } })}>
                     <Icon source="phone" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button}>
