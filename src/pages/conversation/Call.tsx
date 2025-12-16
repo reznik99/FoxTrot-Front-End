@@ -30,7 +30,7 @@ class Call extends React.Component<Props, State> {
             peerStream: undefined,
             videoEnabled: props.route.params.data?.video_enabled,
             voiceEnabled: true,
-            loudSpeaker: false,
+            loudSpeaker: props.route.params.data?.video_enabled,
             isFrontCamera: true,
             minimizeLocalStream: true,
             callStatus: '',
@@ -48,7 +48,7 @@ class Call extends React.Component<Props, State> {
 
         InCallManager.start({ media: 'video', auto: true });
         // Loudspeaker and keep screen on if its a video call
-        InCallManager.setSpeakerphoneOn(this.state.videoEnabled);
+        InCallManager.setSpeakerphoneOn(this.state.loudSpeaker);
         InCallManager.setKeepScreenOn(this.state.videoEnabled);
         this.checkCallStatus(undefined);
     };
@@ -327,6 +327,12 @@ class Call extends React.Component<Props, State> {
     };
 
     render = () => {
+        const showPeerStream = this.state.peerStream
+            && !this.state.peerStream?.getVideoTracks()?.[0].muted
+            && this.state.peerConnection?.connectionState === 'connected';
+        const showLocalStream = this.state.stream
+            && this.state.videoEnabled;
+
         return (
             <View style={styles.body}>
                 {/* Header */}
@@ -336,9 +342,9 @@ class Call extends React.Component<Props, State> {
                 </View>
                 {/* Remote camera view or placeholder */}
                 <View style={{ width: '100%', flex: 1 }}>
-                    {this.state.peerStream && this.state.peerConnection?.connectionState === 'connected'
+                    {showPeerStream
                         ? <RTCView style={styles.stream}
-                            streamURL={this.state.peerStream.toURL()}
+                            streamURL={this.state.peerStream!.toURL()}
                             mirror={true}
                             objectFit={'cover'}
                             zOrder={1} />
@@ -348,9 +354,9 @@ class Call extends React.Component<Props, State> {
                 </View>
                 <View style={[styles.footer]}>
                     {/* Local camera view or placeholder */}
-                    {this.state.stream && this.state.videoEnabled
+                    {showLocalStream
                         ? <RTCView style={[styles.userCamera, this.state.minimizeLocalStream && styles.userCameraSmall]}
-                            streamURL={this.state.stream.toURL()}
+                            streamURL={this.state.stream!.toURL()}
                             mirror={this.state.isFrontCamera}
                             objectFit={'cover'}
                             zOrder={2}
