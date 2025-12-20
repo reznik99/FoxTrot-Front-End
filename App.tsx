@@ -26,6 +26,7 @@ import HeaderConversation from '~/components/HeaderConversation';
 import { UserData } from '~/store/reducers/user';
 import { deleteFromStorage, writeToStorage } from '~/global/storage';
 import { getAvatar } from '~/global/helper';
+import { SocketMessage } from '~/store/actions/websocket';
 
 const defaultHeaderOptions: StackNavigationOptions & DrawerNavigationOptions = {
     headerStyle: {
@@ -129,11 +130,8 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
     InCallManager.stopRingtone();
     console.log('Message handled in the background!', remoteMessage);
     const callerRaw = remoteMessage.data?.caller as string;
-    if (!callerRaw) {
-        console.error('Caller data is not defined');
-        return;
-    }
-    const caller = JSON.parse(callerRaw) as UserData;
+    if (!callerRaw) { return console.error('Caller data is not defined'); }
+
     RNNotificationCall.addEventListener('answer', (info) => {
         console.debug('RNNotificationCall: User answered call', info);
         RNNotificationCall.backToApp();
@@ -174,6 +172,9 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
         deleteFromStorage('call_answered_in_background');
     });
     InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
+
+    const eventData = JSON.parse(remoteMessage.data?.data as string || '{}') as SocketMessage;
+    const caller = JSON.parse(callerRaw) as UserData;
     RNNotificationCall.displayNotification(
         '22221a99-8eb4-4ac2-b2cf-0a3c0b9100af',
         caller.pic || getAvatar(caller.id),
@@ -187,7 +188,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
             answerText: 'Answer',
             declineText: 'Decline',
             notificationColor: 'colorAccent',
-            payload: caller,
+            payload: { caller: caller, data: eventData },
             // notificationSound: 'skype_ring',
             // mainComponent: "CallScreen"
             // isVideo: true
