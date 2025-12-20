@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { connect, ConnectedProps } from 'react-redux';
 import { Icon } from 'react-native-paper';
@@ -37,6 +37,7 @@ class Call extends React.Component<Props, State> {
             loudSpeaker: props.route.params.data?.video_enabled,
             isFrontCamera: true,
             mirrorPeerStream: true,
+            showPeerStream: props.route.params.data?.video_enabled,
             minimizeLocalStream: true,
             callStatus: '',
             callDelay: 0,
@@ -289,6 +290,9 @@ class Call extends React.Component<Props, State> {
             case 'SWITCH_CAM':
                 this.setState({ mirrorPeerStream: !this.state.mirrorPeerStream });
                 break;
+            case 'MUTE_CAM':
+                this.setState({ showPeerStream: !this.state.showPeerStream });
+                break;
             // case 'MUTE':
             // TODO: Show icon saying peer is mute
             // case 'CLOSE':
@@ -299,16 +303,16 @@ class Call extends React.Component<Props, State> {
         }
     };
 
-    toggleVideoEnabled = async () => {
+    toggleVideoEnabled = useCallback(async () => {
         if (!this.state.stream) { return; }
 
         const newVideoEnabled = !this.state.videoEnabled;
         const videoTrack = this.state.stream.getVideoTracks()[0];
         videoTrack.enabled = newVideoEnabled;
         this.setState({ videoEnabled: newVideoEnabled });
-    };
+    }, [this.state.stream, this.state.videoEnabled]);
 
-    toggleVoiceEnabled = () => {
+    toggleVoiceEnabled = useCallback(() => {
         if (!this.state.stream) { return; }
 
         const newVoiceEnabled = !this.state.voiceEnabled;
@@ -316,17 +320,17 @@ class Call extends React.Component<Props, State> {
         audioTrack.enabled = newVoiceEnabled;
         InCallManager.setMicrophoneMute(newVoiceEnabled);
         this.setState({ voiceEnabled: newVoiceEnabled });
-    };
+    }, [this.state.stream, this.state.voiceEnabled]);
 
-    toggleLoudSpeaker = () => {
+    toggleLoudSpeaker = useCallback(() => {
         if (!this.state.stream) { return; }
 
         const newLoudSpeaker = !this.state.loudSpeaker;
         InCallManager.setSpeakerphoneOn(newLoudSpeaker);
         this.setState({ loudSpeaker: newLoudSpeaker });
-    };
+    }, [this.state.stream, this.state.loudSpeaker]);
 
-    toggleCamera = () => {
+    toggleCamera = useCallback(() => {
         if (!this.state.stream) { return; }
 
         const newIsFrontCamera = !this.state.isFrontCamera;
@@ -336,22 +340,13 @@ class Call extends React.Component<Props, State> {
 
         const switchCamMsg: WebRTCMessage = { type: 'SWITCH_CAM' };
         this.state.peerChannel?.send(JSON.stringify(switchCamMsg))
-    };
+    }, [this.state.stream, this.state.peerChannel, this.state.isFrontCamera]);
 
-    toggleMinimizedStream = () => {
+    toggleMinimizedStream = useCallback(() => {
         this.setState({ minimizeLocalStream: !this.state.minimizeLocalStream });
-    };
+    }, [this.state.minimizeLocalStream]);
 
-    printCallTime = () => {
-        // ~~ = fast Math.floor
-        const hours = ~~(this.state.callTime / (60 * 60));
-        const minutes = ~~(this.state.callTime / 60);
-        const seconds = ~~(this.state.callTime - (minutes * 60));
-
-        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    };
-
-    checkConnectionType = async () => {
+    checkConnectionType = useCallback(async () => {
         if (!this.state.peerConnection) { return; }
         // Get all WebRTC connection stats
         const reports = await getConnStats(this.state.peerConnection);
@@ -365,33 +360,39 @@ class Call extends React.Component<Props, State> {
         this.setState({
             connectionInfo: { localCandidate, candidatePair },
         });
-    };
+    }, [this.state.peerConnection])
 
-    calculatePing = () => {
+    calculatePing = useCallback(() => {
         if (!this.state.peerChannel) { return; }
         // Ping peer to calculate delay
         console.log('[WebRTC] pinging peer...')
         const pingMsg: WebRTCMessage = { type: 'PING', data: Date.now() };
         this.state.peerChannel.send(JSON.stringify(pingMsg));
-    }
+    }, [this.state.peerChannel])
 
-    renderCallInfo = () => {
+    calculateCallTime = useCallback(() => {
+        // ~~ = fast Math.floor
+        const hours = ~~(this.state.callTime / (60 * 60));
+        const minutes = ~~(this.state.callTime / 60);
+        const seconds = ~~(this.state.callTime - (minutes * 60));
+
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }, [this.state.callTime]);
+
+    renderCallInfo = useCallback(() => {
         const localCandidate = this.state.connectionInfo?.localCandidate;
         return (
             this.state.stream && <View>
-                <Text>{this.printCallTime()} : {localCandidate?.protocol}({localCandidate?.networkType})</Text>
+                <Text>{this.calculateCallTime()} : {localCandidate?.protocol}({localCandidate?.networkType})</Text>
                 <Text>Connection : {localCandidate?.candidateType} {getIconForConnType(localCandidate?.candidateType || '')}</Text>
                 <Text>Ping : {this.state.callDelay}ms</Text>
             </View>
         );
-    };
+    }, [this.state.stream, this.state.callDelay, this.state.connectionInfo]);
 
     render = () => {
-        const showPeerStream = this.state.peerStream
-            && !this.state.peerStream?.getVideoTracks()?.[0].muted
-            && this.state.peerConnection?.connectionState === 'connected';
-        const showLocalStream = this.state.stream
-            && this.state.videoEnabled;
+        const showPeerStream = this.state.peerStream && this.state.showPeerStream; //&& this.state.peerConnection?.connectionState === 'connected';
+        const showLocalStream = this.state.stream && this.state.videoEnabled;
 
         return (
             <View style={styles.body}>
@@ -488,6 +489,7 @@ interface State {
     loudSpeaker: boolean;
     isFrontCamera: boolean;
     mirrorPeerStream: boolean;
+    showPeerStream: boolean;
     minimizeLocalStream: boolean;
     callStatus: string;
     callDelay: number;
