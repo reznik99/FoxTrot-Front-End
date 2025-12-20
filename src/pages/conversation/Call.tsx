@@ -242,6 +242,7 @@ class Call extends React.Component<Props, State> {
         // Close networking
         this.state.stream?.release?.();
         this.state.peerConnection?.close?.();
+        this.state.peerChannel?.close?.();
         // Reset local state
         this.setState({
             peerConnection: undefined,
@@ -300,16 +301,16 @@ class Call extends React.Component<Props, State> {
         }
     };
 
-    toggleVideoEnabled = useCallback(async () => {
+    toggleVideoEnabled = async () => {
         if (!this.state.stream) { return; }
 
         const newVideoEnabled = !this.state.videoEnabled;
         const videoTrack = this.state.stream.getVideoTracks()[0];
         videoTrack.enabled = newVideoEnabled;
         this.setState({ videoEnabled: newVideoEnabled });
-    }, [this.state.stream, this.state.videoEnabled]);
+    }
 
-    toggleVoiceEnabled = useCallback(() => {
+    toggleVoiceEnabled = () => {
         if (!this.state.stream) { return; }
 
         const newVoiceEnabled = !this.state.voiceEnabled;
@@ -317,17 +318,17 @@ class Call extends React.Component<Props, State> {
         audioTrack.enabled = newVoiceEnabled;
         InCallManager.setMicrophoneMute(newVoiceEnabled);
         this.setState({ voiceEnabled: newVoiceEnabled });
-    }, [this.state.stream, this.state.voiceEnabled]);
+    }
 
-    toggleLoudSpeaker = useCallback(() => {
+    toggleLoudSpeaker = () => {
         if (!this.state.stream) { return; }
 
         const newLoudSpeaker = !this.state.loudSpeaker;
         InCallManager.setSpeakerphoneOn(newLoudSpeaker);
         this.setState({ loudSpeaker: newLoudSpeaker });
-    }, [this.state.stream, this.state.loudSpeaker]);
+    }
 
-    toggleCamera = useCallback(() => {
+    toggleCamera = () => {
         if (!this.state.stream) { return; }
 
         const newIsFrontCamera = !this.state.isFrontCamera;
@@ -337,13 +338,13 @@ class Call extends React.Component<Props, State> {
 
         const switchCamMsg: WebRTCMessage = { type: 'SWITCH_CAM' };
         this.state.peerChannel?.send(JSON.stringify(switchCamMsg));
-    }, [this.state.stream, this.state.peerChannel, this.state.isFrontCamera]);
+    }
 
-    toggleMinimizedStream = useCallback(() => {
+    toggleMinimizedStream = () => {
         this.setState({ minimizeLocalStream: !this.state.minimizeLocalStream });
-    }, [this.state.minimizeLocalStream]);
+    }
 
-    checkConnectionType = useCallback(async () => {
+    checkConnectionType = async () => {
         if (!this.state.peerConnection) { return; }
         // Get all WebRTC connection stats
         const reports = await getConnStats(this.state.peerConnection);
@@ -357,26 +358,26 @@ class Call extends React.Component<Props, State> {
         this.setState({
             connectionInfo: { localCandidate, candidatePair },
         });
-    }, [this.state.peerConnection]);
+    }
 
-    calculatePing = useCallback(() => {
+    calculatePing = () => {
         if (!this.state.peerChannel) { return; }
         // Ping peer to calculate delay
         console.debug('[WebRTC] pinging peer...');
         const pingMsg: WebRTCMessage = { type: 'PING', data: Date.now() };
         this.state.peerChannel.send(JSON.stringify(pingMsg));
-    }, [this.state.peerChannel]);
+    }
 
-    calculateCallTime = useCallback(() => {
+    calculateCallTime = () => {
         // ~~ = fast Math.floor
         const hours = ~~(this.state.callTime / (60 * 60));
         const minutes = ~~(this.state.callTime / 60);
         const seconds = ~~(this.state.callTime - (minutes * 60));
 
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }, [this.state.callTime]);
+    }
 
-    renderCallInfo = useCallback(() => {
+    renderCallInfo = () => {
         const localCandidate = this.state.connectionInfo?.localCandidate;
         return (
             this.state.stream && <View>
@@ -385,7 +386,7 @@ class Call extends React.Component<Props, State> {
                 <Text>Ping : {this.state.callDelay}ms</Text>
             </View>
         );
-    }, [this.state.stream, this.state.callDelay, this.state.connectionInfo]);
+    }
 
     render = () => {
         const showPeerStream = this.state.peerStream && this.state.showPeerStream; //&& this.state.peerConnection?.connectionState === 'connected';
