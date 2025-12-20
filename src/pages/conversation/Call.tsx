@@ -129,7 +129,7 @@ class Call extends React.Component<Props, State> {
         // Create data channel
         const peerChannel = this.state.peerConnection.createDataChannel(this.props.userData.phone_no);
         peerChannel.addEventListener('open', e => console.log('[WebRTC] Channel opened:', e.channel.label));
-        peerChannel.addEventListener('error', e => console.log('[WebRTC] Channel error:', e));
+        peerChannel.addEventListener('error', this.onWebrtcError);
         peerChannel.addEventListener('close', e => console.log('[WebRTC] Channel closed:', e));
         peerChannel.addEventListener('message', this.onChannelMessage);
         // Create offer
@@ -168,16 +168,11 @@ class Call extends React.Component<Props, State> {
             const newConnection = new RTCPeerConnection(getRTCConfiguration(this.props.turnServerCreds));
 
             // Event handlers
-            newConnection.addEventListener('icecandidateerror', () => {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error occoured during call',
-                    text2: 'Unable to find viable path to peer',
-                });
-            });
+            newConnection.addEventListener('error', this.onWebrtcError)
+            newConnection.addEventListener('icecandidateerror', this.onWebrtcError);
             newConnection.addEventListener('icecandidate', (event: any) => {
                 if (!event.candidate) { console.debug('[WebRTC] onIceCandidate finished'); }
-                // Send the iceCandidate to the other participant. Using websockets
+                // Send the iceCandidate to the peer using websockets
                 const message: SocketData = {
                     cmd: 'CALL_ICE_CANDIDATE',
                     data: {
@@ -208,7 +203,7 @@ class Call extends React.Component<Props, State> {
             newConnection.addEventListener('datachannel', event => {
                 this.setState({ peerChannel: event.channel }, () => {
                     event.channel.addEventListener('open', e => console.log('[WebRTC] Channel opened:', e.channel.label));
-                    event.channel.addEventListener('error', e => console.log('[WebRTC] Channel error:', e));
+                    event.channel.addEventListener('error', this.onWebrtcError);
                     event.channel.addEventListener('close', e => console.log('[WebRTC] Channel closed:', e));
                     event.channel.addEventListener('message', this.onChannelMessage);
                 });
@@ -233,10 +228,17 @@ class Call extends React.Component<Props, State> {
     };
 
     endCall = (isEvent: boolean = false) => {
-        // Let peer know we hung up, through webrtc channel
         if (!isEvent) {
+            // Let peer know we hung up, through webrtc channel
             const closeMsg: WebRTCMessage = { type: 'CLOSE' };
             this.state.peerChannel?.send(JSON.stringify(closeMsg));
+        } else {
+            // Peer hung up, show a toast to user
+            Toast.show({
+                type: 'info',
+                text1: `${this.state.peerUser.phone_no || 'User'} hanged up the call`,
+                text2: `Call lasted ${this.calculateCallTime()}`,
+            });
         }
         // Close networking
         this.state.stream?.release?.();
@@ -284,6 +286,15 @@ class Call extends React.Component<Props, State> {
                 break;
         }
     };
+
+    onWebrtcError = (e: any) => {
+        console.error('[WebRTC] error:', e)
+        Toast.show({
+            type: 'error',
+            text1: 'Error occoured during call',
+            text2: e.toString(),
+        });
+    }
 
     toggleVideoEnabled = async () => {
         if (!this.state.stream) { return; }
