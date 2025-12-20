@@ -168,7 +168,7 @@ class Call extends React.Component<Props, State> {
             const newConnection = new RTCPeerConnection(getRTCConfiguration(this.props.turnServerCreds));
 
             // Event handlers
-            newConnection.addEventListener('error', this.onWebrtcError)
+            newConnection.addEventListener('error', this.onWebrtcError);
             newConnection.addEventListener('icecandidateerror', this.onWebrtcError);
             newConnection.addEventListener('icecandidate', (event: any) => {
                 if (!event.candidate) { console.debug('[WebRTC] onIceCandidate finished'); }
@@ -288,13 +288,13 @@ class Call extends React.Component<Props, State> {
     };
 
     onWebrtcError = (e: any) => {
-        console.error('[WebRTC] error:', e)
+        console.error('[WebRTC] error:', e);
         Toast.show({
             type: 'error',
             text1: 'Error occoured during call',
             text2: e.toString(),
         });
-    }
+    };
 
     toggleVideoEnabled = async () => {
         if (!this.state.stream) { return; }

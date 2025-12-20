@@ -6,7 +6,6 @@ import Toast from 'react-native-toast-message';
 
 import { AppDispatch, GetState } from '../store';
 import { getAvatar } from '~/global/helper';
-import { UserData } from '../reducers/user';
 
 export interface SocketData {
     cmd: 'MSG' | 'CALL_OFFER' | 'CALL_ICE_CANDIDATE' | 'CALL_ANSWER' | 'CALL_CLOSED';
@@ -130,7 +129,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                     caller = {
                         id: parsedData.data.sender_id,
                         phone_no: parsedData.data.sender,
-                    }
+                    };
                     console.warn('Received call from a user who is not a contact. Ignoring...', parsedData);
                 }
                 dispatch({ type: 'user/RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
