@@ -76,10 +76,10 @@ class Call extends React.Component<Props, State> {
 
     checkCallStatus = async (prevProps: Readonly<Props> | undefined) => {
         // Check if peer has hanged up
-        if (this.props.callClosed && !prevProps?.callClosed) {
-            console.debug('Peer closed the call!');
-            this.endCall(true);
-        }
+        // if (this.props.callClosed && !prevProps?.callClosed) {
+        //     console.debug('Peer closed the call!');
+        //     this.endCall(true);
+        // }
         // Check if peer has answered our call
         if (this.props.callAnswer && !prevProps?.callAnswer) {
             if (this.state.peerConnection) {
@@ -249,32 +249,30 @@ class Call extends React.Component<Props, State> {
             peerStream: undefined,
             callStatus: '',
         });
-        // Let peer know we hung up, through websocket
+        // Let peer know we hung up, through webrtc channel
         if (!isEvent) {
-            const message: SocketData = {
-                cmd: 'CALL_CLOSED',
-                data: {
-                    reciever_id: this.state.peerUser.id,
-                    reciever: this.state.peerUser.phone_no,
-                    sender_id: this.props.userData.id,
-                    sender: this.props.userData.phone_no,
-                },
-            };
-            this.props.socketConn?.send(JSON.stringify(message));
+            const closeMsg: WebRTCMessage = { type: 'CLOSE' };
+            this.state.peerChannel?.send(JSON.stringify(closeMsg));
+            // Fallback webrtc
+            // const message: SocketData = {
+            //     cmd: 'CALL_CLOSED',
+            //     data: {
+            //         reciever_id: this.state.peerUser.id,
+            //         reciever: this.state.peerUser.phone_no,
+            //         sender_id: this.props.userData.id,
+            //         sender: this.props.userData.phone_no,
+            //     },
+            // };
+            // this.props.socketConn?.send(JSON.stringify(message));
         }
         // Reset redux state
         this.props.resetCallState();
     };
 
     onChannelMessage = (event: MessageEvent<'message'>) => {
-        if (typeof event.data !== 'string') {
-            console.warn('[WebRTC] Received a non string message in channel:', event.data);
-            return;
-        }
-        if (!this.state.peerChannel) {
-            console.warn('[WebRTC] Received a message in channel but channel is undefined:');
-            return;
-        }
+        if (typeof event.data !== 'string') { return console.warn('[WebRTC] Received a non string message in channel:', event.data); }
+        if (!this.state.peerChannel) { return console.warn('[WebRTC] Received a message in channel but channel is undefined:'); }
+
         const message: WebRTCMessage = JSON.parse(event.data || '{}');
         console.log('[WebRTC] Received channel message', message.type);
         switch (message.type) {
@@ -293,10 +291,9 @@ class Call extends React.Component<Props, State> {
             case 'MUTE_CAM':
                 this.setState({ showPeerStream: !this.state.showPeerStream });
                 break;
-            // case 'MUTE':
-            // TODO: Show icon saying peer is mute
-            // case 'CLOSE':
-            // TODO: Hangup gracefully to avoid using websocket message to hangup
+            case 'CLOSE':
+                this.endCall(true);
+                break;
             default:
                 console.log('[WebRTC] unhandled channel message of type:', message.type);
                 break;
@@ -339,7 +336,7 @@ class Call extends React.Component<Props, State> {
         this.setState({ isFrontCamera: newIsFrontCamera });
 
         const switchCamMsg: WebRTCMessage = { type: 'SWITCH_CAM' };
-        this.state.peerChannel?.send(JSON.stringify(switchCamMsg))
+        this.state.peerChannel?.send(JSON.stringify(switchCamMsg));
     }, [this.state.stream, this.state.peerChannel, this.state.isFrontCamera]);
 
     toggleMinimizedStream = useCallback(() => {
@@ -356,19 +353,19 @@ class Call extends React.Component<Props, State> {
         const localCandidate = reports
             .find(rp => rp.type === 'local-candidate' && rp.id === candidatePair?.localCandidateId) as LocalCandidate | undefined;
 
-        if (!candidatePair || !localCandidate) { return console.warn("[WebRTC] Failed to load reports"); }
+        if (!candidatePair || !localCandidate) { return console.warn('[WebRTC] Failed to load reports'); }
         this.setState({
             connectionInfo: { localCandidate, candidatePair },
         });
-    }, [this.state.peerConnection])
+    }, [this.state.peerConnection]);
 
     calculatePing = useCallback(() => {
         if (!this.state.peerChannel) { return; }
         // Ping peer to calculate delay
-        console.log('[WebRTC] pinging peer...')
+        console.debug('[WebRTC] pinging peer...');
         const pingMsg: WebRTCMessage = { type: 'PING', data: Date.now() };
         this.state.peerChannel.send(JSON.stringify(pingMsg));
-    }, [this.state.peerChannel])
+    }, [this.state.peerChannel]);
 
     calculateCallTime = useCallback(() => {
         // ~~ = fast Math.floor
