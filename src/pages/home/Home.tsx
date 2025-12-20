@@ -41,8 +41,6 @@ export default function Home(props: IProps) {
             store.dispatch(registerPushNotifications());
             // [background] Get TURN credentials for proxying calls if peer-to-peer ICE fails
             store.dispatch(getTURNServerCreds());
-            // Start websocket connection to server
-            await configureWebsocket();
             // Load keys from TPM
             const loaded = await loadKeypair();
             if (!loaded) {
@@ -54,6 +52,8 @@ export default function Home(props: IProps) {
             }
             // Load new messages from backend and old messages from storage
             await loadMessagesAndContacts();
+            // Start websocket connection to server
+            await configureWebsocket();
             // Setup axios interceptors
             setupInterceptors(props.navigation);
             // Register Call Screen handler

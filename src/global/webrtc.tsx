@@ -2,6 +2,10 @@ import { Icon } from 'react-native-paper';
 import { RTCPeerConnection } from 'react-native-webrtc';
 import { TURNCredentials } from '~/store/reducers/user';
 
+export interface WebRTCMessage {
+    type: 'PING' | 'PING_REPLY' | 'SWITCH_CAM' | 'MUTE_CAM' | 'CLOSE';
+    data?: any;
+}
 export interface LocalCandidate {
     timestamp: number;
     type: 'local-candidate';

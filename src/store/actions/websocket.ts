@@ -96,7 +96,6 @@ export function resetCallState() {
         try {
             dispatch({ type: 'user/RESET_CALL_ICE_CANDIDATES', payload: undefined });
             dispatch({ type: 'user/RECV_CALL_ANSWER', payload: undefined });
-            dispatch({ type: 'user/RECV_CALL_CLOSED', payload: false });
             dispatch({ type: 'user/RECV_CALL_OFFER', payload: undefined });
         } catch (err) {
             console.warn('Error resetCallState: ', err);
@@ -125,10 +124,13 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 console.debug('Websocket CALL_OFFER Recieved', parsedData.data?.sender);
 
                 const state = getState().userReducer;
-                const caller = state.contacts.find(con => con.phone_no === parsedData.data.sender);
+                let caller = state.contacts.find(con => con.phone_no === parsedData.data.sender);
                 if (!caller) {
+                    caller = {
+                        id: parsedData.data.sender_id,
+                        phone_no: parsedData.data.sender,
+                    };
                     console.warn('Received call from a user who is not a contact. Ignoring...', parsedData);
-                    return;
                 }
                 dispatch({ type: 'user/RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
 
@@ -159,10 +161,6 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
             case 'CALL_ANSWER':
                 console.debug('Websocket CALL_ANSWER Recieved', parsedData.data?.sender);
                 dispatch({ type: 'user/RECV_CALL_ANSWER', payload: parsedData.data?.answer });
-                break;
-            case 'CALL_CLOSED': // TODO: maybe move to webrtc datachannel (also send camera swapping, muting and camera disable for instant feedback)
-                console.debug('Websocket CALL_CLOSED Recieved', parsedData.data?.sender);
-                dispatch({ type: 'user/RECV_CALL_CLOSED', payload: true });
                 break;
             case 'CALL_ICE_CANDIDATE':
                 console.debug('Websocket RECV_CALL_ICE_CANDIDATE Recieved', parsedData.data?.sender);
