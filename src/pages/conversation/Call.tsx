@@ -3,13 +3,16 @@ import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { connect, ConnectedProps } from 'react-redux';
 import { Icon } from 'react-native-paper';
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCSessionDescription, RTCView } from 'react-native-webrtc';
+import RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel';
+import MessageEvent from 'react-native-webrtc/lib/typescript/MessageEvent';
+
 import InCallManager from 'react-native-incall-manager';
 import Toast from 'react-native-toast-message';
 import { StackScreenProps } from '@react-navigation/stack';
 import { withSafeAreaInsets, WithSafeAreaInsetsProps } from 'react-native-safe-area-context';
 import { RTCOfferOptions } from 'react-native-webrtc/lib/typescript/RTCUtil';
 
-import { CandidatePair, LocalCandidate, getConnStats, getIconForConnType, getRTCConfiguration } from '~/global/webrtc';
+import { CandidatePair, LocalCandidate, WebRTCMessage, getConnStats, getIconForConnType, getRTCConfiguration } from '~/global/webrtc';
 import { DARKHEADER } from '~/global/variables';
 import { resetCallState, SocketData } from '~/store/actions/websocket';
 import { UserData } from '~/store/reducers/user';
@@ -26,14 +29,17 @@ class Call extends React.Component<Props, State> {
         this.state = {
             peerUser: props.route.params.data?.peer_user || this.props.caller,
             peerConnection: undefined,
+            peerChannel: undefined,
             stream: undefined,
             peerStream: undefined,
             videoEnabled: props.route.params.data?.video_enabled,
             voiceEnabled: true,
             loudSpeaker: props.route.params.data?.video_enabled,
             isFrontCamera: true,
+            mirrorPeerStream: true,
             minimizeLocalStream: true,
             callStatus: '',
+            callDelay: 0,
             connectionInfo: undefined,
             callTime: Date.now(),
             startTime: Date.now(),
@@ -44,7 +50,7 @@ class Call extends React.Component<Props, State> {
 
     componentDidMount = () => {
         this.callTimer = setInterval(() => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }), 1000);
-        this.callStatsTimer = setInterval(() => this.checkConnectionType, 4000);
+        this.callStatsTimer = setInterval(this.calculatePing, 4000);
 
         InCallManager.start({ media: 'video', auto: true });
         // Loudspeaker and keep screen on if its a video call
@@ -125,7 +131,13 @@ class Call extends React.Component<Props, State> {
 
     call = async () => {
         if (!this.state.peerConnection) { return console.error('call: Unable to initiate call with null peerConnection'); }
-
+        // Create data channel
+        const peerChannel = this.state.peerConnection.createDataChannel(this.props.userData.phone_no);
+        peerChannel.addEventListener('open', e => console.log('[WebRTC] Channel opened:', e.channel.label));
+        peerChannel.addEventListener('error', e => console.log('[WebRTC] Channel error:', e));
+        peerChannel.addEventListener('close', e => console.log('[WebRTC] Channel closed:', e));
+        peerChannel.addEventListener('message', this.onChannelMessage);
+        // Create offer
         let sessionConstraints: RTCOfferOptions = {
             offerToReceiveAudio: true,
             offerToReceiveVideo: true,
@@ -133,7 +145,6 @@ class Call extends React.Component<Props, State> {
         };
         let offerDescription = await this.state.peerConnection.createOffer(sessionConstraints) as RTCSessionDescriptionInit;
         await this.state.peerConnection.setLocalDescription(offerDescription as RTCSessionDescription);
-
         // Send the offerDescription to the other participant. Using websockets
         const message: SocketData = {
             cmd: 'CALL_OFFER',
@@ -147,8 +158,8 @@ class Call extends React.Component<Props, State> {
             },
         };
         this.props.socketConn?.send(JSON.stringify(message));
-
-        this.setState({ callStatus: `${this.state.peerUser?.phone_no} : Dialing` });
+        // Update state
+        this.setState({ callStatus: `${this.state.peerUser?.phone_no} : Dialing`, peerChannel: peerChannel });
     };
 
     startStream = async () => {
@@ -170,7 +181,7 @@ class Call extends React.Component<Props, State> {
                 });
             });
             newConnection.addEventListener('icecandidate', (event: any) => {
-                if (!event.candidate) { console.debug('onIceCandidate finished'); }
+                if (!event.candidate) { console.debug('[WebRTC] onIceCandidate finished'); }
                 // Send the iceCandidate to the other participant. Using websockets
                 const message: SocketData = {
                     cmd: 'CALL_ICE_CANDIDATE',
@@ -185,20 +196,27 @@ class Call extends React.Component<Props, State> {
                 this.props.socketConn?.send(JSON.stringify(message));
             });
             newConnection.addEventListener('connectionstatechange', _event => {
-                console.debug('WebRTC connection state change:', newConnection?.connectionState);
+                console.debug('[WebRTC] connection state change:', newConnection?.connectionState);
                 this.setState({ callStatus: `${this.state.peerUser?.phone_no} : ${newConnection?.connectionState}` });
                 if (newConnection?.connectionState === 'disconnected') { this.endCall(true); }
+                if (newConnection.connectionState === 'connected') { this.checkConnectionType(); }
             });
             newConnection.addEventListener('iceconnectionstatechange', _event => {
-                console.debug('ICE connection state change:', newConnection?.iceConnectionState);
-                if (newConnection.iceConnectionState === 'connected') {
-                    this.checkConnectionType();
-                }
+                console.debug('[WebRTC] ICE connection state change:', newConnection?.iceConnectionState);
+                if (newConnection.iceConnectionState === 'connected') { this.checkConnectionType(); }
             });
-            newConnection.addEventListener('track', (event: any) => {
+            newConnection.addEventListener('track', event => {
                 const newPeerStream = event.streams[0];
-                newPeerStream.addTrack(event.track);
+                newPeerStream.addTrack(event.track!);
                 this.setState({ peerStream: newPeerStream });
+            });
+            newConnection.addEventListener('datachannel', event => {
+                this.setState({ peerChannel: event.channel }, () => {
+                    event.channel.addEventListener('open', e => console.log('[WebRTC] Channel opened:', e.channel.label));
+                    event.channel.addEventListener('error', e => console.log('[WebRTC] Channel error:', e));
+                    event.channel.addEventListener('close', e => console.log('[WebRTC] Channel closed:', e));
+                    event.channel.addEventListener('message', this.onChannelMessage);
+                });
             });
 
             console.debug('startStream - Loading tracks');
@@ -247,6 +265,40 @@ class Call extends React.Component<Props, State> {
         this.props.resetCallState();
     };
 
+    onChannelMessage = (event: MessageEvent<'message'>) => {
+        if (typeof event.data !== 'string') {
+            console.warn('[WebRTC] Received a non string message in channel:', event.data);
+            return;
+        }
+        if (!this.state.peerChannel) {
+            console.warn('[WebRTC] Received a message in channel but channel is undefined:');
+            return;
+        }
+        const message: WebRTCMessage = JSON.parse(event.data || '{}');
+        console.log('[WebRTC] Received channel message', message.type);
+        switch (message.type) {
+            case 'PING':
+                const pingReply: WebRTCMessage = { type: 'PING_REPLY', data: message.data };
+                this.state.peerChannel.send(JSON.stringify(pingReply));
+                break;
+            case 'PING_REPLY':
+                const pingInMs = (Date.now() - message.data);
+                this.setState({ callDelay: pingInMs });
+                console.log('Ping to peer:', pingInMs, 'ms');
+                break;
+            case 'SWITCH_CAM':
+                this.setState({ mirrorPeerStream: !this.state.mirrorPeerStream });
+                break;
+            // case 'MUTE':
+            // TODO: Show icon saying peer is mute
+            // case 'CLOSE':
+            // TODO: Hangup gracefully to avoid using websocket message to hangup
+            default:
+                console.log('[WebRTC] unhandled channel message of type:', message.type);
+                break;
+        }
+    };
+
     toggleVideoEnabled = async () => {
         if (!this.state.stream) { return; }
 
@@ -281,6 +333,9 @@ class Call extends React.Component<Props, State> {
         const videoTrack = this.state.stream.getVideoTracks()[0];
         videoTrack.applyConstraints({ facingMode: newIsFrontCamera ? 'user' : 'environment' });
         this.setState({ isFrontCamera: newIsFrontCamera });
+
+        const switchCamMsg: WebRTCMessage = { type: 'SWITCH_CAM' };
+        this.state.peerChannel?.send(JSON.stringify(switchCamMsg))
     };
 
     toggleMinimizedStream = () => {
@@ -306,23 +361,27 @@ class Call extends React.Component<Props, State> {
         const localCandidate = reports
             .find(rp => rp.type === 'local-candidate' && rp.id === candidatePair?.localCandidateId) as LocalCandidate | undefined;
 
-        console.debug('candidatePair:', candidatePair);
-        console.debug('localCandidate:', localCandidate);
-        if (!candidatePair || !localCandidate) { return; }
-
+        if (!candidatePair || !localCandidate) { return console.warn("[WebRTC] Failed to load reports"); }
         this.setState({
             connectionInfo: { localCandidate, candidatePair },
         });
     };
 
+    calculatePing = () => {
+        if (!this.state.peerChannel) { return; }
+        // Ping peer to calculate delay
+        console.log('[WebRTC] pinging peer...')
+        const pingMsg: WebRTCMessage = { type: 'PING', data: Date.now() };
+        this.state.peerChannel.send(JSON.stringify(pingMsg));
+    }
+
     renderCallInfo = () => {
         const localCandidate = this.state.connectionInfo?.localCandidate;
-        const candidatePair = this.state.connectionInfo?.candidatePair;
         return (
             this.state.stream && <View>
                 <Text>{this.printCallTime()} : {localCandidate?.protocol}({localCandidate?.networkType})</Text>
                 <Text>Connection : {localCandidate?.candidateType} {getIconForConnType(localCandidate?.candidateType || '')}</Text>
-                <Text>Delay(RTT) : {(candidatePair?.currentRoundTripTime || 0) * 1000}ms</Text>
+                <Text>Ping : {this.state.callDelay}ms</Text>
             </View>
         );
     };
@@ -346,7 +405,7 @@ class Call extends React.Component<Props, State> {
                     {showPeerStream
                         ? <RTCView style={styles.stream}
                             streamURL={this.state.peerStream!.toURL()}
-                            mirror={true}
+                            mirror={this.state.mirrorPeerStream}
                             objectFit={'cover'}
                             zOrder={1} />
                         : <Image style={[styles.stream, { backgroundColor: '#333333' }]}
@@ -421,14 +480,17 @@ export default withSafeAreaInsets(connector(Call));
 interface State {
     peerUser: UserData;
     peerConnection: RTCPeerConnection | undefined;
+    peerChannel: RTCDataChannel | undefined;
     stream: MediaStream | undefined;
     peerStream: MediaStream | undefined;
     videoEnabled: boolean;
     voiceEnabled: boolean;
     loudSpeaker: boolean;
     isFrontCamera: boolean;
+    mirrorPeerStream: boolean;
     minimizeLocalStream: boolean;
     callStatus: string;
+    callDelay: number;
     connectionInfo: {
         localCandidate: LocalCandidate;
         candidatePair: CandidatePair;
