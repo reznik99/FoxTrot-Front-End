@@ -57,7 +57,7 @@ class Call extends React.Component<Props, State> {
         InCallManager.setKeepScreenOn(false);
         InCallManager.stop();
         // If call is active then let peer know we closed the call page
-        const callIsActive = !this.state.peerStream
+        const callIsActive = !this.state.peerStream;
         this.endCall(callIsActive);
         if (this.callTimer) { clearInterval(this.callTimer); }
         if (this.callStatsTimer) { clearInterval(this.callStatsTimer); }
@@ -143,7 +143,7 @@ class Call extends React.Component<Props, State> {
                 reciever_id: this.state.peerUser.id,
                 reciever: this.state.peerUser.phone_no,
                 offer: offerDescription,
-                type: this.state.videoEnabled ? 'video' : 'audio'
+                type: this.state.videoEnabled ? 'video' : 'audio',
             },
         };
         this.props.socketConn?.send(JSON.stringify(message));
@@ -204,7 +204,7 @@ class Call extends React.Component<Props, State> {
             console.debug('startStream - Loading tracks');
             newStream.getTracks().forEach(track => newConnection.addTrack(track, newStream));
             // Disable video if it's an audio call (can be enabled later)
-            newStream.getVideoTracks()[0].enabled = this.state.videoEnabled
+            newStream.getVideoTracks()[0].enabled = this.state.videoEnabled;
 
             this.setState({
                 startTime: Date.now(),

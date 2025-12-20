@@ -127,8 +127,8 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 const state = getState().userReducer;
                 const caller = state.contacts.find(con => con.phone_no === parsedData.data.sender);
                 if (!caller) {
-                    console.warn("Received call from a user who is not a contact. Ignoring...", parsedData)
-                    return
+                    console.warn('Received call from a user who is not a contact. Ignoring...', parsedData);
+                    return;
                 }
                 dispatch({ type: 'user/RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
 

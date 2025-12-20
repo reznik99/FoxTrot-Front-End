@@ -64,8 +64,8 @@ export default function Home(props: IProps) {
                 props.navigation.navigate('Call', {
                     data: {
                         peer_user: data.caller,
-                        video_enabled: data.data.type === 'video'
-                    }
+                        video_enabled: data.data.type === 'video',
+                    },
                 });
             });
             RNNotificationCall.addEventListener('endCall', (payload) => {
@@ -81,8 +81,8 @@ export default function Home(props: IProps) {
                 props.navigation.navigate('Call', {
                     data: {
                         peer_user: data.caller,
-                        video_enabled: data.data.type === 'video'
-                    }
+                        video_enabled: data.data.type === 'video',
+                    },
                 });
             }
             setLoadingMsg('');

@@ -126,7 +126,7 @@ const darkTheme = {
 // Register background handler
 const messaging = getMessaging();
 setBackgroundMessageHandler(messaging, async remoteMessage => {
-    InCallManager.stopRingtone()
+    InCallManager.stopRingtone();
     console.log('Message handled in the background!', remoteMessage);
     const callerRaw = remoteMessage.data?.caller as string;
     if (!callerRaw) {
@@ -165,7 +165,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
                 message: `You missed a call from ${caller.phone_no}`,
                 when: Date.now() - 20000,
                 visibility: 'public',
-                picture: getAvatar(caller.id),
+                picture: caller.pic || getAvatar(caller.id),
                 largeIcon: 'foxtrot',
                 smallIcon: 'foxtrot',
             });
