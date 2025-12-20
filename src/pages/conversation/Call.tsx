@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { connect, ConnectedProps } from 'react-redux';
 import { Icon } from 'react-native-paper';
@@ -18,7 +18,6 @@ import { resetCallState, SocketData } from '~/store/actions/websocket';
 import { UserData } from '~/store/reducers/user';
 import { RootState } from '~/store/store';
 import { HomeStackParamList } from '../../../App';
-
 
 class Call extends React.Component<Props, State> {
     callTimer: NodeJS.Timeout | undefined;
@@ -308,7 +307,7 @@ class Call extends React.Component<Props, State> {
         const videoTrack = this.state.stream.getVideoTracks()[0];
         videoTrack.enabled = newVideoEnabled;
         this.setState({ videoEnabled: newVideoEnabled });
-    }
+    };
 
     toggleVoiceEnabled = () => {
         if (!this.state.stream) { return; }
@@ -318,7 +317,7 @@ class Call extends React.Component<Props, State> {
         audioTrack.enabled = newVoiceEnabled;
         InCallManager.setMicrophoneMute(newVoiceEnabled);
         this.setState({ voiceEnabled: newVoiceEnabled });
-    }
+    };
 
     toggleLoudSpeaker = () => {
         if (!this.state.stream) { return; }
@@ -326,7 +325,7 @@ class Call extends React.Component<Props, State> {
         const newLoudSpeaker = !this.state.loudSpeaker;
         InCallManager.setSpeakerphoneOn(newLoudSpeaker);
         this.setState({ loudSpeaker: newLoudSpeaker });
-    }
+    };
 
     toggleCamera = () => {
         if (!this.state.stream) { return; }
@@ -338,11 +337,11 @@ class Call extends React.Component<Props, State> {
 
         const switchCamMsg: WebRTCMessage = { type: 'SWITCH_CAM' };
         this.state.peerChannel?.send(JSON.stringify(switchCamMsg));
-    }
+    };
 
     toggleMinimizedStream = () => {
         this.setState({ minimizeLocalStream: !this.state.minimizeLocalStream });
-    }
+    };
 
     checkConnectionType = async () => {
         if (!this.state.peerConnection) { return; }
@@ -358,7 +357,7 @@ class Call extends React.Component<Props, State> {
         this.setState({
             connectionInfo: { localCandidate, candidatePair },
         });
-    }
+    };
 
     calculatePing = () => {
         if (!this.state.peerChannel) { return; }
@@ -366,7 +365,7 @@ class Call extends React.Component<Props, State> {
         console.debug('[WebRTC] pinging peer...');
         const pingMsg: WebRTCMessage = { type: 'PING', data: Date.now() };
         this.state.peerChannel.send(JSON.stringify(pingMsg));
-    }
+    };
 
     calculateCallTime = () => {
         // ~~ = fast Math.floor
@@ -375,7 +374,7 @@ class Call extends React.Component<Props, State> {
         const seconds = ~~(this.state.callTime - (minutes * 60));
 
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
+    };
 
     renderCallInfo = () => {
         const localCandidate = this.state.connectionInfo?.localCandidate;
@@ -386,7 +385,7 @@ class Call extends React.Component<Props, State> {
                 <Text>Ping : {this.state.callDelay}ms</Text>
             </View>
         );
-    }
+    };
 
     render = () => {
         const showPeerStream = this.state.peerStream && this.state.showPeerStream; //&& this.state.peerConnection?.connectionState === 'connected';
