@@ -189,11 +189,11 @@ class Call extends React.Component<Props, State> {
                 console.debug('[WebRTC] connection state change:', newConnection?.connectionState);
                 this.setState({ callStatus: `${this.state.peerUser?.phone_no} : ${newConnection?.connectionState}` });
                 if (newConnection?.connectionState === 'disconnected') { this.endCall(true); }
-                if (newConnection.connectionState === 'connected') { this.checkConnectionType(); }
+                this.checkConnectionType();
             });
             newConnection.addEventListener('iceconnectionstatechange', _event => {
                 console.debug('[WebRTC] ICE connection state change:', newConnection?.iceConnectionState);
-                if (newConnection.iceConnectionState === 'connected') { this.checkConnectionType(); }
+                this.checkConnectionType();
             });
             newConnection.addEventListener('track', event => {
                 const newPeerStream = event.streams[0];
@@ -228,6 +228,8 @@ class Call extends React.Component<Props, State> {
     };
 
     endCall = (isEvent: boolean = false) => {
+        if (!this.state.stream && !this.state.peerConnection && !this.state.peerChannel) { return; }
+
         if (!isEvent) {
             // Let peer know we hung up, through webrtc channel
             const closeMsg: WebRTCMessage = { type: 'CLOSE' };
@@ -352,7 +354,7 @@ class Call extends React.Component<Props, State> {
         const localCandidate = reports
             .find(rp => rp.type === 'local-candidate' && rp.id === candidatePair?.localCandidateId) as LocalCandidate | undefined;
 
-        if (!candidatePair || !localCandidate) { return console.warn('[WebRTC] Failed to load reports'); }
+        if (!candidatePair || !localCandidate) { return console.log('[WebRTC] Failed to load reports'); }
         this.setState({
             connectionInfo: { localCandidate, candidatePair },
         });
