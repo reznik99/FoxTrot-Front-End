@@ -143,6 +143,7 @@ class Call extends React.Component<Props, State> {
                 reciever_id: this.state.peerUser.id,
                 reciever: this.state.peerUser.phone_no,
                 offer: offerDescription,
+                type: this.state.videoEnabled ? 'video' : 'audio'
             },
         };
         this.props.socketConn?.send(JSON.stringify(message));

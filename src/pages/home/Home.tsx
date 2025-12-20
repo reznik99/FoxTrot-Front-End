@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications, getTURNServerCreds } from '~/store/actions/user';
-import { initializeWebsocket, destroyWebsocket } from '~/store/actions/websocket';
+import { initializeWebsocket, destroyWebsocket, SocketMessage } from '~/store/actions/websocket';
 import ConversationPeek from '~/components/ConversationPeek';
 import { setupInterceptors } from '~/store/actions/auth';
 import { PRIMARY } from '~/global/variables';
@@ -60,9 +60,13 @@ export default function Home(props: IProps) {
             RNNotificationCall.addEventListener('answer', (info) => {
                 console.debug('RNNotificationCall: User answered call', info);
                 RNNotificationCall.backToApp();
-                const caller = JSON.parse(info.payload || '{}') as UserData;
-                // TODO: figure out if video or audio call
-                props.navigation.navigate('Call', { data: { peer_user: caller, video_enabled: true } });
+                const data = JSON.parse(info.payload || '{}') as { caller: UserData, data: SocketMessage };
+                props.navigation.navigate('Call', {
+                    data: {
+                        peer_user: data.caller,
+                        video_enabled: data.data.type === 'video'
+                    }
+                });
             });
             RNNotificationCall.addEventListener('endCall', (payload) => {
                 console.debug('RNNotificationCall: User ended call', payload);
@@ -72,10 +76,14 @@ export default function Home(props: IProps) {
             setLoadingMsg('Checking call status');
             const callerRaw = await readFromStorage('call_answered_in_background');
             if (callerRaw) {
-                const caller = JSON.parse(callerRaw) as UserData;
+                const data = JSON.parse(callerRaw || '{}') as { caller: UserData, data: SocketMessage };
                 await deleteFromStorage('call_answered_in_background');
-                // TODO: figure out if video or audio call
-                props.navigation.navigate('Call', { data: { peer_user: caller, video_enabled: true } });
+                props.navigation.navigate('Call', {
+                    data: {
+                        peer_user: data.caller,
+                        video_enabled: data.data.type === 'video'
+                    }
+                });
             }
             setLoadingMsg('');
         };

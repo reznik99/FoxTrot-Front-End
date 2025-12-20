@@ -24,6 +24,7 @@ export interface SocketMessage {
     answer?: any;
     candidate?: string;
     ring?: boolean;
+    type?: 'video' | 'audio';
 }
 
 export function initializeWebsocket() {
@@ -125,14 +126,19 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
 
                 const state = getState().userReducer;
                 const caller = state.contacts.find(con => con.phone_no === parsedData.data.sender);
+                if (!caller) {
+                    console.warn("Received call from a user who is not a contact. Ignoring...", parsedData)
+                    return
+                }
                 dispatch({ type: 'user/RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
 
-                // Ring and show notification
+                // Don't ring if offer was cached and received after app open on answer event
                 if (parsedData.data.ring === false) { break; }
+                // Ring and show notification
                 InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
                 RNNotificationCall.displayNotification(
                     '22221a97-8eb4-4ac2-b2cf-0a3c0b9100ad',
-                    caller?.pic || '',
+                    caller.pic || getAvatar(caller.id),
                     30000,
                     {
                         channelId: 'com.foxtrot.callNotifications',
@@ -143,7 +149,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                         answerText: 'Answer',
                         declineText: 'Decline',
                         notificationColor: 'colorAccent',
-                        payload: caller,
+                        payload: { caller: caller, data: parsedData.data },
                         // notificationSound: 'skype_ring',
                         // mainComponent: "CallScreen"
                         // isVideo: true
