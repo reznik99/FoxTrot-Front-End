@@ -11,7 +11,11 @@ export const KeypairAlgorithm = {
 };
 // Chunk size for encrypting/decrypting large payloads.
 // Required due to web-crypto bug: https://github.com/webview-crypto/react-native-webview-crypto/issues/26
-export const ChunkSize = 48 * 1024;
+// export const ChunkSize = 48 * 1024;
+
+// Date after which all messages are no longer chunked and use AES-GCM instead of AES-CBC
+export const migrationDate = new Date("2025-12-21T02:25:20.000Z") 
+
 
 export const KeychainOpts = {
     authenticationPrompt: {

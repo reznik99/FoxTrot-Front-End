@@ -2,7 +2,7 @@
 // Crypto
 import { Buffer } from 'buffer';
 import QuickCrypto, { CryptoKey as QCCryptoKey, RandomTypedArrays } from 'react-native-quick-crypto';
-import { KeypairAlgorithm } from '~/global/variables';
+import { KeypairAlgorithm, migrationDate } from '~/global/variables';
 
 interface exportedKeypair {
     privateKey: string
@@ -75,7 +75,7 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
         } as any,
         userPrivate,
         {
-            name: 'AES-CBC',
+            name: 'AES-GCM',
             length: 256,
         },
         true,
@@ -86,8 +86,8 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
     const newSessionKey = await QuickCrypto.subtle.importKey(
         'raw',
         rawSessionKey,
-        { name: 'AES-CBC', length: 256 },
-        false,
+        { name: 'AES-GCM', length: 256 },
+        true,
         ['encrypt', 'decrypt']
     )
 
@@ -129,23 +129,24 @@ export async function publicKeyFingerprint(peerPublic: string): Promise<string> 
 }
 
 /** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
-export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
+export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string, sentAt: Date): Promise<string> {
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
 
     const startTime = performance.now();
     const chunks = encryptedMessage.split(':');
-    const promises = [];
-
-    for (let i = 0; i < chunks.length; i += 2) {
-        const iv = Buffer.from(chunks[i], 'base64');
-        const cipherText = Buffer.from(chunks[i + 1], 'base64');
-        promises.push(QuickCrypto.subtle.decrypt({ name: 'AES-CBC', iv: iv }, sessionKey, cipherText));
+    if (chunks.length != 2 || sentAt < migrationDate) {
+        // Legacy encryption on this message
+        return decryptLegacy(sessionKey, encryptedMessage)
     }
+    const [iv, ciphertext] = chunks
+    const plaintext = await QuickCrypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: Buffer.from(iv, 'base64') },
+        sessionKey,
+        Buffer.from(ciphertext, 'base64')
+    )
 
-    const decryptedChunks = await Promise.all(promises);
-
-    console.debug('Decrypt took:', (performance.now() - startTime).toLocaleString(), 'ms', '| chunks:', decryptedChunks.length);
-    return decryptedChunks.map(chunk => Buffer.from(chunk).toString()).join('');
+    console.debug('Decrypt took:', (performance.now() - startTime).toLocaleString(), 'ms');
+    return Buffer.from(plaintext).toString();
 }
 
 /** Encrypts a given message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a Base64 string. */
@@ -153,11 +154,42 @@ export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
 
     const startTime = performance.now();
-    const messageBuf = Buffer.from(message);
+    const plaintext = Buffer.from(message);
 
-    const iv = QuickCrypto.getRandomValues(new Uint8Array(16));
-    const ciphertext = await QuickCrypto.subtle.encrypt({ name: 'AES-CBC', iv: iv }, sessionKey, messageBuf)
+    const iv = QuickCrypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = await QuickCrypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        sessionKey,
+        plaintext
+    )
 
     console.debug('Encrypt took:', (performance.now() - startTime).toLocaleString(), 'ms');
     return Buffer.from(iv).toString('base64') + ':' + Buffer.from(ciphertext).toString('base64');
+}
+
+export async function decryptLegacy(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
+    if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
+
+    const newSessionKey = await QuickCrypto.subtle.importKey(
+        'raw',
+        await QuickCrypto.subtle.exportKey('raw', sessionKey),
+        { name: 'AES-CBC', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+    )
+
+    const startTime = performance.now();
+    const chunks = encryptedMessage.split(':');
+    const promises = [];
+
+    for (let i = 0; i < chunks.length; i += 2) {
+        const iv = Buffer.from(chunks[i], 'base64');
+        const ciphertext = Buffer.from(chunks[i + 1], 'base64');
+        promises.push(QuickCrypto.subtle.decrypt({ name: 'AES-CBC', iv: iv }, newSessionKey, ciphertext));
+    }
+
+    const decryptedChunks = await Promise.all(promises);
+
+    console.debug('Legacy Decrypt took:', (performance.now() - startTime).toLocaleString(), 'ms', '| chunks:', decryptedChunks.length);
+    return decryptedChunks.map(chunk => Buffer.from(chunk).toString()).join('');
 }
