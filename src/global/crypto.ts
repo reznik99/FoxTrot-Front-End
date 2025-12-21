@@ -82,14 +82,14 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
         ['encrypt', 'decrypt']
     );
 
-    const rawSessionKey = await crypto.subtle.exportKey('raw', sessionKey)
+    const rawSessionKey = await crypto.subtle.exportKey('raw', sessionKey);
     const newSessionKey = await QuickCrypto.subtle.importKey(
         'raw',
         rawSessionKey,
         { name: 'AES-GCM', length: 256 },
         true,
         ['encrypt', 'decrypt']
-    )
+    );
 
     return newSessionKey;
 }
@@ -134,16 +134,16 @@ export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string,
 
     const startTime = performance.now();
     const chunks = encryptedMessage.split(':');
-    if (chunks.length != 2 || sentAt < migrationDate) {
+    if (chunks.length !== 2 || sentAt < migrationDate) {
         // Legacy encryption on this message
-        return decryptLegacy(sessionKey, encryptedMessage)
+        return decryptLegacy(sessionKey, encryptedMessage);
     }
-    const [iv, ciphertext] = chunks
+    const [iv, ciphertext] = chunks;
     const plaintext = await QuickCrypto.subtle.decrypt(
         { name: 'AES-GCM', iv: Buffer.from(iv, 'base64') },
         sessionKey,
         Buffer.from(ciphertext, 'base64')
-    )
+    );
 
     console.debug('Decrypt took:', (performance.now() - startTime).toLocaleString(), 'ms');
     return Buffer.from(plaintext).toString();
@@ -161,7 +161,7 @@ export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise
         { name: 'AES-GCM', iv: iv },
         sessionKey,
         plaintext
-    )
+    );
 
     console.debug('Encrypt took:', (performance.now() - startTime).toLocaleString(), 'ms');
     return Buffer.from(iv).toString('base64') + ':' + Buffer.from(ciphertext).toString('base64');
@@ -176,7 +176,7 @@ export async function decryptLegacy(sessionKey: QCCryptoKey, encryptedMessage: s
         { name: 'AES-CBC', length: 256 },
         false,
         ['encrypt', 'decrypt']
-    )
+    );
 
     const startTime = performance.now();
     const chunks = encryptedMessage.split(':');

@@ -5,7 +5,6 @@ import { Icon } from 'react-native-paper';
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCSessionDescription, RTCView } from 'react-native-webrtc';
 import RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel';
 import MessageEvent from 'react-native-webrtc/lib/typescript/MessageEvent';
-
 import InCallManager from 'react-native-incall-manager';
 import Toast from 'react-native-toast-message';
 import { StackScreenProps } from '@react-navigation/stack';
