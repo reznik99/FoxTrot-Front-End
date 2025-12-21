@@ -6,6 +6,7 @@ import { pick, types } from '@react-native-documents/picker';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 import * as Keychain from 'react-native-keychain';
+import QuickCrypto from 'react-native-quick-crypto';
 import Toast from 'react-native-toast-message';
 import RNFS from 'react-native-fs';
 import { Buffer } from 'buffer';
@@ -102,7 +103,8 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
             console.debug('Decrypting keypair file...');
             let Ikeys = new ArrayBuffer();
             try {
-                Ikeys = await crypto.subtle.decrypt(
+                // react-native-quick-crypto ✅
+                Ikeys = await QuickCrypto.subtle.decrypt(
                     { name: 'AES-GCM', iv: Buffer.from(iv, 'base64') },
                     derivedKEK,
                     Buffer.from(ciphertext, 'base64'),
@@ -156,12 +158,12 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
         try {
             const IKeys = await exportKeypair(keypair);
             const iter = 100000;
-            const salt = crypto.getRandomValues(new Uint8Array(8));
+            const salt = QuickCrypto.getRandomValues(new Uint8Array(8));
             const derivedKEK = await deriveKeyFromPassword(encPassword, salt, iter);
 
             // Encrypt Keypair
-            const iv = crypto.getRandomValues(new Uint8Array(12));
-            const encryptedIKeys = await crypto.subtle.encrypt(
+            const iv = QuickCrypto.getRandomValues(new Uint8Array(12));
+            const encryptedIKeys = await QuickCrypto.subtle.encrypt(
                 { name: 'AES-GCM', iv: iv },
                 derivedKEK,
                 Buffer.from(JSON.stringify(IKeys)),

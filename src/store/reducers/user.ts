@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { CryptoKey as QCCryptoKey } from 'react-native-quick-crypto';
 import { RTCIceCandidate } from 'react-native-webrtc';
 import { getAvatar } from '~/global/helper';
 import { writeToStorage } from '~/global/storage';
@@ -28,7 +29,7 @@ export interface UserData {
     phone_no: string,
     pic?: string
     public_key?: string,
-    session_key?: CryptoKey,
+    session_key?: QCCryptoKey,
 }
 
 export interface Conversation {
