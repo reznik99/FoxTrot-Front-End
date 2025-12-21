@@ -103,7 +103,6 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
             console.debug('Decrypting keypair file...');
             let Ikeys = new ArrayBuffer();
             try {
-                // react-native-quick-crypto ✅
                 Ikeys = await QuickCrypto.subtle.decrypt(
                     { name: 'AES-GCM', iv: Buffer.from(iv, 'base64') },
                     derivedKEK,

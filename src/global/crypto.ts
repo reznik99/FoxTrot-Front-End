@@ -2,7 +2,7 @@
 // Crypto
 import { Buffer } from 'buffer';
 import QuickCrypto, { CryptoKey as QCCryptoKey, RandomTypedArrays } from 'react-native-quick-crypto';
-import { KeypairAlgorithm, migrationDate } from '~/global/variables';
+import { KeypairAlgorithm, LegacySymmetricAlgorithm, migrationDate, SymmetricAlgorithm } from '~/global/variables';
 
 interface exportedKeypair {
     privateKey: string
@@ -51,7 +51,7 @@ export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKey
     };
 }
 
-/** Generates a 256bit AES-CBC Encryption key for messages with a user */
+/** Generates a 256bit AES-GCM Encryption key for messages with a user */
 export async function generateSessionKeyECDH(peerPublic: string, userPrivate: CryptoKey | undefined): Promise<QCCryptoKey> {
 
     if (!peerPublic) { throw new Error("Contacts's public key not present. ECDHE failed"); }
@@ -74,10 +74,7 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
             namedCurve: KeypairAlgorithm.namedCurve,
         } as any,
         userPrivate,
-        {
-            name: 'AES-GCM',
-            length: 256,
-        },
+        SymmetricAlgorithm,
         true,
         ['encrypt', 'decrypt']
     );
@@ -86,7 +83,7 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
     const newSessionKey = await QuickCrypto.subtle.importKey(
         'raw',
         rawSessionKey,
-        { name: 'AES-GCM', length: 256 },
+        SymmetricAlgorithm,
         true,
         ['encrypt', 'decrypt']
     );
@@ -112,8 +109,8 @@ export async function deriveKeyFromPassword(password: string, salt: RandomTypedA
             hash: 'SHA-256',
         },
         keyMaterial,
-        { name: 'AES-GCM', length: 256 },
-        true,
+        SymmetricAlgorithm,
+        false,
         ['encrypt', 'decrypt'],
     );
 }
@@ -128,7 +125,7 @@ export async function publicKeyFingerprint(peerPublic: string): Promise<string> 
     return Buffer.from(digest).toString('hex').toUpperCase().split('').reduce((prev, curr, i) => prev + curr + (i % 2 === 1 ? ' ' : ''), '');
 }
 
-/** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
+/** Decrypts a given base64 message using the supplied AES Session Key (GCM or CBC if legacy message) (generated from *generateSessionKeyECDH*) and returns it as a string. */
 export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string, sentAt: Date): Promise<string> {
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
 
@@ -149,7 +146,7 @@ export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string,
     return Buffer.from(plaintext).toString();
 }
 
-/** Encrypts a given message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a Base64 string. */
+/** Encrypts a given message using the supplied AES Session Key (GCM) (generated from *generateSessionKeyECDH*) and returns it as a Base64 string. */
 export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise<string> {
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
 
@@ -167,13 +164,14 @@ export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise
     return Buffer.from(iv).toString('base64') + ':' + Buffer.from(ciphertext).toString('base64');
 }
 
+/** Decrypts a given base64 message using the supplied AES Session Key (CBC) (generated from *generateSessionKeyECDH*) and returns it as a string. */
 export async function decryptLegacy(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
 
     const newSessionKey = await QuickCrypto.subtle.importKey(
         'raw',
         await QuickCrypto.subtle.exportKey('raw', sessionKey),
-        { name: 'AES-CBC', length: 256 },
+        LegacySymmetricAlgorithm,
         false,
         ['encrypt', 'decrypt']
     );
