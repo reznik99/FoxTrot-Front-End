@@ -1,4 +1,5 @@
 import * as Keychain from 'react-native-keychain';
+import { AnyAlgorithm } from 'react-native-quick-crypto';
 
 // Networking (dev: 'http://10.0.2.2:1234/foxtrot-api')
 export const API_URL = 'https://francescogorini.com/foxtrot-api';
@@ -9,16 +10,25 @@ export const KeypairAlgorithm = {
   name: 'ECDH',
   namedCurve: 'P-384',
 };
-// Chunk size for encrypting/decrypting large payloads.
-// Required due to web-crypto bug: https://github.com/webview-crypto/react-native-webview-crypto/issues/26
-export const ChunkSize = 48 * 1024;
+export const SymmetricAlgorithm = {
+  name: 'AES-GCM' as AnyAlgorithm,
+  length: 256,
+};
+export const LegacySymmetricAlgorithm = {
+  name: 'AES-CBC' as AnyAlgorithm,
+  length: 256,
+};
+
+// Date after which all messages are no longer chunked and use AES-GCM instead of AES-CBC
+export const migrationDate = new Date('2025-12-21T02:25:20.000Z');
+
 
 export const KeychainOpts = {
-    authenticationPrompt: {
-      title: 'Authentication required for Login',
-      cancel: 'Cancel',
-    },
-    accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
+  authenticationPrompt: {
+    title: 'Authentication required for Login',
+    cancel: 'Cancel',
+  },
+  accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
 };
 
 // Style
