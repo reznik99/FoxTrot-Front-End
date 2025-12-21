@@ -125,34 +125,12 @@ export async function publicKeyFingerprint(peerPublic: string): Promise<string> 
     return Buffer.from(digest).toString('hex').toUpperCase().split('').reduce((prev, curr, i) => prev + curr + (i % 2 === 1 ? ' ' : ''), '');
 }
 
-/** Decrypts a given base64 message using the supplied AES Session Key (GCM or CBC if legacy message) (generated from *generateSessionKeyECDH*) and returns it as a string. */
-export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string, sentAt: Date): Promise<string> {
-    if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
-
-    const startTime = performance.now();
-    const chunks = encryptedMessage.split(':');
-    if (chunks.length !== 2 || sentAt < migrationDate) {
-        // Legacy encryption on this message
-        return decryptLegacy(sessionKey, encryptedMessage);
-    }
-    const [iv, ciphertext] = chunks;
-    const plaintext = await QuickCrypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: Buffer.from(iv, 'base64') },
-        sessionKey,
-        Buffer.from(ciphertext, 'base64')
-    );
-
-    console.debug('Decrypt took:', (performance.now() - startTime).toLocaleString(), 'ms');
-    return Buffer.from(plaintext).toString();
-}
-
 /** Encrypts a given message using the supplied AES Session Key (GCM) (generated from *generateSessionKeyECDH*) and returns it as a Base64 string. */
 export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise<string> {
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
-
     const startTime = performance.now();
+    
     const plaintext = Buffer.from(message);
-
     const iv = QuickCrypto.getRandomValues(new Uint8Array(12));
     const ciphertext = await QuickCrypto.subtle.encrypt(
         { name: 'AES-GCM', iv: iv },
@@ -164,9 +142,39 @@ export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise
     return Buffer.from(iv).toString('base64') + ':' + Buffer.from(ciphertext).toString('base64');
 }
 
-/** Decrypts a given base64 message using the supplied AES Session Key (CBC) (generated from *generateSessionKeyECDH*) and returns it as a string. */
-export async function decryptLegacy(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
+/** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
+export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string, sentAt: Date): Promise<string> {
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
+
+    const version = extractVersioningFromMessage(encryptedMessage, sentAt);
+    switch (version) {
+        case ProtocolVersion.LEGACY_CBC_CHUNKED:
+            return decryptLegacyCBC(sessionKey, encryptedMessage);
+        case ProtocolVersion.GCM_V1:
+            return decryptGCM(sessionKey, encryptedMessage);
+        case ProtocolVersion.GCM_RATCHET_V2:
+            // TODO:
+            throw new Error('Please update the app to decrypt this new type of message');
+    }
+}
+
+/** Decrypts a given base64 message using the supplied AES-GCM Session Key */
+async function decryptGCM(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
+    const startTime = performance.now();
+    const [iv, ciphertext] = encryptedMessage.split(':');
+    const plaintext = await QuickCrypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: Buffer.from(iv, 'base64') },
+        sessionKey,
+        Buffer.from(ciphertext, 'base64')
+    );
+
+    console.debug('Decrypt took:', (performance.now() - startTime).toLocaleString(), 'ms');
+    return Buffer.from(plaintext).toString();
+}
+
+/** Decrypts a given base64 message using the supplied AES Session Key */
+async function decryptLegacyCBC(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
+    const startTime = performance.now();
 
     const newSessionKey = await QuickCrypto.subtle.importKey(
         'raw',
@@ -176,18 +184,59 @@ export async function decryptLegacy(sessionKey: QCCryptoKey, encryptedMessage: s
         ['encrypt', 'decrypt']
     );
 
-    const startTime = performance.now();
     const chunks = encryptedMessage.split(':');
     const promises = [];
-
     for (let i = 0; i < chunks.length; i += 2) {
         const iv = Buffer.from(chunks[i], 'base64');
         const ciphertext = Buffer.from(chunks[i + 1], 'base64');
         promises.push(QuickCrypto.subtle.decrypt({ name: 'AES-CBC', iv: iv }, newSessionKey, ciphertext));
     }
-
     const decryptedChunks = await Promise.all(promises);
 
     console.debug('Legacy Decrypt took:', (performance.now() - startTime).toLocaleString(), 'ms', '| chunks:', decryptedChunks.length);
     return decryptedChunks.map(chunk => Buffer.from(chunk).toString()).join('');
+}
+
+enum ProtocolVersion {
+    LEGACY_CBC_CHUNKED = 0,
+    GCM_V1 = 1,
+    GCM_RATCHET_V2 = 2, // TODO
+}
+/** Parses version number to check if its a valid protocol version */
+function parseEmbeddedVersion(n: number): ProtocolVersion {
+    switch (n) {
+        case ProtocolVersion.LEGACY_CBC_CHUNKED:
+        case ProtocolVersion.GCM_V1:
+        case ProtocolVersion.GCM_RATCHET_V2:
+            return n;
+        default:
+            throw new Error(`Unknown protocol version: ${n}`);
+    }
+}
+
+/** Extracts versioning from message, if not present it analyzes the message structure and sentAt time to figure out message version. */
+function extractVersioningFromMessage(encryptedMessage: string, sentAt: Date): ProtocolVersion {
+    let separators = 0;
+    let indexFirstSeparator = -1;
+    for (let i = 0; i < encryptedMessage.length; i++) {
+        if (encryptedMessage[i] === ':') {
+            if (indexFirstSeparator === -1) { indexFirstSeparator = i; }
+            separators++;
+        }
+        if (separators > 3) { break; }
+    }
+    if (indexFirstSeparator === -1) { throw new Error('Failed to find ":" separator in message'); }
+
+    // "version:iv:ciphertext"
+    if (separators === 2) {
+        const decoded = Buffer.from(encryptedMessage.slice(0, indexFirstSeparator), 'base64').toString();
+        if (!/^\d+$/.test(decoded)) { throw new Error('Failed to extract version from message: ' + decoded); }
+        return parseEmbeddedVersion(Number(decoded));
+    }
+    // "iv:ciphertext"
+    else if (separators === 1 && sentAt > migrationDate) {
+        return ProtocolVersion.GCM_V1;
+    }
+    // "iv:ciphertext:iv:ciphertext..."
+    return ProtocolVersion.LEGACY_CBC_CHUNKED;
 }
