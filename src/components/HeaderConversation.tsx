@@ -29,12 +29,16 @@ export default function HeaderConversation(props: IProps) {
     const edgeInsets = useSafeAreaInsets();
 
     const showSecurityCode = useCallback(async () => {
-        const contact = contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
-        if (!contact || !contact.public_key) { return; }
+        try {
+            const contact = contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
+            if (!contact || !contact.public_key) { throw new Error("No contact public key found"); }
 
-        setVisibleDialog('SecurityCode');
-        const digest = await publicKeyFingerprint(contact.public_key);
-        setSecurityCode(digest);
+            setVisibleDialog('SecurityCode');
+            const digest = await publicKeyFingerprint(contact.public_key);
+            setSecurityCode(digest);
+        } catch (err) {
+            console.error(err)
+        }
     }, [contacts, data.peer_user.phone_no]);
 
     const copySecurityCode = useCallback(() => {

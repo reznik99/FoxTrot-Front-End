@@ -11,11 +11,13 @@ import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebas
 import RNNotificationCall, { DeclinePayload } from 'react-native-full-screen-notification-incoming-call';
 import InCallManager from 'react-native-incall-manager';
 import PushNotification from 'react-native-push-notification';
+import { Buffer } from "buffer";
 
 // Crypto
 import 'react-native-get-random-values';
 import WebviewCrypto from 'react-native-webview-crypto';
 window.crypto.getRandomValues = globalThis.crypto.getRandomValues;
+global.Buffer = global.Buffer || Buffer
 
 // App
 import { store } from '~/store/store';

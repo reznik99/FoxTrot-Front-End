@@ -32,7 +32,7 @@ export default function ConversationPeek(props: IProps) {
     const { peer, isRequest } = useMemo(() => {
         const contact = contacts.find(con => con.phone_no === data.other_user.phone_no);
         if (!contact) { return { peer: data.other_user, isRequest: true }; }
-        return { peer: contact, isRequest: true };
+        return { peer: contact, isRequest: false };
     }, [contacts, data.other_user]);
 
     const acceptMessageRequest = async () => {
