@@ -27,6 +27,8 @@ export interface State {
 export interface UserData {
     id: string | number,
     phone_no: string,
+    last_seen: number,
+    online: boolean,
     pic?: string
     public_key?: string,
     session_key?: QCCryptoKey,
@@ -58,7 +60,7 @@ const initialState: State = {
     token: '',
     keys: undefined,
     user_data: {
-        id: '', phone_no: '', pic: '',
+        id: '', phone_no: '', pic: '', last_seen: 0, online: false
     },
     contacts: [],
     conversations: new Map(),
@@ -145,6 +147,8 @@ export const userSlice = createSlice({
                     other_user: {
                         id: data.sender_id,
                         phone_no: data.sender,
+                        last_seen: 0,   // TODO: ?
+                        online: false,  // TODO: ?
                         ...state.contacts.find(con => con.phone_no === data.sender),
                         pic: getAvatar(data.sender_id),
                     },
