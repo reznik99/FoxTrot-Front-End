@@ -179,8 +179,7 @@ export const loadContacts = createDefaultAsyncThunk('loadContacts', async ({ ato
 
         // Load contacts
         const response = await axios.get<UserData[]>(`${API_URL}/getContacts`, axiosBearerConfig(state.token));
-
-        const contacts = await Promise.all(response.data.map(async (contact) => {
+        const contacts = await Promise.all<UserData>(response.data.map(async (contact) => {
             try {
                 const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey);
                 console.debug('Generated session key for contact:', contact.phone_no);

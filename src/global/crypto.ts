@@ -2,7 +2,7 @@
 // Crypto
 import { Buffer } from 'buffer';
 import QuickCrypto, { CryptoKey as QCCryptoKey, RandomTypedArrays } from 'react-native-quick-crypto';
-import { KeypairAlgorithm, LegacySymmetricAlgorithm, migrationDate, SymmetricAlgorithm } from '~/global/variables';
+import { KeypairAlgorithm, LegacySymmetricAlgorithm, SaltLenCBC, SaltLenGCM, SymmetricAlgorithm } from '~/global/variables';
 
 interface exportedKeypair {
     privateKey: string
@@ -129,9 +129,9 @@ export async function publicKeyFingerprint(peerPublic: string): Promise<string> 
 export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise<string> {
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
     const startTime = performance.now();
-    
+
     const plaintext = Buffer.from(message);
-    const iv = QuickCrypto.getRandomValues(new Uint8Array(12));
+    const iv = QuickCrypto.getRandomValues(new Uint8Array(SaltLenGCM));
     const ciphertext = await QuickCrypto.subtle.encrypt(
         { name: 'AES-GCM', iv: iv },
         sessionKey,
@@ -139,14 +139,14 @@ export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise
     );
 
     console.debug('Encrypt took:', (performance.now() - startTime).toLocaleString(), 'ms');
-    return Buffer.from(iv).toString('base64') + ':' + Buffer.from(ciphertext).toString('base64');
+    return Buffer.from(`${ProtocolVersion.GCM_V1}`).toString('base64') + ':' + Buffer.from(iv).toString('base64') + ':' + Buffer.from(ciphertext).toString('base64');
 }
 
 /** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
-export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string, sentAt: Date): Promise<string> {
+export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
 
-    const version = extractVersioningFromMessage(encryptedMessage, sentAt);
+    const version = extractVersioningFromMessage(encryptedMessage);
     switch (version) {
         case ProtocolVersion.LEGACY_CBC_CHUNKED:
             return decryptLegacyCBC(sessionKey, encryptedMessage);
@@ -203,7 +203,7 @@ enum ProtocolVersion {
     GCM_RATCHET_V2 = 2, // TODO
 }
 /** Parses version number to check if its a valid protocol version */
-function parseEmbeddedVersion(n: number): ProtocolVersion {
+function parseProtocolVersion(n: number): ProtocolVersion {
     switch (n) {
         case ProtocolVersion.LEGACY_CBC_CHUNKED:
         case ProtocolVersion.GCM_V1:
@@ -215,7 +215,7 @@ function parseEmbeddedVersion(n: number): ProtocolVersion {
 }
 
 /** Extracts versioning from message, if not present it analyzes the message structure and sentAt time to figure out message version. */
-function extractVersioningFromMessage(encryptedMessage: string, sentAt: Date): ProtocolVersion {
+function extractVersioningFromMessage(encryptedMessage: string): ProtocolVersion {
     let separators = 0;
     let indexFirstSeparator = -1;
     for (let i = 0; i < encryptedMessage.length; i++) {
@@ -231,11 +231,16 @@ function extractVersioningFromMessage(encryptedMessage: string, sentAt: Date): P
     if (separators === 2) {
         const decoded = Buffer.from(encryptedMessage.slice(0, indexFirstSeparator), 'base64').toString();
         if (!/^\d+$/.test(decoded)) { throw new Error('Failed to extract version from message: ' + decoded); }
-        return parseEmbeddedVersion(Number(decoded));
+        return parseProtocolVersion(Number(decoded));
     }
     // "iv:ciphertext"
-    else if (separators === 1 && sentAt > migrationDate) {
-        return ProtocolVersion.GCM_V1;
+    else if (separators === 1) {
+        const ivLength = Buffer.from(encryptedMessage.slice(0, indexFirstSeparator), 'base64').length
+        if (ivLength === SaltLenGCM) {
+            return ProtocolVersion.GCM_V1;
+        } else if (ivLength === SaltLenCBC) {
+            return ProtocolVersion.LEGACY_CBC_CHUNKED;
+        }
     }
     // "iv:ciphertext:iv:ciphertext..."
     return ProtocolVersion.LEGACY_CBC_CHUNKED;

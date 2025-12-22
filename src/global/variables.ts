@@ -18,10 +18,9 @@ export const LegacySymmetricAlgorithm = {
   name: 'AES-CBC' as AnyAlgorithm,
   length: 256,
 };
-
-// Date after which all messages are no longer chunked and use AES-GCM instead of AES-CBC
-export const migrationDate = new Date('2025-12-21T02:25:20.000Z');
-
+export const SaltLenGCM = 12;
+export const SaltLenCBC = 16;
+export const SaltLenPBKDF2 = 16;
 
 export const KeychainOpts = {
   authenticationPrompt: {

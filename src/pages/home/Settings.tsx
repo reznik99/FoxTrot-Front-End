@@ -13,7 +13,7 @@ import { Buffer } from 'buffer';
 
 import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions';
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto';
-import { ACCENT, API_URL, DARKHEADER, KeychainOpts } from '~/global/variables';
+import { ACCENT, API_URL, DARKHEADER, KeychainOpts, SaltLenGCM, SaltLenPBKDF2 } from '~/global/variables';
 import globalStyle from '~/global/style';
 import { deleteFromStorage } from '~/global/storage';
 import { AppDispatch, RootState } from '~/store/store';
@@ -157,11 +157,11 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
         try {
             const IKeys = await exportKeypair(keypair);
             const iter = 100000;
-            const salt = QuickCrypto.getRandomValues(new Uint8Array(8));
+            const salt = QuickCrypto.getRandomValues(new Uint8Array(SaltLenPBKDF2));
             const derivedKEK = await deriveKeyFromPassword(encPassword, salt, iter);
 
             // Encrypt Keypair
-            const iv = QuickCrypto.getRandomValues(new Uint8Array(12));
+            const iv = QuickCrypto.getRandomValues(new Uint8Array(SaltLenGCM));
             const encryptedIKeys = await QuickCrypto.subtle.encrypt(
                 { name: 'AES-GCM', iv: iv },
                 derivedKEK,

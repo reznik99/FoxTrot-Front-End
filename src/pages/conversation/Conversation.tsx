@@ -191,7 +191,7 @@ class Message extends PureComponent<MProps, MState> {
     };
 
     decryptMessage = async (item: message): Promise<decryptedMessage> => {
-        const decryptedMessage = await decrypt(this.props.peer.session_key!, item.message, new Date(item.sent_at));
+        const decryptedMessage = await decrypt(this.props.peer.session_key!, item.message);
         try {
             return JSON.parse(decryptedMessage);
         } catch (err) {
