@@ -60,7 +60,7 @@ const initialState: State = {
     token: '',
     keys: undefined,
     user_data: {
-        id: '', phone_no: '', pic: '', last_seen: 0, online: false
+        id: '', phone_no: '', pic: '', last_seen: 0, online: false,
     },
     contacts: [],
     conversations: new Map(),

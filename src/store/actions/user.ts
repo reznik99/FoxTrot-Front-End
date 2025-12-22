@@ -131,28 +131,28 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
         const response = await axios.get<message[]>(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token));
 
         response.data.toReversed().forEach((msg) => {
-            const user: UserData = {
+            const peer = {
                 id: msg.sender_id,
                 phone_no: msg.sender,
                 pic: getAvatar(msg.sender_id),
                 last_seen: new Date(msg.sent_at).getTime(),
-                online: false
-            }
+                online: false,
+            };
             if (msg.sender === state.user_data.phone_no) {
-                user.id = msg.reciever_id;
-                user.phone_no = msg.reciever;
-                user.pic = getAvatar(msg.reciever_id)
+                peer.id = msg.reciever_id;
+                peer.phone_no = msg.reciever;
+                peer.pic = getAvatar(msg.reciever_id);
             }
-            const convo = conversations.get(user.phone_no);
+            const convo = conversations.get(peer.phone_no);
             if (convo) {
                 // Have to do this instead of unshift() because of readonly property?
-                conversations.set(user.phone_no, {
+                conversations.set(peer.phone_no, {
                     other_user: convo.other_user,
                     messages: [msg, ...convo.messages],
                 });
             } else {
-                conversations.set(user.phone_no, {
-                    other_user: user,
+                conversations.set(peer.phone_no, {
+                    other_user: peer,
                     messages: [msg],
                 });
             }

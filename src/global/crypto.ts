@@ -235,7 +235,7 @@ function extractVersioningFromMessage(encryptedMessage: string): ProtocolVersion
     }
     // "iv:ciphertext"
     else if (separators === 1) {
-        const ivLength = Buffer.from(encryptedMessage.slice(0, indexFirstSeparator), 'base64').length
+        const ivLength = Buffer.from(encryptedMessage.slice(0, indexFirstSeparator), 'base64').length;
         if (ivLength === SaltLenGCM) {
             return ProtocolVersion.GCM_V1;
         } else if (ivLength === SaltLenCBC) {

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
-import { Avatar, Button, Icon } from 'react-native-paper';
+import { Avatar, Badge, Button } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { humanTime } from '~/global/helper';
@@ -28,7 +28,12 @@ export default function ConversationPeek(props: IProps) {
 
     const isNew = lastMessage.sender !== user_phone_no && !lastMessage.seen;
     const boldIfUnseen = isNew ? styles.unseenMessage : null;
-    const isMessageRequest = !contacts.some(con => con.phone_no === data.other_user.phone_no);
+
+    const { peer, isRequest } = useMemo(() => {
+        const contact = contacts.find(con => con.phone_no === data.other_user.phone_no);
+        if (!contact) { return { peer: data.other_user, isRequest: true }; }
+        return { peer: contact, isRequest: true };
+    }, [contacts, data.other_user]);
 
     const acceptMessageRequest = async () => {
         setLoading('accept');
@@ -44,18 +49,18 @@ export default function ConversationPeek(props: IProps) {
     return (
         <>
             <TouchableOpacity style={styles.conversationPeek} onPress={() => { navigation.navigate('Conversation', { data: { peer_user: data.other_user } }); }}>
-                <Avatar.Image size={55} source={{ uri: data.other_user.pic }} style={styles.profilePicContainer} />
-
+                <Badge size={10}
+                    style={{ backgroundColor: peer.online ? '#34eb46' : '#545454ff' }} />
+                <Avatar.Image size={55} source={{ uri: peer.pic }} style={styles.profilePicContainer} />
                 <View style={{ flex: 1 }}>
-                    <Text style={[globalStyle.textInfo, boldIfUnseen]}>{data.other_user.phone_no}</Text>
+                    <Text style={[globalStyle.textInfo, boldIfUnseen]}>{peer.phone_no}</Text>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}>{lastMessage.message?.substring(0, 50)}</Text>
                 </View>
                 <View style={{ alignSelf: 'center', display: 'flex', flexDirection: 'row', alignItems: 'center', marginHorizontal: 5 }}>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}> {humanTime(lastMessage.sent_at)} </Text>
-                    <Text>{isNew && <Icon source="circle" size={10} color="#34eb46" />}</Text>
                 </View>
             </TouchableOpacity>
-            {isMessageRequest &&
+            {isRequest &&
                 <View style={[styles.messageRequestContainer, { justifyContent: 'space-evenly' }]}>
                     <Button mode="contained" icon="check" labelStyle={{ fontSize: 12 }} style={[styles.button]}
                         loading={loading === 'accept'} disabled={loading === 'accept'} onPress={acceptMessageRequest}>Accept</Button>
