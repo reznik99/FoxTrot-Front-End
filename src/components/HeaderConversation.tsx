@@ -31,13 +31,13 @@ export default function HeaderConversation(props: IProps) {
     const showSecurityCode = useCallback(async () => {
         try {
             const contact = contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
-            if (!contact || !contact.public_key) { throw new Error("No contact public key found"); }
+            if (!contact || !contact.public_key) { throw new Error('No contact public key found'); }
 
             setVisibleDialog('SecurityCode');
             const digest = await publicKeyFingerprint(contact.public_key);
             setSecurityCode(digest);
         } catch (err) {
-            console.error(err)
+            console.error(err);
         }
     }, [contacts, data.peer_user.phone_no]);
 

@@ -143,10 +143,10 @@ export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise
 }
 
 /** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
-export async function decrypt(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
+export async function decrypt(sessionKey: QCCryptoKey, encryptedMessageRaw: string): Promise<string> {
     if (!sessionKey) { throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device."); }
 
-    const version = extractVersioningFromMessage(encryptedMessage);
+    const [version, encryptedMessage] = extractVersioningFromMessage(encryptedMessageRaw);
     switch (version) {
         case ProtocolVersion.LEGACY_CBC_CHUNKED:
             return decryptLegacyCBC(sessionKey, encryptedMessage);
@@ -214,8 +214,8 @@ function parseProtocolVersion(n: number): ProtocolVersion {
     }
 }
 
-/** Extracts versioning from message, if not present it analyzes the message structure and sentAt time to figure out message version. */
-function extractVersioningFromMessage(encryptedMessage: string): ProtocolVersion {
+/** Extracts versioning from message, if not present it analyzes the message structure to figure out message version. */
+function extractVersioningFromMessage(encryptedMessage: string): [ProtocolVersion, string] {
     let separators = 0;
     let indexFirstSeparator = -1;
     for (let i = 0; i < encryptedMessage.length; i++) {
@@ -231,17 +231,17 @@ function extractVersioningFromMessage(encryptedMessage: string): ProtocolVersion
     if (separators === 2) {
         const decoded = Buffer.from(encryptedMessage.slice(0, indexFirstSeparator), 'base64').toString();
         if (!/^\d+$/.test(decoded)) { throw new Error('Failed to extract version from message: ' + decoded); }
-        return parseProtocolVersion(Number(decoded));
+        return [parseProtocolVersion(Number(decoded)), encryptedMessage.slice(indexFirstSeparator + 1)];
     }
     // "iv:ciphertext"
     else if (separators === 1) {
         const ivLength = Buffer.from(encryptedMessage.slice(0, indexFirstSeparator), 'base64').length;
         if (ivLength === SaltLenGCM) {
-            return ProtocolVersion.GCM_V1;
+            return [ProtocolVersion.GCM_V1, encryptedMessage];
         } else if (ivLength === SaltLenCBC) {
-            return ProtocolVersion.LEGACY_CBC_CHUNKED;
+            return [ProtocolVersion.LEGACY_CBC_CHUNKED, encryptedMessage];
         }
     }
     // "iv:ciphertext:iv:ciphertext..."
-    return ProtocolVersion.LEGACY_CBC_CHUNKED;
+    return [ProtocolVersion.LEGACY_CBC_CHUNKED, encryptedMessage];
 }

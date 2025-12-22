@@ -50,7 +50,13 @@ export default function ConversationPeek(props: IProps) {
         <>
             <TouchableOpacity style={styles.conversationPeek} onPress={() => { navigation.navigate('Conversation', { data: { peer_user: data.other_user } }); }}>
                 <Badge size={10}
-                    style={{ backgroundColor: peer.online ? '#34eb46' : '#545454ff' }} />
+                    style={{
+                        backgroundColor: peer.online
+                            ? '#038210ff'
+                            : Date.now() - new Date(peer.last_seen).getTime() < 600_000
+                                ? '#0058d2ff'
+                                : '#545454ff'
+                    }} />
                 <Avatar.Image size={55} source={{ uri: peer.pic }} style={styles.profilePicContainer} />
                 <View style={{ flex: 1 }}>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}>{peer.phone_no}</Text>
