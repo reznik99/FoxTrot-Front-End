@@ -1,8 +1,16 @@
-// import { PRIMARY } from "./variables";
+
+export const milliseconds = {
+    second: 1_000,
+    minute: 60 * 1_000,
+    hour: 24 * 60 * 1_000,
+}
+
+export function millisecondsSince(datetime: Date) {
+    return Date.now() - datetime.getTime()
+}
 
 export function humanTime(lastTime: string) {
-    if (!lastTime)
-        {return null;}
+    if (!lastTime) { return null; }
 
     let now = Date.now();
     let diff = now - new Date(lastTime).valueOf();

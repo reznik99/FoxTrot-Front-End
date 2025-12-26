@@ -4,14 +4,15 @@ import { View, ScrollView, Keyboard, Alert } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text, IconButton } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
 import SplashScreen from 'react-native-splash-screen';
+import { StackScreenProps } from '@react-navigation/stack';
 
 import styles from './style';
 import { API_URL, DARKHEADER, KeychainOpts, PRIMARY } from '~/global/variables';
+import { milliseconds, millisecondsSince } from '~/global/helper';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
 import { RootState, store } from '~/store/store';
-import { AuthStackParamList } from '../../../App';
-import { StackScreenProps } from '@react-navigation/stack';
+import { AuthStackParamList } from '~/../App';
 
 type Credentials = {
     username: string;
@@ -78,8 +79,8 @@ class Login extends Component<IProps, IState> {
         if (!creds) { return; }
 
         // If auth token is recent (<30min) then validate it
-        if (Date.now() - creds.time < 1000 * 60 * 30) {
-            // TODO: place token in store in store
+        if (millisecondsSince(new Date(creds.time)) < milliseconds.hour / 2) {
+            // TODO: place token in store
             if (await this.props.validateToken({ token: creds.auth_token })) {
                 console.debug('JWT auth token still valid, skipping login...');
                 this.props.navigation.replace('App');

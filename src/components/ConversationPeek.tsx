@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
 import { Avatar, Badge, Button } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 
-import { humanTime } from '~/global/helper';
+import { humanTime, milliseconds, millisecondsSince } from '~/global/helper';
 import globalStyle from '~/global/style';
 import { addContact } from '~/store/actions/user';
-import { DARKHEADER } from '~/global/variables';
+import { DARKHEADER, PRIMARY, SECONDARY_LITE } from '~/global/variables';
 import { Conversation } from '~/store/reducers/user';
 import { AppDispatch, RootState } from '~/store/store';
 import { RootNavigation } from '~/store/actions/auth';
@@ -25,9 +25,7 @@ export default function ConversationPeek(props: IProps) {
 
     const { data, navigation } = props;
     const lastMessage = data.messages[0] ?? {};
-
     const isNew = lastMessage.sender !== user_phone_no && !lastMessage.seen;
-    const boldIfUnseen = isNew ? styles.unseenMessage : null;
 
     const { peer, isRequest } = useMemo(() => {
         const contact = contacts.find(con => con.phone_no === data.other_user.phone_no);
@@ -46,18 +44,25 @@ export default function ConversationPeek(props: IProps) {
             [{ text: 'OK', onPress: () => { } }]
         );
     };
+
+    const renderStatus = useCallback(() => {
+        if (peer.online) {
+            return <Badge size={10} style={{ backgroundColor: '#039111ff' }} />
+        } else if (millisecondsSince(new Date(peer.last_seen)) < milliseconds.hour) {
+            return <Badge size={10} style={{ backgroundColor: PRIMARY }} />
+        } else {
+            return <Badge size={10} style={{ backgroundColor: SECONDARY_LITE }} />
+        }
+    }, [peer])
+
+    const boldIfUnseen = isNew ? styles.unseenMessage : null;
     return (
         <>
             <TouchableOpacity style={styles.conversationPeek} onPress={() => { navigation.navigate('Conversation', { data: { peer_user: data.other_user } }); }}>
-                <Badge size={10}
-                    style={{
-                        backgroundColor: peer.online
-                            ? '#038210ff'
-                            : Date.now() - new Date(peer.last_seen).getTime() < 600_000
-                                ? '#0058d2ff'
-                                : '#545454ff'
-                    }} />
-                <Avatar.Image size={55} source={{ uri: peer.pic }} style={styles.profilePicContainer} />
+                <View style={{ display: 'flex', flexDirection: 'row' }}>
+                    {renderStatus()}
+                    <Avatar.Image size={55} source={{ uri: peer.pic }} style={styles.profilePicContainer} />
+                </View>
                 <View style={{ flex: 1 }}>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}>{peer.phone_no}</Text>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}>{lastMessage.message?.substring(0, 50)}</Text>
@@ -65,7 +70,7 @@ export default function ConversationPeek(props: IProps) {
                 <View style={{ alignSelf: 'center', display: 'flex', flexDirection: 'row', alignItems: 'center', marginHorizontal: 5 }}>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}> {humanTime(lastMessage.sent_at)} </Text>
                 </View>
-            </TouchableOpacity>
+            </TouchableOpacity >
             {isRequest &&
                 <View style={[styles.messageRequestContainer, { justifyContent: 'space-evenly' }]}>
                     <Button mode="contained" icon="check" labelStyle={{ fontSize: 12 }} style={[styles.button]}
@@ -92,7 +97,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 5,
     }, profilePicContainer: {
-        marginRight: 20,
+        marginRight: 10,
         backgroundColor: DARKHEADER,
     }, unseenMessage: {
         fontWeight: 'bold',
