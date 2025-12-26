@@ -205,7 +205,7 @@ class Message extends PureComponent<MProps, MState> {
         if (!item || !item?.message) { return; }
 
         switch (item.type) {
-            // TODO: Add VIDEO, GIF and AUDIO message types
+            // TODO: Add VIDEO and GIF message types
             case 'IMG':
                 return (
                     <Image source={{ uri: `data:image/jpeg;base64,${item.message}` }}

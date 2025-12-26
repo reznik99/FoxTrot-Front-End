@@ -129,6 +129,8 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                     caller = {
                         id: parsedData.data.sender_id,
                         phone_no: parsedData.data.sender,
+                        last_seen: Date.now(),
+                        online: true
                     };
                     console.warn('Received call from a user who is not a contact. Ignoring...', parsedData);
                 }

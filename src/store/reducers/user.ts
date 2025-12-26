@@ -141,17 +141,26 @@ export const userSlice = createSlice({
         RECV_MESSAGE: (state, action: PayloadAction<message>) => {
             const data = action.payload;
             const conversationR = state.conversations.get(data.sender);
-            if (conversationR) { conversationR.messages = [data, ...conversationR.messages]; }
-            else {
+            // Update contact online status
+            let contact = state.contacts.find(c => c.id === data.sender_id)
+            if (!contact) {
+                contact = {
+                    id: data.sender_id,
+                    phone_no: data.sender,
+                    last_seen: Number(data.sent_at),
+                    online: true,
+                    pic: getAvatar(data.sender_id),
+                }
+            }
+            contact.last_seen = Number(data.sent_at)
+            contact.online = true
+            // Update conversation
+            if (conversationR) {
+                conversationR.other_user = contact
+                conversationR.messages = [data, ...conversationR.messages];
+            } else {
                 state.conversations.set(data.sender, {
-                    other_user: {
-                        id: data.sender_id,
-                        phone_no: data.sender,
-                        last_seen: 0,   // TODO: ?
-                        online: false,  // TODO: ?
-                        ...state.contacts.find(con => con.phone_no === data.sender),
-                        pic: getAvatar(data.sender_id),
-                    },
+                    other_user: contact,
                     messages: [data],
                 });
             }
