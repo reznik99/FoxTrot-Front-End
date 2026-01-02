@@ -8,7 +8,7 @@ import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions, S
 import { createDrawerNavigator, DrawerContentComponentProps, DrawerNavigationOptions } from '@react-navigation/drawer';
 import Toast from 'react-native-toast-message';
 import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging'; // Push Notifications
-import RNNotificationCall, { DeclinePayload } from 'react-native-full-screen-notification-incoming-call';
+import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
 import InCallManager from 'react-native-incall-manager';
 import PushNotification from 'react-native-push-notification';
 import { Buffer } from 'buffer';
@@ -146,7 +146,6 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
     RNNotificationCall.addEventListener('endCall', (payload) => {
         console.debug('RNNotificationCall: User ended call', payload);
         InCallManager.stopRingtone();
-        const data = payload as DeclinePayload;
         // If call was missed, show push notification of missed call
         PushNotification.createChannel(
             {
@@ -156,18 +155,16 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
             },
             () => { },
         );
-        if (data.endAction === 'ACTION_HIDE_CALL') {
-            PushNotification.localNotification({
-                channelId: 'Calls',
-                title: 'Missed Call',
-                message: `You missed a call from ${caller.phone_no}`,
-                when: Date.now() - 20000,
-                visibility: 'public',
-                picture: caller.pic || getAvatar(caller.id),
-                largeIcon: 'foxtrot',
-                smallIcon: 'foxtrot',
-            });
-        }
+        PushNotification.localNotification({
+            channelId: 'Calls',
+            title: 'Missed Call',
+            message: `You missed a call from ${caller.phone_no}`,
+            when: Date.now() - 20000,
+            visibility: 'public',
+            picture: caller.pic || getAvatar(caller.id),
+            largeIcon: 'foxtrot',
+            smallIcon: 'foxtrot',
+        });
         // Delete storage info about caller so they don't get routed to call screen on next app open
         deleteFromStorage('call_answered_in_background');
     });
