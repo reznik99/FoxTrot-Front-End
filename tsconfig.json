@@ -11,7 +11,8 @@
       ]
     },
     "types": [
-      "react-native"
+      "react-native",
+      "node"
     ],
     "lib": [
       "es2023",
