@@ -26,7 +26,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
 
+    <uses-permission android:name="android.permission.BIND_TELECOM_CONNECTION_SERVICE"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <!--Android 14+-->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
 
     <application
@@ -36,6 +40,7 @@
       android:roundIcon="@mipmap/foxtrot"
       android:allowBackup="false"
       android:theme="@style/AppTheme"
+      android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:requestLegacyExternalStorage="true">
       <activity
         android:name=".MainActivity"
@@ -49,6 +54,17 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
-
+      <!-- react-native-callkeep -->
+      <!-- For android 11 or below use android:foregroundServiceType="camera|microphone" -->
+      <service android:name="io.wazo.callkeep.RNCallKeepBackgroundMessagingService" />
+      <service android:name="io.wazo.callkeep.VoiceConnectionService"
+        android:label="Wazo"
+        android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+        android:foregroundServiceType="phoneCall" 
+        android:exported="true"> 
+        <intent-filter>
+            <action android:name="android.telecom.ConnectionService" />
+        </intent-filter>
+      </service>
     </application>
 </manifest>

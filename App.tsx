@@ -8,10 +8,11 @@ import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions, S
 import { createDrawerNavigator, DrawerContentComponentProps, DrawerNavigationOptions } from '@react-navigation/drawer';
 import Toast from 'react-native-toast-message';
 import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging'; // Push Notifications
-import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
+import RNCallKeep, { IOptions as RNCallKeepOpts } from 'react-native-callkeep';
 import InCallManager from 'react-native-incall-manager';
 import PushNotification from 'react-native-push-notification';
 import { Buffer } from 'buffer';
+import QuickCrypto from 'react-native-quick-crypto';
 
 // Crypto
 import WebviewCrypto from 'react-native-webview-crypto';
@@ -27,6 +28,29 @@ import { UserData } from '~/store/reducers/user';
 import { deleteFromStorage, writeToStorage } from '~/global/storage';
 import { getAvatar } from '~/global/helper';
 import { SocketMessage } from '~/store/actions/websocket';
+
+const options: RNCallKeepOpts = {
+    android: {
+        alertTitle: 'Permissions required',
+        alertDescription: 'This application needs to access your phone accounts',
+        cancelButton: 'Cancel',
+        okButton: 'ok',
+        imageName: 'phone_account_icon',
+        additionalPermissions: [],
+        // Required to get audio in background when using Android 11
+        foregroundService: {
+            channelId: 'com.foxtrot.callNotifications',
+            channelName: 'Foreground service for Foxtrot',
+            notificationTitle: 'Foxtrot is running on background',
+            // notificationIcon: 'Path to the resource icon of the notification',
+        },
+    },
+    ios: {
+        appName: 'Foxtrot'
+    }
+};
+
+RNCallKeep.setup(options).then(accepted => { });
 
 const defaultHeaderOptions: StackNavigationOptions & DrawerNavigationOptions = {
     headerStyle: {
@@ -131,22 +155,21 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
     console.log('Message handled in the background!', remoteMessage);
     const callerRaw = remoteMessage.data?.caller as string;
     if (!callerRaw) { return console.error('Caller data is not defined'); }
-
-    RNNotificationCall.addEventListener('answer', (info) => {
-        console.debug('RNNotificationCall: User answered call', info);
-        RNNotificationCall.backToApp();
-        if (!info.payload) {
-            console.error('Background notification data is not defined after call-screen passthrough:', info);
-            return;
-        }
+    // Parse data
+    const eventData = JSON.parse(remoteMessage.data?.data as string || '{}') as SocketMessage;
+    const caller = JSON.parse(callerRaw) as UserData;
+    // Register event handlers
+    RNCallKeep.addEventListener('answerCall', (payload) => {
+        console.debug('RNCallKeep: User answered call', payload);
+        RNCallKeep.backToForeground();
         // Write caller info to special storage key that is checked after app login
-        writeToStorage('call_answered_in_background', info.payload);
+        writeToStorage('call_answered_in_background', JSON.stringify({ caller: caller, data: eventData }));
         // User will be opening app and authenticating after this...
     });
-    RNNotificationCall.addEventListener('endCall', (payload) => {
-        console.debug('RNNotificationCall: User ended call', payload);
+    RNCallKeep.addEventListener('endCall', (payload) => {
+        console.debug('RNCallKeep: User ended call', payload);
+        // Stop ringing and show missed call notification
         InCallManager.stopRingtone();
-        // If call was missed, show push notification of missed call
         PushNotification.createChannel(
             {
                 channelId: 'Calls',
@@ -168,29 +191,10 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
         // Delete storage info about caller so they don't get routed to call screen on next app open
         deleteFromStorage('call_answered_in_background');
     });
-    InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
 
-    const eventData = JSON.parse(remoteMessage.data?.data as string || '{}') as SocketMessage;
-    const caller = JSON.parse(callerRaw) as UserData;
-    RNNotificationCall.displayNotification(
-        '22221a99-8eb4-4ac2-b2cf-0a3c0b9100af',
-        caller.pic || getAvatar(caller.id),
-        20000,
-        {
-            channelId: 'com.foxtrot.callNotifications',
-            channelName: 'Notifications for incoming calls',
-            notificationIcon: '@mipmap/foxtrot', // mipmap
-            notificationTitle: caller.phone_no || 'Unknown User',
-            notificationBody: 'Incoming video call',
-            answerText: 'Answer',
-            declineText: 'Decline',
-            notificationColor: 'colorAccent',
-            payload: { caller: caller, data: eventData },
-            // notificationSound: 'skype_ring',
-            // mainComponent: "CallScreen"
-            // isVideo: true
-        }
-    );
+    // Show call notification and start ringing
+    InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
+    RNCallKeep.displayIncomingCall(QuickCrypto.randomUUID(), caller.phone_no)
 });
 
 export default function App() {

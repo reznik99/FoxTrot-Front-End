@@ -25,6 +25,7 @@
     "buffer": "^6.0.3",
     "react": "19.1.0",
     "react-native": "^0.81.5",
+    "react-native-callkeep": "^4.3.16",
     "react-native-elements": "^3.4.3",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "^2.30.0",

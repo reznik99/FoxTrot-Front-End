@@ -1,7 +1,8 @@
 import { VibratePattern, WEBSOCKET_URL } from '~/global/variables';
 import PushNotification from 'react-native-push-notification';
 import InCallManager from 'react-native-incall-manager';
-import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
+import QuickCrypto from 'react-native-quick-crypto';
+import RNCallKeep from 'react-native-callkeep';
 import Toast from 'react-native-toast-message';
 
 import { AppDispatch, GetState } from '../store';
@@ -140,25 +141,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 if (parsedData.data.ring === false) { break; }
                 // Ring and show notification
                 InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
-                RNNotificationCall.displayNotification(
-                    '22221a97-8eb4-4ac2-b2cf-0a3c0b9100ad',
-                    caller.pic || getAvatar(caller.id),
-                    30000,
-                    {
-                        channelId: 'com.foxtrot.callNotifications',
-                        channelName: 'Notifications for incoming calls',
-                        notificationIcon: '@mipmap/foxtrot', // mipmap
-                        notificationTitle: caller?.phone_no || 'Unknown User',
-                        notificationBody: 'Incoming video call',
-                        answerText: 'Answer',
-                        declineText: 'Decline',
-                        notificationColor: 'colorAccent',
-                        payload: { caller: caller, data: parsedData.data },
-                        // notificationSound: 'skype_ring',
-                        // mainComponent: "CallScreen"
-                        // isVideo: true
-                    }
-                );
+                RNCallKeep.displayIncomingCall(QuickCrypto.randomUUID(), caller.phone_no);
                 break;
             case 'CALL_ANSWER':
                 console.debug('Websocket CALL_ANSWER Recieved', parsedData.data?.sender);

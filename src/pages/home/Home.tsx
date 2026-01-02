@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native';
 import { Divider, FAB, ActivityIndicator, Snackbar, Icon } from 'react-native-paper';
-import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
 import { StackScreenProps } from '@react-navigation/stack';
 import InCallManager from 'react-native-incall-manager';
+import RNCallKeep from 'react-native-callkeep';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -57,19 +57,23 @@ export default function Home(props: IProps) {
             // Setup axios interceptors
             setupInterceptors(props.navigation);
             // Register Call Screen handler
-            RNNotificationCall.addEventListener('answer', (info) => {
-                console.debug('RNNotificationCall: User answered call', info);
-                RNNotificationCall.backToApp();
-                const data = JSON.parse(info.payload || '{}') as { caller: UserData, data: SocketMessage };
-                props.navigation.navigate('Call', {
-                    data: {
-                        peer_user: data.caller,
-                        video_enabled: data.data.type === 'video',
-                    },
-                });
+            RNCallKeep.addEventListener('answerCall', (payload) => {
+                console.debug('RNCallKeep: User answered call', payload);
+                RNCallKeep.backToForeground();
+                try {
+                    const data = JSON.parse(payload.callUUID || '{}') as { caller: UserData, data: SocketMessage };
+                    props.navigation.navigate('Call', {
+                        data: {
+                            peer_user: data.caller,
+                            video_enabled: data.data.type === 'video',
+                        },
+                    });
+                } catch (err) {
+                    console.error("Failed to answer call:", err)
+                }
             });
-            RNNotificationCall.addEventListener('endCall', (payload) => {
-                console.debug('RNNotificationCall: User ended call', payload);
+            RNCallKeep.addEventListener('endCall', (payload) => {
+                console.debug('RNCallKeep: User ended call', payload);
                 InCallManager.stopRingtone();
             });
             // Check if user answered a call in the background
