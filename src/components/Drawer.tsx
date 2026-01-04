@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, View, ToastAndroid } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { Avatar, Button, Chip, Dialog, Icon, Paragraph, Portal } from 'react-native-paper';
+import { Avatar, Button, Chip, Dialog, Icon, Portal, Text } from 'react-native-paper';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { DrawerContentComponentProps } from '@react-navigation/drawer/lib/typescript/src/types';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -74,7 +74,7 @@ export default function Drawer(props: DrawerContentComponentProps) {
                     </Dialog.Title>
                     <Dialog.Content>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
-                            <Paragraph key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Paragraph>
+                            <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Text>
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>

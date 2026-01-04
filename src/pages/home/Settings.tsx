@@ -13,7 +13,7 @@ import { Buffer } from 'buffer';
 
 import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions';
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto';
-import { ACCENT, API_URL, DARKHEADER, KeychainOpts, SaltLenGCM, SaltLenPBKDF2 } from '~/global/variables';
+import { API_URL, DARKHEADER, KeychainOpts, SaltLenGCM, SaltLenPBKDF2 } from '~/global/variables';
 import globalStyle from '~/global/style';
 import { deleteFromStorage } from '~/global/storage';
 import { AppDispatch, RootState } from '~/store/store';

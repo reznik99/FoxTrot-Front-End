@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         position: 'absolute',
         width: '100%',
-        bottom: 0,
+        bottom: -1,
     }, actionContainer: {
         flexDirection: 'row',
         justifyContent: 'center',

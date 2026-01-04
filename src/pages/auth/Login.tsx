@@ -7,7 +7,7 @@ import SplashScreen from 'react-native-splash-screen';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import styles from './style';
-import { API_URL, DARKHEADER, KeychainOpts, PRIMARY } from '~/global/variables';
+import { API_URL, KeychainOpts, PRIMARY } from '~/global/variables';
 import { milliseconds, millisecondsSince } from '~/global/helper';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';

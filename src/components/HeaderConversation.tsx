@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, ToastAndroid, Platform, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
 import { Image } from 'react-native-elements';
-import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal, Icon } from 'react-native-paper';
+import { ActivityIndicator, Text, Button, Dialog, Portal, Icon } from 'react-native-paper';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -95,14 +95,18 @@ export default function HeaderConversation(props: IProps) {
                         <Icon source="lock" color={styles.topBarText.color} size={styles.topBarText.fontSize} /> Security Code
                     </Dialog.Title>
                     <Dialog.Content>
-                        <Paragraph>Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code:</Paragraph>
+                        <Text>Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code:</Text>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
-                            <Paragraph key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Paragraph>
+                            <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Text>
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button onPress={() => setVisibleDialog('')} mode="text" style={{ paddingHorizontal: 15 }}>Close</Button>
-                        <Button onPress={() => copySecurityCode()} mode="contained" style={{ paddingHorizontal: 15 }}>Copy Code</Button>
+                        <Button mode="contained-tonal"
+                            onPress={() => setVisibleDialog('')}
+                            style={{ paddingHorizontal: 15 }}>Close</Button>
+                        <Button mode="contained"
+                            onPress={() => copySecurityCode()}
+                            style={{ paddingHorizontal: 15 }}>Copy Code</Button>
                     </Dialog.Actions>
                 </Dialog>
                 <Dialog visible={visibleDialog === 'UserInfo'} onDismiss={() => setVisibleDialog('')}>
@@ -116,7 +120,9 @@ export default function HeaderConversation(props: IProps) {
                         <Text>Identity Key: {contact?.public_key}</Text>
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button onPress={() => setVisibleDialog('')} mode="text" style={{ paddingHorizontal: 15 }}>Close</Button>
+                        <Button mode="contained-tonal"
+                            onPress={() => setVisibleDialog('')}
+                            style={{ paddingHorizontal: 15 }}>Close</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
