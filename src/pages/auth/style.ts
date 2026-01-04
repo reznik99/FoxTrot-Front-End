@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { PRIMARY, SECONDARY } from '~/global/variables';
+import { DARKHEADER, PRIMARY, SECONDARY } from '~/global/variables';
 
 
 const styles = StyleSheet.create({
@@ -25,6 +25,11 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingVertical: 6,
         backgroundColor: PRIMARY,
+    },
+    buttonSecondary: {
+        width: '100%',
+        paddingVertical: 6,
+        backgroundColor: DARKHEADER,
     },
     titleContainer: {
         display: 'flex',
