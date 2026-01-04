@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, ToastAndroid, Platform, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
 import { Image } from 'react-native-elements';
@@ -12,6 +12,7 @@ import { UserData } from '~/store/reducers/user';
 import { DARKHEADER } from '~/global/variables';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { HomeStackParamList } from '../../App';
+import { humanTime } from '~/global/helper';
 
 interface IProps {
     navigation: StackNavigationProp<HomeStackParamList, 'Conversation' | 'Call'>;
@@ -28,9 +29,12 @@ export default function HeaderConversation(props: IProps) {
     const contacts = useSelector((store: RootState) => store.userReducer.contacts);
     const edgeInsets = useSafeAreaInsets();
 
+    const contact = useMemo(() => {
+        return contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
+    }, [contacts, data.peer_user.phone_no])
+
     const showSecurityCode = useCallback(async () => {
         try {
-            const contact = contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
             if (!contact || !contact.public_key) { throw new Error('No contact public key found'); }
 
             setVisibleDialog('SecurityCode');
@@ -39,7 +43,7 @@ export default function HeaderConversation(props: IProps) {
         } catch (err) {
             console.error(err);
         }
-    }, [contacts, data.peer_user.phone_no]);
+    }, [contact]);
 
     const copySecurityCode = useCallback(() => {
         setVisibleDialog('');
@@ -71,14 +75,17 @@ export default function HeaderConversation(props: IProps) {
                 </TouchableOpacity>
             </View>
             <View style={[styles.buttonContainer]}>
-                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user, video_enabled: true } })}>
+                <TouchableOpacity style={styles.button}
+                    onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user, video_enabled: true } })}>
                     <Icon source="video" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user, video_enabled: false } })}>
+                <TouchableOpacity style={styles.button}
+                    onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user, video_enabled: false } })}>
                     <Icon source="phone" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
-                    <Icon source="menu" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
+                <TouchableOpacity style={styles.button}
+                    onPress={() => setVisibleDialog('UserInfo')}>
+                    <Icon source="information" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
             </View>
 
@@ -96,6 +103,20 @@ export default function HeaderConversation(props: IProps) {
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
                         <Button onPress={() => setVisibleDialog('')} mode="text" style={{ paddingHorizontal: 15 }}>Close</Button>
                         <Button onPress={() => copySecurityCode()} mode="contained" style={{ paddingHorizontal: 15 }}>Copy Code</Button>
+                    </Dialog.Actions>
+                </Dialog>
+                <Dialog visible={visibleDialog === 'UserInfo'} onDismiss={() => setVisibleDialog('')}>
+                    <Dialog.Title>
+                        <Icon source="lock" color={styles.topBarText.color} size={styles.topBarText.fontSize} /> User Information
+                    </Dialog.Title>
+                    <Dialog.Content>
+                        <Text>Status: {contact?.online ? "✅Online" : "❌Offline"}</Text>
+                        <Text>Last seen: {humanTime(contact?.last_seen || '0')}</Text>
+                        <Text>Username: {contact?.phone_no}</Text>
+                        <Text>Identity Key: {contact?.public_key}</Text>
+                    </Dialog.Content>
+                    <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
+                        <Button onPress={() => setVisibleDialog('')} mode="text" style={{ paddingHorizontal: 15 }}>Close</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

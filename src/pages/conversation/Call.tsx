@@ -51,15 +51,11 @@ class Call extends React.Component<Props, State> {
         this.callTimer = setInterval(() => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }), 1000);
         this.callStatsTimer = setInterval(this.calculatePing, 2500);
 
-        InCallManager.start({ media: 'video', auto: true });
-        // Loudspeaker and keep screen on if its a video call
-        InCallManager.setSpeakerphoneOn(this.state.loudSpeaker);
-        InCallManager.setKeepScreenOn(this.state.videoEnabled);
+        InCallManager.start({ media: this.state.videoEnabled ? 'video' : 'audio', auto: true });
         this.checkCallStatus(undefined);
     };
 
     componentWillUnmount = () => {
-        InCallManager.setKeepScreenOn(false);
         InCallManager.stop();
         // If call is active then let peer know we closed the call page
         const callIsActive = !this.state.peerStream;
@@ -230,7 +226,7 @@ class Call extends React.Component<Props, State> {
         if (!this.state.stream && !this.state.peerConnection && !this.state.peerChannel) { return; }
 
         if (!isEvent) {
-            // Let peer know we hung up, through webrtc channel
+            // Notify peer know we hung up, through webrtc channel
             const closeMsg: WebRTCMessage = { type: 'CLOSE' };
             this.state.peerChannel?.send(JSON.stringify(closeMsg));
         } else {
@@ -304,7 +300,7 @@ class Call extends React.Component<Props, State> {
         const videoTrack = this.state.stream.getVideoTracks()[0];
         videoTrack.enabled = newVideoEnabled;
         this.setState({ videoEnabled: newVideoEnabled });
-
+        // Notify peer
         const muteCamMsg: WebRTCMessage = { type: 'MUTE_CAM' };
         this.state.peerChannel?.send(JSON.stringify(muteCamMsg));
     };
@@ -316,7 +312,7 @@ class Call extends React.Component<Props, State> {
         const videoTrack = this.state.stream.getVideoTracks()[0];
         videoTrack.applyConstraints({ facingMode: newIsFrontCamera ? 'user' : 'environment' });
         this.setState({ isFrontCamera: newIsFrontCamera });
-
+        // Notify peer
         const switchCamMsg: WebRTCMessage = { type: 'SWITCH_CAM' };
         this.state.peerChannel?.send(JSON.stringify(switchCamMsg));
     };
@@ -423,7 +419,7 @@ class Call extends React.Component<Props, State> {
                             objectFit={'cover'}
                             zOrder={2}
                             onTouchEnd={this.toggleMinimizedStream} />
-                        : <Image style={[styles.userCamera, this.state.minimizeLocalStream && styles.userCameraSmall]}
+                        : <Image style={[styles.userCamera, styles.userCameraSmall]}
                             source={{ uri: this.props.userData.pic }} />
                     }
                     <View style={[styles.actionContainer, { paddingBottom: this.props.insets.bottom }]}>
@@ -532,7 +528,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         width: '100%',
-        backgroundColor: '#777777a0',
+        backgroundColor: '#000000a0',
     }, actionButton: {
         borderRadius: 50,
         padding: 15,
