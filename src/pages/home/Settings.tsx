@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, ScrollView, Alert, StyleSheet } from 'react-native';
+import { View, ScrollView, Alert } from 'react-native';
 import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pick, types } from '@react-native-documents/picker';
@@ -230,7 +230,7 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                 <Text variant="titleMedium">User Data</Text>
                 <View style={{ marginVertical: 15 }}>
                     <Text>Click entry to delete:</Text>
-                    {/* TPM values */}
+                    {/* KeyChain values */}
                     {hasIdentityKeys && <Chip icon="key" selected style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-keys</Chip>}
                     {hasPassword && <Chip icon="account-key" selected style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-credentials</Chip>}
                     {/* Storage values */}
@@ -261,9 +261,9 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                         <Text variant="bodyMedium">All message data will be lost.</Text>
                         <Text variant="bodyMedium">If you plan to login from another device. Ensure you have exported your Keys!</Text>
                     </Dialog.Content>
-                    <Dialog.Actions style={styles.spaceBetween}>
+                    <Dialog.Actions style={globalStyle.spaceBetween}>
                         <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
-                        <Button mode="contained" onPress={resetApp}>Clear App Data</Button>
+                        <Button mode="contained" icon="delete" onPress={resetApp}>Clear Data</Button>
                     </Dialog.Actions>
                 </Dialog>
 
@@ -271,13 +271,13 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                     <Dialog.Icon icon="file-import" />
                     <Dialog.Title style={{ textAlign: 'center' }}>Import Identity Keys</Dialog.Title>
                     <Dialog.Content>
-                        <Text>File selection will be prompted after decryption password is provided:</Text>
+                        <Text style={globalStyle.dialogText}>File selection will be prompted after decryption password is provided</Text>
                         <TextInput label="Keypair decryption password"
                             autoCapitalize="none"
                             secureTextEntry={true}
                             value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
-                    <Dialog.Actions style={styles.spaceBetween}>
+                    <Dialog.Actions style={globalStyle.spaceBetween}>
                         <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
                         <Button mode="contained" onPress={importKeys} icon="upload" disabled={!encPassword?.trim()}>Import</Button>
                     </Dialog.Actions>
@@ -287,13 +287,13 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                     <Dialog.Icon icon="file-export" />
                     <Dialog.Title style={{ textAlign: 'center' }}>Export Identity Keys</Dialog.Title>
                     <Dialog.Content>
-                        <Text >A weak password can result in account takeover!</Text>
+                        <Text style={globalStyle.dialogText}>A weak password can result in account takeover!</Text>
                         <TextInput label="Keypair encryption password"
                             autoCapitalize="none"
                             secureTextEntry={true}
                             value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
-                    <Dialog.Actions style={styles.spaceBetween}>
+                    <Dialog.Actions style={globalStyle.spaceBetween}>
                         <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
                         <Button mode="contained" onPress={exportKeys} icon="download" disabled={!encPassword?.trim() || !keypair}>Export</Button>
                     </Dialog.Actions>
@@ -303,9 +303,3 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    spaceBetween: {
-        justifyContent: 'space-between',
-    },
-});

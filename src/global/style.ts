@@ -22,6 +22,10 @@ const globalStyle = StyleSheet.create({
         right: 0,
         bottom: 0,
         backgroundColor: PRIMARY,
+    }, dialogText: {
+        marginBottom: 5
+    }, spaceBetween: {
+        justifyContent: 'space-between',
     },
 });
 

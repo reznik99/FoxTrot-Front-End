@@ -79,9 +79,8 @@ export default function Drawer(props: DrawerContentComponentProps) {
 
             <Portal>
                 <Dialog visible={showSecurityCode} onDismiss={() => setShowSecurityCode(false)}>
-                    <Dialog.Title>
-                        <Icon source="lock" color="#00ff00" size={20} /> Your Security Code
-                    </Dialog.Title>
+                    <Dialog.Icon icon="lock" color="#00ff00" />
+                    <Dialog.Title style={{ textAlign: 'center' }}>Your Security Code</Dialog.Title>
                     <Dialog.Content>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
                             <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Text>

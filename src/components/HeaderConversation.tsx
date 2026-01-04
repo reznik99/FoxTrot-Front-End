@@ -91,9 +91,8 @@ export default function HeaderConversation(props: IProps) {
 
             <Portal>
                 <Dialog visible={visibleDialog === 'SecurityCode'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title>
-                        <Icon source="lock" color={styles.topBarText.color} size={styles.topBarText.fontSize} /> Security Code
-                    </Dialog.Title>
+                    <Dialog.Icon icon="lock" color="#00ff00" />
+                    <Dialog.Title style={{ textAlign: 'center' }}>Security Code</Dialog.Title>
                     <Dialog.Content>
                         <Text>Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code:</Text>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
@@ -111,13 +110,12 @@ export default function HeaderConversation(props: IProps) {
                     </Dialog.Actions>
                 </Dialog>
                 <Dialog visible={visibleDialog === 'UserInfo'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title>
-                        <Icon source="lock" color={styles.topBarText.color} size={styles.topBarText.fontSize} /> User Information
-                    </Dialog.Title>
+                    <Dialog.Icon icon="information" />
+                    <Dialog.Title style={{ textAlign: 'center' }}>User Information</Dialog.Title>
                     <Dialog.Content>
+                        <Text>Username: {contact?.phone_no}</Text>
                         <Text>Status: {contact?.online ? "✅Online" : "❌Offline"}</Text>
                         <Text>Last seen: {humanTime(contact?.last_seen || '0')}</Text>
-                        <Text>Username: {contact?.phone_no}</Text>
                         <Text>Identity Key: {contact?.public_key}</Text>
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
