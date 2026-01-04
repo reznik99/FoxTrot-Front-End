@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, ToastAndroid, Platform, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
 import { Image } from 'react-native-elements';
-import { ActivityIndicator, Text, Button, Dialog, Paragraph, Portal, Icon } from 'react-native-paper';
+import { ActivityIndicator, Text, Button, Dialog, Portal, Icon } from 'react-native-paper';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -91,32 +91,37 @@ export default function HeaderConversation(props: IProps) {
 
             <Portal>
                 <Dialog visible={visibleDialog === 'SecurityCode'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title>
-                        <Icon source="lock" color={styles.topBarText.color} size={styles.topBarText.fontSize} /> Security Code
-                    </Dialog.Title>
+                    <Dialog.Icon icon="lock" color="#00ff00" />
+                    <Dialog.Title style={{ textAlign: 'center' }}>Security Code</Dialog.Title>
                     <Dialog.Content>
-                        <Paragraph>Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code:</Paragraph>
+                        <Text>Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code:</Text>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
-                            <Paragraph key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Paragraph>
+                            <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Text>
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button onPress={() => setVisibleDialog('')} mode="text" style={{ paddingHorizontal: 15 }}>Close</Button>
-                        <Button onPress={() => copySecurityCode()} mode="contained" style={{ paddingHorizontal: 15 }}>Copy Code</Button>
+                        <Button mode="contained-tonal"
+                            onPress={() => setVisibleDialog('')}
+                            style={{ paddingHorizontal: 15 }}>Close</Button>
+                        <Button mode="contained"
+                            onPress={() => copySecurityCode()}
+                            icon="content-copy"
+                            style={{ paddingHorizontal: 15 }}>Copy</Button>
                     </Dialog.Actions>
                 </Dialog>
                 <Dialog visible={visibleDialog === 'UserInfo'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title>
-                        <Icon source="lock" color={styles.topBarText.color} size={styles.topBarText.fontSize} /> User Information
-                    </Dialog.Title>
+                    <Dialog.Icon icon="information" />
+                    <Dialog.Title style={{ textAlign: 'center' }}>User Information</Dialog.Title>
                     <Dialog.Content>
+                        <Text>Username: {contact?.phone_no}</Text>
                         <Text>Status: {contact?.online ? "✅Online" : "❌Offline"}</Text>
                         <Text>Last seen: {humanTime(contact?.last_seen || '0')}</Text>
-                        <Text>Username: {contact?.phone_no}</Text>
                         <Text>Identity Key: {contact?.public_key}</Text>
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button onPress={() => setVisibleDialog('')} mode="text" style={{ paddingHorizontal: 15 }}>Close</Button>
+                        <Button mode="contained-tonal"
+                            onPress={() => setVisibleDialog('')}
+                            style={{ paddingHorizontal: 15 }}>Close</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

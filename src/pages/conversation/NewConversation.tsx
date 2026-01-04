@@ -35,9 +35,9 @@ export default function NewConversation(props: StackScreenProps<HomeStackParamLi
             {/* Search */}
             <View style={globalStyle.searchContainer}>
                 <Searchbar icon="magnify"
-                    iconColor="white"
-                    placeholderTextColor="white"
-                    style={{ color: 'white', backgroundColor: ACCENT }}
+                    iconColor="#fff"
+                    placeholderTextColor="#fff"
+                    style={{ color: '#fff', backgroundColor: ACCENT, borderRadius: 0 }}
                     placeholder="Search contacts"
                     value={prefix}
                     onChangeText={val => setPrefix(val)}

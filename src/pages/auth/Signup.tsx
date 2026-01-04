@@ -56,7 +56,11 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
 
                 {/* Actions */}
                 <View style={{ marginTop: 30, display: 'flex', alignItems: 'center' }}>
-                    <Button mode="contained" icon="account-plus" style={styles.button} onPress={signup} loading={loading}>Signup</Button>
+                    <Button mode="contained"
+                        icon="account-plus"
+                        style={styles.button}
+                        onPress={signup}
+                        loading={loading}>Signup</Button>
                 </View>
             </View>
         </ScrollView>

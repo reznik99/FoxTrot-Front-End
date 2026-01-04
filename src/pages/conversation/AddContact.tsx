@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Text, View, ScrollView } from 'react-native';
-import { Divider, Searchbar, ActivityIndicator, Icon } from 'react-native-paper';
+import { Divider, Searchbar, ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { StackScreenProps } from '@react-navigation/stack';
 
@@ -42,16 +42,14 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
         setAddingContact(undefined);
     };
 
-    const renderSearchIcon = ({ size, color }: { size: number, color: string }) => {
-        return <Icon source="magnify" color={color} size={size} />;
-    };
-
     return (
         <View style={globalStyle.wrapper}>
             {/* Search */}
             <View style={globalStyle.searchContainer}>
-                <Searchbar
-                    icon={renderSearchIcon}
+                <Searchbar icon="magnify"
+                    iconColor="#fff"
+                    placeholderTextColor="#fff"
+                    style={{ color: '#fff', borderRadius: 0 }}
                     placeholder="Find new contacts"
                     onChangeText={val => setPrefix(val)}
                     value={prefix}

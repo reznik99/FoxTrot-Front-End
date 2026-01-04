@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, View, ToastAndroid } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { Avatar, Button, Chip, Dialog, Icon, Paragraph, Portal } from 'react-native-paper';
+import { Avatar, Button, Chip, Dialog, Icon, Portal, Text } from 'react-native-paper';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { DrawerContentComponentProps } from '@react-navigation/drawer/lib/typescript/src/types';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -27,6 +27,16 @@ export default function Drawer(props: DrawerContentComponentProps) {
         );
     }, [securityCode]);
 
+    const loadSecurityCode = useCallback(async () => {
+        try {
+            setShowSecurityCode(true);
+            const code = await publicKeyFingerprint(state.user_data.public_key || '')
+            setSecurityCode(code)
+        } catch (err) {
+            console.error(err)
+        }
+    }, [state.user_data])
+
     return (
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: SECONDARY }} {...props}>
             <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
@@ -49,7 +59,7 @@ export default function Drawer(props: DrawerContentComponentProps) {
                 <View>
                     <DrawerItem inactiveTintColor={PRIMARY}
                         label="Security Code"
-                        onPress={() => { setShowSecurityCode(true); publicKeyFingerprint(state.user_data.public_key || '').then(setSecurityCode).catch(err => console.error(err)); }}
+                        onPress={() => loadSecurityCode()}
                         icon={renderLockIcon}
                     />
                     <DrawerItem inactiveTintColor={PRIMARY}
@@ -69,17 +79,21 @@ export default function Drawer(props: DrawerContentComponentProps) {
 
             <Portal>
                 <Dialog visible={showSecurityCode} onDismiss={() => setShowSecurityCode(false)}>
-                    <Dialog.Title>
-                        <Icon source="lock" color="#00ff00" size={20} /> Your Security Code
-                    </Dialog.Title>
+                    <Dialog.Icon icon="lock" color="#00ff00" />
+                    <Dialog.Title style={{ textAlign: 'center' }}>Your Security Code</Dialog.Title>
                     <Dialog.Content>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
-                            <Paragraph key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Paragraph>
+                            <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Text>
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button onPress={() => setShowSecurityCode(false)} mode="text" style={{ paddingHorizontal: 15 }}>OK</Button>
-                        <Button onPress={() => copySecurityCode()} mode="contained" style={{ paddingHorizontal: 15 }}>Copy Code</Button>
+                        <Button mode="contained-tonal"
+                            onPress={() => setShowSecurityCode(false)}
+                            style={{ paddingHorizontal: 15 }}>Close</Button>
+                        <Button mode="contained"
+                            onPress={() => copySecurityCode()}
+                            icon="content-copy"
+                            style={{ paddingHorizontal: 15 }}>Copy</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

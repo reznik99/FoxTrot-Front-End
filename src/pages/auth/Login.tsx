@@ -7,7 +7,7 @@ import SplashScreen from 'react-native-splash-screen';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import styles from './style';
-import { API_URL, DARKHEADER, KeychainOpts, PRIMARY } from '~/global/variables';
+import { API_URL, KeychainOpts, PRIMARY } from '~/global/variables';
 import { milliseconds, millisecondsSince } from '~/global/helper';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { logIn } from '~/store/actions/auth';
@@ -118,7 +118,7 @@ class Login extends Component<IProps, IState> {
 
         Keyboard.dismiss();
         const loggedIn = await this.props.logIn({ username, password });
-        if (loggedIn) {
+        if (loggedIn.payload) {
             console.debug('Routing to home page');
             this.props.navigation.replace('App');
         }
@@ -163,7 +163,7 @@ class Login extends Component<IProps, IState> {
                                 <Text style={{ paddingVertical: 10 }}>Or</Text>
                                 <Button mode="contained"
                                     icon="account-plus"
-                                    style={[styles.button, { backgroundColor: DARKHEADER }]}
+                                    style={styles.buttonSecondary}
                                     onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
                             </View>
                             <View style={{ display: 'flex', alignItems: 'center' }}>

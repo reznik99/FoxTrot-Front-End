@@ -2,7 +2,7 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import { StatusBar } from 'react-native';
 import { Provider } from 'react-redux';
-import { Provider as PaperProvider, MD2DarkTheme as DarkTheme, Icon } from 'react-native-paper';
+import { Provider as PaperProvider, MD3DarkTheme, Icon } from 'react-native-paper';
 import { NavigationContainer, DarkTheme as NavDarkTheme, RouteProp } from '@react-navigation/native';
 import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions, StackHeaderProps } from '@react-navigation/stack';
 import { createDrawerNavigator, DrawerContentComponentProps, DrawerNavigationOptions } from '@react-navigation/drawer';
@@ -115,14 +115,14 @@ const AuthNavigator = () => {
 
 
 const darkTheme = {
-    ...DarkTheme,
+    ...MD3DarkTheme,
     colors: {
-        ...DarkTheme.colors,
+        ...MD3DarkTheme.colors,
         primary: PRIMARY,
+        onPrimary: "#fff",
         background: SECONDARY,
         accent: ACCENT,
     },
-    dark: true,
 };
 
 // Register background handler
