@@ -106,7 +106,8 @@ export default function HeaderConversation(props: IProps) {
                             style={{ paddingHorizontal: 15 }}>Close</Button>
                         <Button mode="contained"
                             onPress={() => copySecurityCode()}
-                            style={{ paddingHorizontal: 15 }}>Copy Code</Button>
+                            icon="content-copy"
+                            style={{ paddingHorizontal: 15 }}>Copy</Button>
                     </Dialog.Actions>
                 </Dialog>
                 <Dialog visible={visibleDialog === 'UserInfo'} onDismiss={() => setVisibleDialog('')}>

@@ -27,6 +27,16 @@ export default function Drawer(props: DrawerContentComponentProps) {
         );
     }, [securityCode]);
 
+    const loadSecurityCode = useCallback(async () => {
+        try {
+            setShowSecurityCode(true);
+            const code = await publicKeyFingerprint(state.user_data.public_key || '')
+            setSecurityCode(code)
+        } catch (err) {
+            console.error(err)
+        }
+    }, [state.user_data])
+
     return (
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: SECONDARY }} {...props}>
             <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
@@ -49,7 +59,7 @@ export default function Drawer(props: DrawerContentComponentProps) {
                 <View>
                     <DrawerItem inactiveTintColor={PRIMARY}
                         label="Security Code"
-                        onPress={() => { setShowSecurityCode(true); publicKeyFingerprint(state.user_data.public_key || '').then(setSecurityCode).catch(err => console.error(err)); }}
+                        onPress={() => loadSecurityCode()}
                         icon={renderLockIcon}
                     />
                     <DrawerItem inactiveTintColor={PRIMARY}
@@ -78,8 +88,13 @@ export default function Drawer(props: DrawerContentComponentProps) {
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button onPress={() => setShowSecurityCode(false)} mode="text" style={{ paddingHorizontal: 15 }}>OK</Button>
-                        <Button onPress={() => copySecurityCode()} mode="contained" style={{ paddingHorizontal: 15 }}>Copy Code</Button>
+                        <Button mode="contained-tonal"
+                            onPress={() => setShowSecurityCode(false)}
+                            style={{ paddingHorizontal: 15 }}>Close</Button>
+                        <Button mode="contained"
+                            onPress={() => copySecurityCode()}
+                            icon="content-copy"
+                            style={{ paddingHorizontal: 15 }}>Copy</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

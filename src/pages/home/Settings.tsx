@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, Alert, StyleSheet } from 'react-native';
-import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, Icon, useTheme } from 'react-native-paper';
+import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pick, types } from '@react-native-documents/picker';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -208,9 +208,28 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
         <View style={globalStyle.wrapper}>
 
             <ScrollView style={{ paddingHorizontal: 40, paddingVertical: 15, marginBottom: 15, flex: 1 }}>
-                <Text variant="titleLarge">User Data</Text>
+
+                <Text variant="titleMedium">User Identity Keys</Text>
+                <View style={{ marginVertical: 15, flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Button mode="contained"
+                        icon="upload-circle"
+                        onPress={() => setVisibleDialog('import')}
+                        loading={visibleDialog === 'import'}>
+                        Import Keys
+                    </Button>
+                    <Button mode="contained"
+                        icon="download-circle"
+                        onPress={() => setVisibleDialog('export')}
+                        loading={visibleDialog === 'export'}>
+                        Export Keys
+                    </Button>
+                </View>
+
+                <Divider style={{ marginVertical: 15 }} />
+
+                <Text variant="titleMedium">User Data</Text>
                 <View style={{ marginVertical: 15 }}>
-                    <Text>Stored on device:</Text>
+                    <Text>Click entry to delete:</Text>
                     {/* TPM values */}
                     {hasIdentityKeys && <Chip icon="key" selected style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-keys</Chip>}
                     {hasPassword && <Chip icon="account-key" selected style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-credentials</Chip>}
@@ -232,29 +251,12 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                     <Text>Show all db keys in storage</Text>
                     <Switch value={showAllKeys} onValueChange={() => setShowAllKeys(!showAllKeys)} />
                 </View>
-
-                <Divider style={{ marginVertical: 15 }} />
-
-                <Text variant="titleMedium">User Identity Keys</Text>
-                <View style={{ marginVertical: 15, flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Button mode="contained"
-                        icon="upload-circle"
-                        onPress={() => setVisibleDialog('import')}
-                        loading={visibleDialog === 'import'}>
-                        Import
-                    </Button>
-                    <Button mode="contained"
-                        icon="download-circle"
-                        onPress={() => setVisibleDialog('export')}
-                        loading={visibleDialog === 'export'}>
-                        Export
-                    </Button>
-                </View>
             </ScrollView>
 
             <Portal>
                 <Dialog visible={visibleDialog === 'reset'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title><Icon source="flash-triangle" color="yellow" size={20} /> Warning</Dialog.Title>
+                    <Dialog.Icon icon="flash-triangle" color='yellow' />
+                    <Dialog.Title>Factory Reset App</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium">All message data will be lost.</Text>
                         <Text variant="bodyMedium">If you plan to login from another device. Ensure you have exported your Keys!</Text>
@@ -266,8 +268,10 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                 </Dialog>
 
                 <Dialog visible={visibleDialog === 'import'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title><Icon source="file-document-alert" color="yellow" size={20} /> Import User Identity Keys</Dialog.Title>
+                    <Dialog.Icon icon="file-import" />
+                    <Dialog.Title style={{ textAlign: 'center' }}>Import Identity Keys</Dialog.Title>
                     <Dialog.Content>
+                        <Text>File selection will be prompted after decryption password is provided:</Text>
                         <TextInput label="Keypair decryption password"
                             autoCapitalize="none"
                             secureTextEntry={true}
@@ -280,8 +284,10 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                 </Dialog>
 
                 <Dialog visible={visibleDialog === 'export'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Title><Icon source="file-document-check" color="yellow" size={20} /> Export User Identity Keys</Dialog.Title>
+                    <Dialog.Icon icon="file-export" />
+                    <Dialog.Title style={{ textAlign: 'center' }}>Export Identity Keys</Dialog.Title>
                     <Dialog.Content>
+                        <Text >A weak password can result in account takeover!</Text>
                         <TextInput label="Keypair encryption password"
                             autoCapitalize="none"
                             secureTextEntry={true}
