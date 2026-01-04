@@ -58,7 +58,7 @@ export default function Home(props: IProps) {
             setupInterceptors(props.navigation);
             // Register Call Screen handler
             RNNotificationCall.addEventListener('answer', (info) => {
-                console.debug('RNNotificationCall: User answered call', info);
+                console.debug('RNNotificationCall: User answered call', info.callUUID);
                 RNNotificationCall.backToApp();
                 const data = JSON.parse(info.payload || '{}') as { caller: UserData, data: SocketMessage };
                 props.navigation.navigate('Call', {
@@ -68,8 +68,8 @@ export default function Home(props: IProps) {
                     },
                 });
             });
-            RNNotificationCall.addEventListener('endCall', (payload) => {
-                console.debug('RNNotificationCall: User ended call', payload);
+            RNNotificationCall.addEventListener('endCall', (info) => {
+                console.debug('RNNotificationCall: User ended call', info.callUUID);
                 InCallManager.stopRingtone();
             });
             // Check if user answered a call in the background

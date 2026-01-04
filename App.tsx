@@ -11,6 +11,7 @@ import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebas
 import RNNotificationCall, { DeclinePayload } from 'react-native-full-screen-notification-incoming-call';
 import InCallManager from 'react-native-incall-manager';
 import PushNotification from 'react-native-push-notification';
+import QuickCrypto from 'react-native-quick-crypto';
 import { Buffer } from 'buffer';
 
 // Crypto
@@ -133,7 +134,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
     if (!callerRaw) { return console.error('Caller data is not defined'); }
 
     RNNotificationCall.addEventListener('answer', (info) => {
-        console.debug('RNNotificationCall: User answered call', info);
+        console.debug('RNNotificationCall: User answered call', info.callUUID);
         RNNotificationCall.backToApp();
         if (!info.payload) {
             console.error('Background notification data is not defined after call-screen passthrough:', info);
@@ -143,10 +144,10 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
         writeToStorage('call_answered_in_background', info.payload);
         // User will be opening app and authenticating after this...
     });
-    RNNotificationCall.addEventListener('endCall', (payload) => {
-        console.debug('RNNotificationCall: User ended call', payload);
+    RNNotificationCall.addEventListener('endCall', (info) => {
+        console.debug('RNNotificationCall: User ended call', info.callUUID);
         InCallManager.stopRingtone();
-        const data = payload as DeclinePayload;
+        const data = info as DeclinePayload;
         // If call was missed, show push notification of missed call
         PushNotification.createChannel(
             {
@@ -162,7 +163,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
                 title: 'Missed Call',
                 message: `You missed a call from ${caller.phone_no}`,
                 when: Date.now() - 20000,
-                visibility: 'public',
+                visibility: 'private',
                 picture: caller.pic || getAvatar(caller.id),
                 largeIcon: 'foxtrot',
                 smallIcon: 'foxtrot',
@@ -176,7 +177,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
     const eventData = JSON.parse(remoteMessage.data?.data as string || '{}') as SocketMessage;
     const caller = JSON.parse(callerRaw) as UserData;
     RNNotificationCall.displayNotification(
-        '22221a99-8eb4-4ac2-b2cf-0a3c0b9100af',
+        QuickCrypto.randomUUID(),
         caller.pic || getAvatar(caller.id),
         20000,
         {
@@ -184,14 +185,14 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
             channelName: 'Notifications for incoming calls',
             notificationIcon: '@mipmap/foxtrot', // mipmap
             notificationTitle: caller.phone_no || 'Unknown User',
-            notificationBody: 'Incoming video call',
+            notificationBody: `Incoming ${eventData.type || 'audio'} call`,
             answerText: 'Answer',
             declineText: 'Decline',
             notificationColor: 'colorAccent',
             payload: { caller: caller, data: eventData },
+            isVideo: eventData.type === 'video'
             // notificationSound: 'skype_ring',
             // mainComponent: "CallScreen"
-            // isVideo: true
         }
     );
 });

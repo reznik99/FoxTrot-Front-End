@@ -2,6 +2,7 @@ import { VibratePattern, WEBSOCKET_URL } from '~/global/variables';
 import PushNotification from 'react-native-push-notification';
 import InCallManager from 'react-native-incall-manager';
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
+import QuickCrypto from 'react-native-quick-crypto';
 import Toast from 'react-native-toast-message';
 
 import { AppDispatch, GetState } from '../store';
@@ -114,7 +115,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                     title: `Message from ${parsedData.data.sender}`,
                     message: parsedData.data?.message || '',
                     when: parsedData.data.sent_at,
-                    visibility: 'public',
+                    visibility: 'private',
                     picture: getAvatar(parsedData.data.sender_id),
                     largeIcon: 'foxtrot',
                     smallIcon: 'foxtrot',
@@ -141,7 +142,7 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 // Ring and show notification
                 InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
                 RNNotificationCall.displayNotification(
-                    '22221a97-8eb4-4ac2-b2cf-0a3c0b9100ad',
+                    QuickCrypto.randomUUID(),
                     caller.pic || getAvatar(caller.id),
                     30000,
                     {
@@ -149,14 +150,14 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                         channelName: 'Notifications for incoming calls',
                         notificationIcon: '@mipmap/foxtrot', // mipmap
                         notificationTitle: caller?.phone_no || 'Unknown User',
-                        notificationBody: 'Incoming video call',
+                        notificationBody: `Incoming ${parsedData.data.type || 'audio'} call`,
                         answerText: 'Answer',
                         declineText: 'Decline',
                         notificationColor: 'colorAccent',
                         payload: { caller: caller, data: parsedData.data },
+                        isVideo: parsedData.data.type === 'video'
                         // notificationSound: 'skype_ring',
                         // mainComponent: "CallScreen"
-                        // isVideo: true
                     }
                 );
                 break;
