@@ -158,14 +158,12 @@ class Login extends Component<IProps, IState> {
                                 <Button mode="contained"
                                     icon="login"
                                     style={styles.button}
-                                    textColor='#fff'
                                     loading={this.props.loading}
                                     onPress={() => this.handleLogin(this.state.username, this.state.password)}>Login</Button>
                                 <Text style={{ paddingVertical: 10 }}>Or</Text>
                                 <Button mode="contained"
                                     icon="account-plus"
                                     style={styles.buttonSecondary}
-                                    textColor='#fff'
                                     onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
                             </View>
                             <View style={{ display: 'flex', alignItems: 'center' }}>

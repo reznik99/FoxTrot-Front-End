@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, Alert, StyleSheet } from 'react-native';
-import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, Icon } from 'react-native-paper';
+import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, Icon, useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pick, types } from '@react-native-documents/picker';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -26,6 +26,7 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
     const dispatch = useDispatch<AppDispatch>();
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
     const keypair = useSelector((state: RootState) => state.userReducer.keys);
+    const theme = useTheme()
 
     const [keys, setKeys] = useState<string[]>([]);
     const [hasIdentityKeys, setHasIdentityKeys] = useState(false);
@@ -218,7 +219,8 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
 
                     <Button mode="contained"
                         icon="alert-circle"
-                        buttonColor={ACCENT}
+                        buttonColor={theme.colors.errorContainer}
+                        textColor={theme.colors.error}
                         style={{ marginTop: 10 }}
                         onPress={() => setVisibleDialog('reset')}
                         loading={visibleDialog === 'reset'}>
@@ -235,12 +237,16 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
 
                 <Text variant="titleMedium">User Identity Keys</Text>
                 <View style={{ marginVertical: 15, flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Button icon="upload-circle" mode="contained"
-                        onPress={() => setVisibleDialog('import')} loading={visibleDialog === 'import'}>
+                    <Button mode="contained"
+                        icon="upload-circle"
+                        onPress={() => setVisibleDialog('import')}
+                        loading={visibleDialog === 'import'}>
                         Import
                     </Button>
-                    <Button icon="download-circle" mode="contained"
-                        onPress={() => setVisibleDialog('export')} loading={visibleDialog === 'export'}>
+                    <Button mode="contained"
+                        icon="download-circle"
+                        onPress={() => setVisibleDialog('export')}
+                        loading={visibleDialog === 'export'}>
                         Export
                     </Button>
                 </View>
@@ -254,8 +260,8 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                         <Text variant="bodyMedium">If you plan to login from another device. Ensure you have exported your Keys!</Text>
                     </Dialog.Content>
                     <Dialog.Actions style={styles.spaceBetween}>
-                        <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
-                        <Button onPress={resetApp} mode="contained" color="yellow">Clear App Data</Button>
+                        <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
+                        <Button mode="contained" onPress={resetApp}>Clear App Data</Button>
                     </Dialog.Actions>
                 </Dialog>
 
@@ -268,8 +274,8 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                             value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
                     <Dialog.Actions style={styles.spaceBetween}>
-                        <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
-                        <Button onPress={importKeys} icon="upload" mode="contained" disabled={!encPassword?.trim()}>Import</Button>
+                        <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
+                        <Button mode="contained" onPress={importKeys} icon="upload" disabled={!encPassword?.trim()}>Import</Button>
                     </Dialog.Actions>
                 </Dialog>
 
@@ -282,8 +288,8 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                             value={encPassword} onChangeText={setEncPassword} />
                     </Dialog.Content>
                     <Dialog.Actions style={styles.spaceBetween}>
-                        <Button onPress={() => setVisibleDialog('')}>Cancel</Button>
-                        <Button onPress={exportKeys} icon="download" mode="contained" disabled={!encPassword?.trim() || !keypair}>Export</Button>
+                        <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
+                        <Button mode="contained" onPress={exportKeys} icon="download" disabled={!encPassword?.trim() || !keypair}>Export</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

@@ -119,10 +119,10 @@ const darkTheme = {
     colors: {
         ...MD3DarkTheme.colors,
         primary: PRIMARY,
+        onPrimary: "#fff",
         background: SECONDARY,
         accent: ACCENT,
     },
-    dark: true,
 };
 
 // Register background handler

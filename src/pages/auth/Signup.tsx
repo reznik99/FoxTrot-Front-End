@@ -59,7 +59,6 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
                     <Button mode="contained"
                         icon="account-plus"
                         style={styles.button}
-                        textColor='#fff'
                         onPress={signup}
                         loading={loading}>Signup</Button>
                 </View>
