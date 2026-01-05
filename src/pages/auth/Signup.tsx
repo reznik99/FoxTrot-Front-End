@@ -4,13 +4,14 @@ import { Button, TextInput, Text } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { StackScreenProps } from '@react-navigation/stack';
 
-import styles from './style';
-import { signUp } from '~/store/actions/auth';
 import { AppDispatch, RootState } from '~/store/store';
-import { AuthStackParamList } from '../../../App';
+import { signUp } from '~/store/actions/auth';
+import { AuthStackParamList } from '~/../App';
+import styles from './style';
 
 export default function Signup(props: StackScreenProps<AuthStackParamList, 'Signup'>) {
-    const { signupErr, loading } = useSelector((state: RootState) => state.userReducer);
+    const loading = useSelector((state: RootState) => state.userReducer.loading);
+    const signupErr = useSelector((state: RootState) => state.userReducer.signupErr);
     const dispatch = useDispatch<AppDispatch>();
 
     const [username, setUsername] = useState('');
@@ -19,9 +20,12 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
 
     const signup = async () => {
         if (loading) { return; }
-
-        const res = await dispatch(signUp({ username, password, rePassword }));
-        if (res.payload) { return props.navigation.navigate('Login', { data: { errorMsg: '', loggedOut: false } }); }
+        try {
+            const success = await dispatch(signUp({ username, password, rePassword })).unwrap();
+            if (success) { return props.navigation.navigate('Login', { data: { errorMsg: '', loggedOut: false } }); }
+        } catch (err) {
+            console.error("Signup error:", err)
+        }
     };
 
     return (

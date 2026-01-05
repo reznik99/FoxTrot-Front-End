@@ -18,7 +18,7 @@ import { getAvatar } from '~/global/helper';
 
 const createDefaultAsyncThunk = createAsyncThunk.withTypes<{ state: RootState, dispatch: AppDispatch }>();
 
-export const loadKeys = createDefaultAsyncThunk('loadKeys', async (_, thunkAPI): Promise<boolean> => {
+export const loadKeys = createDefaultAsyncThunk('loadKeys', async (_, thunkAPI) => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
 
@@ -256,7 +256,7 @@ export const searchUsers = createDefaultAsyncThunk<UserData[], { prefix: string 
 });
 
 type sendMessageParams = { message: string, to_user: UserData }
-export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: sendMessageParams, thunkAPI): Promise<boolean> => {
+export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: sendMessageParams, thunkAPI) => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
         const state = thunkAPI.getState().userReducer;
@@ -297,7 +297,7 @@ export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: s
     }
 });
 
-export const validateToken = createDefaultAsyncThunk('validateToken', async ({ token }: { token: string }, thunkAPI) => {
+export const validateToken = createDefaultAsyncThunk('validateToken', async (token: string, thunkAPI) => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
         if (!token) { return false; }
@@ -305,7 +305,7 @@ export const validateToken = createDefaultAsyncThunk('validateToken', async ({ t
         const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(token));
 
         thunkAPI.dispatch(TOKEN_VALID({ token: token, valid: res.data?.valid }));
-        return res.data?.valid;
+        return res.data?.valid === true;
     } catch (err: any) {
         thunkAPI.dispatch(TOKEN_VALID({ token: '', valid: false }));
         return false;

@@ -206,7 +206,6 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
 
     return (
         <View style={globalStyle.wrapper}>
-
             <ScrollView style={{ paddingHorizontal: 40, paddingVertical: 15, marginBottom: 15, flex: 1 }}>
 
                 <Text variant="titleMedium">User Identity Keys</Text>
@@ -256,10 +255,10 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
             <Portal>
                 <Dialog visible={visibleDialog === 'reset'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Icon icon="flash-triangle" color='yellow' />
-                    <Dialog.Title>Factory Reset App</Dialog.Title>
+                    <Dialog.Title style={{ textAlign: 'center' }}>Factory Reset App</Dialog.Title>
                     <Dialog.Content>
-                        <Text variant="bodyMedium">All message data will be lost.</Text>
-                        <Text variant="bodyMedium">If you plan to login from another device. Ensure you have exported your Keys!</Text>
+                        <Text>All message data will be lost.</Text>
+                        <Text>If you plan to login from another device. Ensure you have exported your Keys!</Text>
                     </Dialog.Content>
                     <Dialog.Actions style={globalStyle.spaceBetween}>
                         <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
@@ -299,7 +298,6 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
-
         </View>
     );
 }
