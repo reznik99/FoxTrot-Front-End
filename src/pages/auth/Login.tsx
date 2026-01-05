@@ -1,18 +1,18 @@
-import React, { Component } from 'react';
-import { ConnectedProps, connect } from 'react-redux';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { View, ScrollView, Keyboard, Alert } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text, IconButton } from 'react-native-paper';
 import * as Keychain from 'react-native-keychain';
 import SplashScreen from 'react-native-splash-screen';
 import { StackScreenProps } from '@react-navigation/stack';
 
-import styles from './style';
+import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { API_URL, KeychainOpts, PRIMARY } from '~/global/variables';
 import { milliseconds, millisecondsSince } from '~/global/helper';
-import { validateToken, syncFromStorage } from '~/store/actions/user';
-import { logIn } from '~/store/actions/auth';
 import { RootState, store } from '~/store/store';
 import { AuthStackParamList } from '~/../App';
+import { logIn } from '~/store/actions/auth';
+import styles from './style';
 
 type Credentials = {
     username: string;
@@ -21,79 +21,49 @@ type Credentials = {
     time: number;
 }
 
-interface IState {
-    gloablLoading: boolean;
-    username: string;
-    password: string;
-}
+export default function Login(props: StackScreenProps<AuthStackParamList, 'Login'>) {
+    const user_data = useSelector((state: RootState) => state.userReducer.user_data);
+    const loading = useSelector((state: RootState) => state.userReducer.loading);
+    const loginErr = useSelector((state: RootState) => state.userReducer.loginErr);
 
-type IProps = StackScreenProps<AuthStackParamList, 'Login'> & PropsFromRedux
+    const [gloablLoading, setGloablLoading] = useState(false)
+    const [username, setUsername] = useState('')
+    const [password, setPassword] = useState('')
 
-class Login extends Component<IProps, IState> {
-
-    constructor(props: IProps) {
-        super(props);
-        this.state = {
-            gloablLoading: false,
-            username: '',
-            password: '',
-        };
-    }
-
-    async componentDidMount() {
+    useEffect(() => {
+        // Hide app splashscreen
         SplashScreen.hide();
-
         // Auto-fill username field from signup page
-        if (!this.state.username && this.props.user_data?.phone_no) {
-            this.setState({ username: this.props.user_data?.phone_no });
+        if (user_data?.phone_no) {
+            setUsername(user_data?.phone_no)
         }
-
         // If user manually logged out, don't try autologin
-        if (this.props.route.params?.data?.loggedOut) {
-            if (this.props.route.params?.data?.errorMsg) {
+        if (props.route.params?.data?.loggedOut) {
+            if (props.route.params?.data?.errorMsg) {
                 Alert.alert('Unable to Login',
-                    this.props.route.params?.data?.errorMsg,
+                    props.route.params?.data?.errorMsg,
                     [{ text: 'OK', onPress: () => { } }]
                 );
             }
             return console.debug('User logged out');
         }
+        // Read user info from storage
+        readStorage()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
-        try {
-            this.setState({ gloablLoading: true });
+    const handleLogin = useCallback(async () => {
+        if (loading) { return; }
 
-            // Load data from disk into redux store
-            if (!this.props.user_data?.phone_no && !this.state.username) {
-                await store.dispatch(syncFromStorage());
-                this.setState({ username: this.props.user_data?.phone_no || '' }, () => this.attemptAutoLogin());
-            }
-        } catch (err) {
-            console.error('Error on auto-login:', err);
-        } finally {
-            this.setState({ gloablLoading: false });
+        Keyboard.dismiss();
+        const loggedIn = await store.dispatch(logIn({ username, password })).unwrap();
+        if (loggedIn) {
+            console.debug('Routing to home page');
+            props.navigation.replace('App');
         }
-    }
+    }, [username, password, loading, props.navigation])
 
-    attemptAutoLogin = async () => {
-        const creds = await this.loadCredentials(this.state.username);
-        if (!creds) { return; }
-
-        // If auth token is recent (<30min) then validate it
-        if (millisecondsSince(new Date(creds.time)) < milliseconds.hour / 2) {
-            // TODO: place token in store
-            if (await this.props.validateToken({ token: creds.auth_token })) {
-                console.debug('JWT auth token still valid, skipping login...');
-                this.props.navigation.replace('App');
-                return true;
-            }
-        }
-        // Auth token expired, use password
-        await this.handleLogin(this.state.username, creds.password);
-
-        return true;
-    };
-
-    loadCredentials = async (username: string) => {
+    const loadCredentials = useCallback(async () => {
         try {
             console.debug('Loading credentials from secure storage');
             const res = await Keychain.getGenericPassword({
@@ -102,8 +72,7 @@ class Login extends Component<IProps, IState> {
                 accessControl: KeychainOpts.accessControl,
                 authenticationPrompt: KeychainOpts.authenticationPrompt,
             });
-            if (!res) { return undefined; }
-            if (res.username !== this.state.username) { return undefined; }
+            if (!res || res.username !== username) { return undefined; }
 
             const creds = JSON.parse(res.password);
             return { username: res.username, ...creds } as Credentials;
@@ -111,89 +80,97 @@ class Login extends Component<IProps, IState> {
             console.error('Failed to load creds:', err);
             return undefined;
         }
-    };
+    }, [username])
 
-    handleLogin = async (username: string, password: string) => {
-        if (this.props.loading) { return; }
+    const attemptAutoLogin = useCallback(async () => {
+        const creds = await loadCredentials();
+        if (!creds) { return; }
 
-        Keyboard.dismiss();
-        const loggedIn = await this.props.logIn({ username, password });
-        if (loggedIn.payload) {
-            console.debug('Routing to home page');
-            this.props.navigation.replace('App');
+        // If auth token is recent (<30min) then validate it
+        if (millisecondsSince(new Date(creds.time)) < milliseconds.hour / 2) {
+            // TODO: place token in store
+            const tokenIsValid = await store.dispatch(validateToken(creds.auth_token)).unwrap()
+            if (tokenIsValid) {
+                console.debug('JWT auth token still valid, skipping login...');
+                props.navigation.replace('App');
+                return true;
+            }
         }
-    };
+        // Auth token expired, use password
+        await handleLogin();
 
-    render() {
-        return (
-            <ScrollView contentContainerStyle={styles.container}>
-                <View style={styles.wrapper}>
-                    <View style={styles.titleContainer}>
-                        <Text style={styles.title}>FoxTrot</Text>
-                        <Text style={styles.subTitle}>secure communications</Text>
-                    </View>
-                    {this.props.loginErr && <Text style={styles.errorMsg}>{this.props.loginErr}</Text>}
+        return true;
+    }, [handleLogin, loadCredentials, props.navigation])
 
-                    {this.state.gloablLoading
-                        ? <ActivityIndicator size="large" />
-                        : <View>
-                            <TextInput mode="outlined"
-                                autoCapitalize="none"
-                                onChangeText={val => this.setState({ username: val.trim() })}
-                                value={this.state.username}
-                                label="Username"
-                                outlineColor={this.props.loginErr ? 'red' : undefined}
-                            />
-                            <TextInput mode="outlined"
-                                autoCapitalize="none"
-                                onChangeText={val => this.setState({ password: val.trim() })}
-                                value={this.state.password}
-                                label="Password"
-                                secureTextEntry={true}
-                                outlineColor={this.props.loginErr ? 'red' : undefined}
-                            />
+    const readStorage = useCallback(async () => {
+        try {
+            setGloablLoading(true)
+            // Load data from disk into redux store
+            if (!user_data?.phone_no && !username) {
+                await store.dispatch(syncFromStorage()).unwrap()
+                setUsername(user_data.phone_no || '');
+                await attemptAutoLogin()
+            }
+        } catch (err) {
+            console.error('Error on auto-login:', err);
+        } finally {
+            setGloablLoading(false)
+        }
+    }, [user_data, username, attemptAutoLogin])
 
-                            {/* Actions */}
-                            <View style={{ marginTop: 30, display: 'flex', alignItems: 'center' }}>
-                                <Button mode="contained"
-                                    icon="login"
-                                    style={styles.button}
-                                    loading={this.props.loading}
-                                    onPress={() => this.handleLogin(this.state.username, this.state.password)}>Login</Button>
-                                <Text style={{ paddingVertical: 10 }}>Or</Text>
-                                <Button mode="contained"
-                                    icon="account-plus"
-                                    style={styles.buttonSecondary}
-                                    onPress={() => this.props.navigation.navigate('Signup')}>Signup</Button>
-                            </View>
-                            <View style={{ display: 'flex', alignItems: 'center' }}>
-                                <IconButton icon="fingerprint"
-                                    size={50}
-                                    iconColor={PRIMARY}
-                                    onPress={this.attemptAutoLogin}
-                                    accessibilityLabel="Retry biometric authentication"
-                                />
-                            </View>
-                        </View>
-                    }
+    return (
+        <ScrollView contentContainerStyle={styles.container}>
+            <View style={styles.wrapper}>
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>FoxTrot</Text>
+                    <Text style={styles.subTitle}>secure communications</Text>
                 </View>
-            </ScrollView>
-        );
-    }
+                {loginErr && <Text style={styles.errorMsg}>{loginErr}</Text>}
+
+                {gloablLoading
+                    ? <ActivityIndicator size="large" />
+                    : <View>
+                        <TextInput mode="outlined"
+                            autoCapitalize="none"
+                            onChangeText={val => setUsername(val.trim())}
+                            value={username}
+                            label="Username"
+                            outlineColor={loginErr ? 'red' : undefined}
+                        />
+                        <TextInput mode="outlined"
+                            autoCapitalize="none"
+                            onChangeText={val => setPassword(val.trim())}
+                            value={password}
+                            label="Password"
+                            secureTextEntry={true}
+                            outlineColor={loginErr ? 'red' : undefined}
+                        />
+
+                        {/* Actions */}
+                        <View style={{ marginTop: 30, display: 'flex', alignItems: 'center' }}>
+                            <Button mode="contained"
+                                icon="login"
+                                style={styles.button}
+                                loading={loading}
+                                onPress={handleLogin}>Login</Button>
+                            <Text style={{ paddingVertical: 10 }}>Or</Text>
+                            <Button mode="contained"
+                                icon="account-plus"
+                                style={styles.buttonSecondary}
+                                onPress={() => props.navigation.navigate('Signup')}>Signup</Button>
+                        </View>
+                        <View style={{ display: 'flex', alignItems: 'center' }}>
+                            <IconButton icon="fingerprint"
+                                size={50}
+                                iconColor={PRIMARY}
+                                onPress={attemptAutoLogin}
+                                accessibilityLabel="Retry biometric authentication"
+                            />
+                        </View>
+                    </View>
+                }
+            </View>
+        </ScrollView>
+    );
 }
 
-const mapStateToProps = (state: RootState) => ({
-    user_data: state.userReducer.user_data,
-    loading: state.userReducer.loading,
-    loginErr: state.userReducer.loginErr,
-});
-
-const mapDispatchToProps = {
-    syncFromStorage,
-    validateToken,
-    logIn,
-};
-
-const connector = connect(mapStateToProps, mapDispatchToProps);
-type PropsFromRedux = ConnectedProps<typeof connector>
-export default connector(Login);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Text, View, ScrollView } from 'react-native';
 import { Divider, Searchbar, ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
@@ -23,16 +23,14 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
     const [prefix, setPrefix] = useState('');
     const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-    const handleSearch = async () => {
-        const res = await dispatch(searchUsers({ prefix: prefix }));
-        const users = res.payload as UserData[];
-        setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no) ? 1 : -1));
-    };
-
     useEffect(() => {
+        const handleSearch = async () => {
+            const users = await dispatch(searchUsers({ prefix: prefix })).unwrap();
+            setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no) ? 1 : -1));
+        }
         if (timer) { clearTimeout(timer); }
         if (prefix.length > 2) { setTimer(setTimeout(handleSearch, 250)); }
-    }, [prefix]);
+    }, [prefix, timer, dispatch]);
 
     const handleAddContact = async (user: UserData) => {
         setAddingContact(user);
