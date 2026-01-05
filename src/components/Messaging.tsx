@@ -30,7 +30,7 @@ export default function Messaging(props: IProps) {
     const setInputMessage = useCallback((text: string) => {
         props.setInputMessage(text);
         if (expandActions) {setExpandActions(false);}
-    }, [expandActions, props.setInputMessage]);
+    }, [expandActions, props]);
 
     const resetAudio = useCallback(() => {
         setAudioFilePath('');
@@ -59,7 +59,7 @@ export default function Messaging(props: IProps) {
         } catch (err) {
             console.error(err); // Show error
         }
-    }, []);
+    }, [resetAudio]);
 
     const onMicRelease = useCallback(async () => {
         try {
@@ -101,9 +101,9 @@ export default function Messaging(props: IProps) {
             await props.handleSendAudio(audioData, audioRecordTime);
             resetAudio();
         } catch (err) {
-            console.error(err); // Show error
+            console.error(err);
         }
-    }, [audioFilePath, audioRecordTime]);
+    }, [audioFilePath, audioRecordTime, resetAudio, props]);
 
     return (
         <CustomKeyboardAvoidingView>

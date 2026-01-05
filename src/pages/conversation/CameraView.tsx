@@ -33,6 +33,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     useEffect(() => {
         if (props.route.params?.data?.picturePath) { return; }
         requestPermissions();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const requestPermissions = useCallback(async () => {

@@ -21,7 +21,7 @@ import { loadContacts, loadKeys } from '~/store/actions/user';
 import { logOut } from '~/store/actions/auth';
 import { HomeStackParamList } from '../../../App';
 
-export default function Settings(_props: StackScreenProps<HomeStackParamList, 'Settings'>) {
+export default function Settings(props: StackScreenProps<HomeStackParamList, 'Settings'>) {
 
     const dispatch = useDispatch<AppDispatch>();
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
@@ -70,9 +70,9 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
             deleteFromStorage(''),
             Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys` }),
             Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
-            dispatch(logOut({ navigation: _props.navigation as any })),
+            dispatch(logOut({ navigation: props.navigation as any })),
         ]);
-    }, [user_data, dispatch]);
+    }, [user_data, props.navigation, dispatch]);
 
     const resetValue = useCallback(async (key: string) => {
         console.debug('Deleting:', key);

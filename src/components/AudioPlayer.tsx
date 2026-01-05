@@ -35,6 +35,7 @@ export default function AudioPlayer(props: IProps) {
                 .then(() => console.debug('Cleaned up temp audio message file'))
                 .catch(err => console.error('audio message file cleanup err:', err));
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const playAudio = useCallback(async () => {

@@ -92,6 +92,7 @@ export default function Home(props: IProps) {
         return () => {
             store.dispatch(destroyWebsocket());
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const loadMessagesAndContacts = useCallback(async () => {
@@ -100,18 +101,18 @@ export default function Home(props: IProps) {
             store.dispatch(loadContacts({ atomic: false })),
             store.dispatch(loadMessages()),
         ]);
-    }, [store.dispatch]);
+    }, []);
 
     const loadKeypair = useCallback(async () => {
         setLoadingMsg('Loading keys from TPM...');
-        const loadedKeys = await store.dispatch(loadKeys());
-        return loadedKeys.payload as boolean;
-    }, [store.dispatch]);
+        const loadedKeys = await store.dispatch(loadKeys()).unwrap();
+        return loadedKeys;
+    }, []);
 
     const generateKeypair = useCallback(async () => {
         setLoadingMsg('Generating cryptographic keys...');
-        const success = await store.dispatch(generateAndSyncKeys());
-        if (!success.payload) {
+        const success = await store.dispatch(generateAndSyncKeys()).unwrap();
+        if (!success) {
             Alert.alert('Failed to generate keys', 'This account might have already logged into another device. Keys must be imported in the settings page.',
                 [
                     {
@@ -124,13 +125,13 @@ export default function Home(props: IProps) {
                 ]
             );
         }
-        return success.payload as boolean;
-    }, [store.dispatch]);
+        return success;
+    }, [props.navigation]);
 
     const configureWebsocket = useCallback(async () => {
         setLoadingMsg('Initializing websocket...');
         await store.dispatch(initializeWebsocket());
-    }, [store.dispatch]);
+    }, []);
 
     return (
         <View style={globalStyle.wrapper}>
