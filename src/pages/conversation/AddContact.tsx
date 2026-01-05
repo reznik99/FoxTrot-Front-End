@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Text, View, ScrollView } from 'react-native';
 import { Divider, Searchbar, ActivityIndicator } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
