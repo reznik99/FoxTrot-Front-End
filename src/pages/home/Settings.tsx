@@ -125,8 +125,8 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
 
             // Load into redux store
             console.debug('Loading keys into App...');
-            const res = await dispatch(loadKeys());
-            if (!res.payload) { throw new Error('Failed to load imported keys into app'); }
+            const success = await dispatch(loadKeys()).unwrap();
+            if (!success) { throw new Error('Failed to load imported keys into app'); }
 
             // TODO: Validate that public key locally matches public key on Key Server.
 

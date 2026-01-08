@@ -34,8 +34,8 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
 
     const handleAddContact = async (user: UserData) => {
         setAddingContact(user);
-        const res = await dispatch(addContact({ user: user }));
-        if (res.payload) { navigation.replace('Conversation', { data: { peer_user: user } }); }
+        const success = await dispatch(addContact({ user: user })).unwrap();
+        if (success) { navigation.replace('Conversation', { data: { peer_user: user } }); }
 
         setAddingContact(undefined);
     };
