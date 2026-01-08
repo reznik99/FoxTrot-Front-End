@@ -322,13 +322,13 @@ export const syncFromStorage = createDefaultAsyncThunk('syncFromStorage', async 
         // TODO: Load existing contacts from async storage
         // const token = await readFromStorage('auth_token')
         const user_data = await readFromStorage('user_data');
-        if (!user_data) { return false; }
+        if (!user_data) { return undefined; }
 
         const payload = {
-            user_data: JSON.parse(user_data),
+            user_data: JSON.parse(user_data) as UserData,
         };
         thunkAPI.dispatch(SYNC_FROM_STORAGE(payload));
-        return true;
+        return payload.user_data;
     } catch (err: any) {
         console.error('Error syncing from storage:', err);
         Toast.show({
@@ -337,7 +337,7 @@ export const syncFromStorage = createDefaultAsyncThunk('syncFromStorage', async 
             text2: err.message ?? err.toString(),
             visibilityTime: 5000,
         });
-        return false;
+        return undefined;
     } finally {
         thunkAPI.dispatch(SET_LOADING(false));
     }

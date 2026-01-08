@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { View, ScrollView, Keyboard, Alert } from 'react-native';
 import { ActivityIndicator, TextInput, Button, Text, IconButton } from 'react-native-paper';
@@ -26,7 +26,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
     const loading = useSelector((state: RootState) => state.userReducer.loading);
     const loginErr = useSelector((state: RootState) => state.userReducer.loginErr);
 
-    const [gloablLoading, setGloablLoading] = useState(false)
+    const [globalLoading, setGlobalLoading] = useState(false)
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
 
@@ -52,18 +52,43 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    const handleLogin = useCallback(async () => {
-        if (loading) { return; }
-
-        Keyboard.dismiss();
-        const loggedIn = await store.dispatch(logIn({ username, password })).unwrap();
-        if (loggedIn) {
-            console.debug('Routing to home page');
-            props.navigation.replace('App');
+    const readStorage = async () => {
+        try {
+            setGlobalLoading(true)
+            // Load data from disk into redux store
+            if (!user_data?.phone_no && !username) {
+                const new_user_data = await store.dispatch(syncFromStorage()).unwrap()
+                if (new_user_data?.phone_no) {
+                    setUsername(new_user_data.phone_no);
+                    await attemptAutoLogin(new_user_data.phone_no)
+                }
+            }
+        } catch (err) {
+            console.error('Error on auto-login:', err);
+        } finally {
+            setGlobalLoading(false)
         }
-    }, [username, password, loading, props.navigation])
+    }
 
-    const loadCredentials = useCallback(async () => {
+    const attemptAutoLogin = async (username: string) => {
+        const creds = await loadCredentials(username);
+        if (!creds) { return; }
+
+        // If auth token is recent (<30min) then validate it
+        if (millisecondsSince(new Date(creds.time)) < milliseconds.hour / 2) {
+            // TODO: place token in store
+            const tokenIsValid = await store.dispatch(validateToken(creds.auth_token)).unwrap()
+            if (tokenIsValid) {
+                console.debug('JWT auth token still valid, skipping login...');
+                props.navigation.replace('App');
+                return;
+            }
+        }
+        // Auth token expired, use password
+        await handleLogin();
+    }
+
+    const loadCredentials = async (username: string) => {
         try {
             console.debug('Loading credentials from secure storage');
             const res = await Keychain.getGenericPassword({
@@ -80,43 +105,18 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
             console.error('Failed to load creds:', err);
             return undefined;
         }
-    }, [username])
+    }
 
-    const attemptAutoLogin = useCallback(async () => {
-        const creds = await loadCredentials();
-        if (!creds) { return; }
+    const handleLogin = async () => {
+        if (loading) { return; }
 
-        // If auth token is recent (<30min) then validate it
-        if (millisecondsSince(new Date(creds.time)) < milliseconds.hour / 2) {
-            // TODO: place token in store
-            const tokenIsValid = await store.dispatch(validateToken(creds.auth_token)).unwrap()
-            if (tokenIsValid) {
-                console.debug('JWT auth token still valid, skipping login...');
-                props.navigation.replace('App');
-                return true;
-            }
+        Keyboard.dismiss();
+        const loggedIn = await store.dispatch(logIn({ username, password })).unwrap();
+        if (loggedIn) {
+            console.debug('Routing to home page');
+            props.navigation.replace('App');
         }
-        // Auth token expired, use password
-        await handleLogin();
-
-        return true;
-    }, [handleLogin, loadCredentials, props.navigation])
-
-    const readStorage = useCallback(async () => {
-        try {
-            setGloablLoading(true)
-            // Load data from disk into redux store
-            if (!user_data?.phone_no && !username) {
-                await store.dispatch(syncFromStorage()).unwrap()
-                setUsername(user_data.phone_no || '');
-                await attemptAutoLogin()
-            }
-        } catch (err) {
-            console.error('Error on auto-login:', err);
-        } finally {
-            setGloablLoading(false)
-        }
-    }, [user_data, username, attemptAutoLogin])
+    }
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -127,7 +127,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
                 </View>
                 {loginErr && <Text style={styles.errorMsg}>{loginErr}</Text>}
 
-                {gloablLoading
+                {globalLoading
                     ? <ActivityIndicator size="large" />
                     : <View>
                         <TextInput mode="outlined"
@@ -163,7 +163,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
                             <IconButton icon="fingerprint"
                                 size={50}
                                 iconColor={PRIMARY}
-                                onPress={attemptAutoLogin}
+                                onPress={() => attemptAutoLogin(username)}
                                 accessibilityLabel="Retry biometric authentication"
                             />
                         </View>
