@@ -71,8 +71,8 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
         }
     }
 
-    const attemptAutoLogin = async (username: string) => {
-        const creds = await loadCredentials(username);
+    const attemptAutoLogin = async (user_name: string) => {
+        const creds = await loadCredentials(user_name);
         if (!creds) { return; }
 
         // If auth token is recent (<30min) then validate it
@@ -86,19 +86,19 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
             }
         }
         // Auth token expired, use password
-        await handleLogin(username, creds.password);
+        await handleLogin(user_name, creds.password);
     }
 
-    const loadCredentials = async (username: string) => {
+    const loadCredentials = async (user_name: string) => {
         try {
             console.debug('Loading credentials from secure storage');
             const res = await Keychain.getGenericPassword({
                 server: API_URL,
-                service: `${username}-credentials`,
+                service: `${user_name}-credentials`,
                 accessControl: KeychainOpts.accessControl,
                 authenticationPrompt: KeychainOpts.authenticationPrompt,
             });
-            if (!res || res.username !== username) { return undefined; }
+            if (!res || res.username !== user_name) { return undefined; }
 
             const creds = JSON.parse(res.password);
             return { username: res.username, ...creds } as Credentials;
@@ -108,11 +108,11 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
         }
     }
 
-    const handleLogin = async (username: string, password: string) => {
+    const handleLogin = async (user_name: string, password_: string) => {
         if (loading) { return; }
 
         Keyboard.dismiss();
-        const loggedIn = await store.dispatch(logIn({ username, password })).unwrap();
+        const loggedIn = await store.dispatch(logIn({ username: user_name, password: password_ })).unwrap();
         if (loggedIn) {
             console.debug('Routing to home page');
             props.navigation.replace('App');
@@ -130,7 +130,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
 
                 {globalLoading
                     ? <ActivityIndicator size="large" />
-                    : <View style={{ rowGap: 10 }}>
+                    : <View style={{ rowGap: 8 }}>
                         <TextInput mode="outlined"
                             autoCapitalize="none"
                             onChangeText={val => setUsername(val.trim())}

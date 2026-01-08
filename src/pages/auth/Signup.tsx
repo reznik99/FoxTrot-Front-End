@@ -38,7 +38,7 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
                 </View>
                 {signupErr && <Text style={styles.errorMsg}>{signupErr}</Text>}
 
-                <View style={{ gap: 10 }}>
+                <View style={{ gap: 8 }}>
                     <TextInput mode="outlined"
                         onChangeText={val => setUsername(val.trim())}
                         value={username}
