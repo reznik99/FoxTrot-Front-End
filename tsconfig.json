@@ -3,6 +3,7 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "resolvePackageJsonExports": false,
+    "strict": true,
     "target": "esnext",
     "baseUrl": "./src",
     "paths": {

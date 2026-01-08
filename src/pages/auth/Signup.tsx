@@ -4,13 +4,15 @@ import { Button, TextInput, Text } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { StackScreenProps } from '@react-navigation/stack';
 
-import styles from './style';
-import { signUp } from '~/store/actions/auth';
+import PasswordInput from '~/components/PasswordInput';
 import { AppDispatch, RootState } from '~/store/store';
-import { AuthStackParamList } from '../../../App';
+import { signUp } from '~/store/actions/auth';
+import { AuthStackParamList } from '~/../App';
+import styles from './style';
 
 export default function Signup(props: StackScreenProps<AuthStackParamList, 'Signup'>) {
-    const { signupErr, loading } = useSelector((state: RootState) => state.userReducer);
+    const loading = useSelector((state: RootState) => state.userReducer.loading);
+    const signupErr = useSelector((state: RootState) => state.userReducer.signupErr);
     const dispatch = useDispatch<AppDispatch>();
 
     const [username, setUsername] = useState('');
@@ -19,9 +21,12 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
 
     const signup = async () => {
         if (loading) { return; }
-
-        const res = await dispatch(signUp({ username, password, rePassword }));
-        if (res.payload) { return props.navigation.navigate('Login', { data: { errorMsg: '', loggedOut: false } }); }
+        try {
+            const success = await dispatch(signUp({ username, password, rePassword })).unwrap();
+            if (success) { return props.navigation.navigate('Login', { data: { errorMsg: '', loggedOut: false } }); }
+        } catch (err) {
+            console.error("Signup error:", err)
+        }
     };
 
     return (
@@ -33,26 +38,28 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
                 </View>
                 {signupErr && <Text style={styles.errorMsg}>{signupErr}</Text>}
 
-                <TextInput mode="outlined"
-                    onChangeText={val => setUsername(val.trim())}
-                    value={username}
-                    label="Username"
-                    outlineColor={signupErr && !username ? 'red' : undefined}
-                />
-                <TextInput mode="outlined"
-                    onChangeText={val => setPassword(val.trim())}
-                    value={password}
-                    secureTextEntry={true}
-                    label="Password"
-                    outlineColor={signupErr && !password ? 'red' : undefined}
-                />
-                <TextInput mode="outlined"
-                    onChangeText={val => setRePassword(val.trim())}
-                    value={rePassword}
-                    secureTextEntry={true}
-                    label="Repeat Password"
-                    outlineColor={signupErr && (!rePassword || rePassword !== password) ? 'red' : undefined}
-                />
+                <View style={{ gap: 8 }}>
+                    <TextInput mode="outlined"
+                        onChangeText={val => setUsername(val.trim())}
+                        value={username}
+                        label="Username"
+                        outlineColor={signupErr && !username ? 'red' : undefined}
+                    />
+                    <PasswordInput mode="outlined"
+                        autoCapitalize="none"
+                        onChangeText={val => setPassword(val.trim())}
+                        value={password}
+                        label="Password"
+                        outlineColor={signupErr && !password ? 'red' : undefined}
+                    />
+                    <PasswordInput mode="outlined"
+                        autoCapitalize="none"
+                        onChangeText={val => setRePassword(val.trim())}
+                        value={rePassword}
+                        label="Repeat Password"
+                        outlineColor={signupErr && (!rePassword || rePassword !== password) ? 'red' : undefined}
+                    />
+                </View>
 
                 {/* Actions */}
                 <View style={{ marginTop: 30, display: 'flex', alignItems: 'center' }}>

@@ -1,18 +1,19 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, ToastAndroid, Platform, StyleSheet } from 'react-native';
+import { ActivityIndicator, Text, Button, Dialog, Portal, Icon } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { Image } from 'react-native-elements';
-import { ActivityIndicator, Text, Button, Dialog, Portal, Icon } from 'react-native-paper';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 import { publicKeyFingerprint } from '~/global/crypto';
 import { RootState } from '~/store/store';
 import { UserData } from '~/store/reducers/user';
-import { DARKHEADER } from '~/global/variables';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { HomeStackParamList } from '../../App';
+import { DARKHEADER } from '~/global/variables';
 import { humanTime } from '~/global/helper';
+import globalStyle from '~/global/style';
 
 interface IProps {
     navigation: StackNavigationProp<HomeStackParamList, 'Conversation' | 'Call'>;
@@ -76,11 +77,11 @@ export default function HeaderConversation(props: IProps) {
             </View>
             <View style={[styles.buttonContainer]}>
                 <TouchableOpacity style={styles.button}
-                    onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user, video_enabled: true } })}>
+                    onPress={() => navigation.navigate('Call', { data: { peer_user: data.peer_user, video_enabled: true } })}>
                     <Icon source="video" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button}
-                    onPress={() => navigation.navigate('Call', { data: { peer_user: data?.peer_user, video_enabled: false } })}>
+                    onPress={() => navigation.navigate('Call', { data: { peer_user: data.peer_user, video_enabled: false } })}>
                     <Icon source="phone" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button}
@@ -94,7 +95,9 @@ export default function HeaderConversation(props: IProps) {
                     <Dialog.Icon icon="lock" color="#00ff00" />
                     <Dialog.Title style={{ textAlign: 'center' }}>Security Code</Dialog.Title>
                     <Dialog.Content>
-                        <Text>Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code:</Text>
+                        <Text style={globalStyle.dialogText}>
+                            Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code
+                        </Text>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
                             <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Text>
                         ))}

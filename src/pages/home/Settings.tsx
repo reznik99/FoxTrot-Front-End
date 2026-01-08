@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, useTheme } from 'react-native-paper';
+import { Button, Dialog, Portal, Chip, Text, Divider, Switch, useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pick, types } from '@react-native-documents/picker';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -11,17 +11,18 @@ import Toast from 'react-native-toast-message';
 import RNFS from 'react-native-fs';
 import { Buffer } from 'buffer';
 
+import { API_URL, DARKHEADER, KeychainOpts, SaltLenGCM, SaltLenPBKDF2 } from '~/global/variables';
 import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions';
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto';
-import { API_URL, DARKHEADER, KeychainOpts, SaltLenGCM, SaltLenPBKDF2 } from '~/global/variables';
-import globalStyle from '~/global/style';
 import { deleteFromStorage } from '~/global/storage';
-import { AppDispatch, RootState } from '~/store/store';
+import globalStyle from '~/global/style';
 import { loadContacts, loadKeys } from '~/store/actions/user';
 import { logOut } from '~/store/actions/auth';
-import { HomeStackParamList } from '../../../App';
+import { AppDispatch, RootState } from '~/store/store';
+import { HomeStackParamList } from '~/../App';
+import PasswordInput from '~/components/PasswordInput';
 
-export default function Settings(_props: StackScreenProps<HomeStackParamList, 'Settings'>) {
+export default function Settings(props: StackScreenProps<HomeStackParamList, 'Settings'>) {
 
     const dispatch = useDispatch<AppDispatch>();
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
@@ -70,9 +71,9 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
             deleteFromStorage(''),
             Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys` }),
             Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
-            dispatch(logOut({ navigation: _props.navigation as any })),
+            dispatch(logOut({ navigation: props.navigation as any })),
         ]);
-    }, [user_data, dispatch]);
+    }, [user_data, props.navigation, dispatch]);
 
     const resetValue = useCallback(async (key: string) => {
         console.debug('Deleting:', key);
@@ -124,8 +125,8 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
 
             // Load into redux store
             console.debug('Loading keys into App...');
-            const res = await dispatch(loadKeys());
-            if (!res.payload) { throw new Error('Failed to load imported keys into app'); }
+            const success = await dispatch(loadKeys()).unwrap();
+            if (!success) { throw new Error('Failed to load imported keys into app'); }
 
             // TODO: Validate that public key locally matches public key on Key Server.
 
@@ -206,7 +207,6 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
 
     return (
         <View style={globalStyle.wrapper}>
-
             <ScrollView style={{ paddingHorizontal: 40, paddingVertical: 15, marginBottom: 15, flex: 1 }}>
 
                 <Text variant="titleMedium">User Identity Keys</Text>
@@ -256,10 +256,10 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
             <Portal>
                 <Dialog visible={visibleDialog === 'reset'} onDismiss={() => setVisibleDialog('')}>
                     <Dialog.Icon icon="flash-triangle" color='yellow' />
-                    <Dialog.Title>Factory Reset App</Dialog.Title>
+                    <Dialog.Title style={{ textAlign: 'center' }}>Factory Reset App</Dialog.Title>
                     <Dialog.Content>
-                        <Text variant="bodyMedium">All message data will be lost.</Text>
-                        <Text variant="bodyMedium">If you plan to login from another device. Ensure you have exported your Keys!</Text>
+                        <Text>All message data will be lost.</Text>
+                        <Text>If you plan to login from another device. Ensure you have exported your Keys!</Text>
                     </Dialog.Content>
                     <Dialog.Actions style={globalStyle.spaceBetween}>
                         <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
@@ -272,10 +272,11 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                     <Dialog.Title style={{ textAlign: 'center' }}>Import Identity Keys</Dialog.Title>
                     <Dialog.Content>
                         <Text style={globalStyle.dialogText}>File selection will be prompted after decryption password is provided</Text>
-                        <TextInput label="Keypair decryption password"
+                        <PasswordInput label="Keypair decryption password"
                             autoCapitalize="none"
-                            secureTextEntry={true}
-                            value={encPassword} onChangeText={setEncPassword} />
+                            onChangeText={setEncPassword}
+                            value={encPassword}
+                        />
                     </Dialog.Content>
                     <Dialog.Actions style={globalStyle.spaceBetween}>
                         <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
@@ -288,10 +289,11 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                     <Dialog.Title style={{ textAlign: 'center' }}>Export Identity Keys</Dialog.Title>
                     <Dialog.Content>
                         <Text style={globalStyle.dialogText}>A weak password can result in account takeover!</Text>
-                        <TextInput label="Keypair encryption password"
+                        <PasswordInput label="Keypair encryption password"
                             autoCapitalize="none"
-                            secureTextEntry={true}
-                            value={encPassword} onChangeText={setEncPassword} />
+                            onChangeText={setEncPassword}
+                            value={encPassword}
+                        />
                     </Dialog.Content>
                     <Dialog.Actions style={globalStyle.spaceBetween}>
                         <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
@@ -299,7 +301,6 @@ export default function Settings(_props: StackScreenProps<HomeStackParamList, 'S
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
-
         </View>
     );
 }

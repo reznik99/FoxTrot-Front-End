@@ -4,12 +4,12 @@ import { connect, ConnectedProps } from 'react-redux';
 import { Icon } from 'react-native-paper';
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCSessionDescription, RTCView } from 'react-native-webrtc';
 import RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel';
+import { RTCOfferOptions } from 'react-native-webrtc/lib/typescript/RTCUtil';
 import MessageEvent from 'react-native-webrtc/lib/typescript/MessageEvent';
 import InCallManager from 'react-native-incall-manager';
 import Toast from 'react-native-toast-message';
 import { StackScreenProps } from '@react-navigation/stack';
 import { withSafeAreaInsets, WithSafeAreaInsetsProps } from 'react-native-safe-area-context';
-import { RTCOfferOptions } from 'react-native-webrtc/lib/typescript/RTCUtil';
 
 import { CandidatePair, LocalCandidate, WebRTCMessage, getConnStats, getIconForConnType, getRTCConfiguration } from '~/global/webrtc';
 import { DARKHEADER } from '~/global/variables';

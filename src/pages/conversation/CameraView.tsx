@@ -33,6 +33,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     useEffect(() => {
         if (props.route.params?.data?.picturePath) { return; }
         requestPermissions();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const requestPermissions = useCallback(async () => {
@@ -94,8 +95,8 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                 message: rawPic,
             });
 
-            const res = await dispatch(sendMessage({ message: toSend, to_user: props.route.params?.data?.peer }));
-            if (res.payload) { props.navigation.goBack(); }
+            const success = await dispatch(sendMessage({ message: toSend, to_user: props.route.params?.data?.peer })).unwrap();
+            if (success) { props.navigation.goBack(); }
         } catch (err) {
             console.error('Error sending image:', err);
         } finally {
