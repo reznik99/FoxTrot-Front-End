@@ -9,6 +9,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { validateToken, syncFromStorage } from '~/store/actions/user';
 import { API_URL, KeychainOpts, PRIMARY } from '~/global/variables';
 import { milliseconds, millisecondsSince } from '~/global/helper';
+import PasswordInput from '~/components/PasswordInput';
 import { RootState, store } from '~/store/store';
 import { AuthStackParamList } from '~/../App';
 import { logIn } from '~/store/actions/auth';
@@ -85,7 +86,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
             }
         }
         // Auth token expired, use password
-        await handleLogin();
+        await handleLogin(username, creds.password);
     }
 
     const loadCredentials = async (username: string) => {
@@ -107,7 +108,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
         }
     }
 
-    const handleLogin = async () => {
+    const handleLogin = async (username: string, password: string) => {
         if (loading) { return; }
 
         Keyboard.dismiss();
@@ -129,7 +130,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
 
                 {globalLoading
                     ? <ActivityIndicator size="large" />
-                    : <View>
+                    : <View style={{ rowGap: 10 }}>
                         <TextInput mode="outlined"
                             autoCapitalize="none"
                             onChangeText={val => setUsername(val.trim())}
@@ -137,22 +138,21 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
                             label="Username"
                             outlineColor={loginErr ? 'red' : undefined}
                         />
-                        <TextInput mode="outlined"
+                        <PasswordInput mode="outlined"
                             autoCapitalize="none"
                             onChangeText={val => setPassword(val.trim())}
                             value={password}
                             label="Password"
-                            secureTextEntry={true}
                             outlineColor={loginErr ? 'red' : undefined}
                         />
 
                         {/* Actions */}
-                        <View style={{ marginTop: 30, display: 'flex', alignItems: 'center' }}>
+                        <View style={{ marginTop: 15, display: 'flex', alignItems: 'center' }}>
                             <Button mode="contained"
                                 icon="login"
                                 style={styles.button}
                                 loading={loading}
-                                onPress={handleLogin}>Login</Button>
+                                onPress={() => handleLogin(username, password)}>Login</Button>
                             <Text style={{ paddingVertical: 10 }}>Or</Text>
                             <Button mode="contained"
                                 icon="account-plus"

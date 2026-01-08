@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, Dialog, Portal, Chip, Text, TextInput, Divider, Switch, useTheme } from 'react-native-paper';
+import { Button, Dialog, Portal, Chip, Text, Divider, Switch, useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pick, types } from '@react-native-documents/picker';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -11,15 +11,16 @@ import Toast from 'react-native-toast-message';
 import RNFS from 'react-native-fs';
 import { Buffer } from 'buffer';
 
+import { API_URL, DARKHEADER, KeychainOpts, SaltLenGCM, SaltLenPBKDF2 } from '~/global/variables';
 import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions';
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto';
-import { API_URL, DARKHEADER, KeychainOpts, SaltLenGCM, SaltLenPBKDF2 } from '~/global/variables';
-import globalStyle from '~/global/style';
 import { deleteFromStorage } from '~/global/storage';
-import { AppDispatch, RootState } from '~/store/store';
+import globalStyle from '~/global/style';
 import { loadContacts, loadKeys } from '~/store/actions/user';
 import { logOut } from '~/store/actions/auth';
-import { HomeStackParamList } from '../../../App';
+import { AppDispatch, RootState } from '~/store/store';
+import { HomeStackParamList } from '~/../App';
+import PasswordInput from '~/components/PasswordInput';
 
 export default function Settings(props: StackScreenProps<HomeStackParamList, 'Settings'>) {
 
@@ -271,10 +272,11 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
                     <Dialog.Title style={{ textAlign: 'center' }}>Import Identity Keys</Dialog.Title>
                     <Dialog.Content>
                         <Text style={globalStyle.dialogText}>File selection will be prompted after decryption password is provided</Text>
-                        <TextInput label="Keypair decryption password"
+                        <PasswordInput label="Keypair decryption password"
                             autoCapitalize="none"
-                            secureTextEntry={true}
-                            value={encPassword} onChangeText={setEncPassword} />
+                            onChangeText={setEncPassword}
+                            value={encPassword}
+                        />
                     </Dialog.Content>
                     <Dialog.Actions style={globalStyle.spaceBetween}>
                         <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
@@ -287,10 +289,11 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
                     <Dialog.Title style={{ textAlign: 'center' }}>Export Identity Keys</Dialog.Title>
                     <Dialog.Content>
                         <Text style={globalStyle.dialogText}>A weak password can result in account takeover!</Text>
-                        <TextInput label="Keypair encryption password"
+                        <PasswordInput label="Keypair encryption password"
                             autoCapitalize="none"
-                            secureTextEntry={true}
-                            value={encPassword} onChangeText={setEncPassword} />
+                            onChangeText={setEncPassword}
+                            value={encPassword}
+                        />
                     </Dialog.Content>
                     <Dialog.Actions style={globalStyle.spaceBetween}>
                         <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
