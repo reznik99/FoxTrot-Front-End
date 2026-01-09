@@ -7,12 +7,12 @@ import SplashScreen from 'react-native-splash-screen';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import { validateToken, syncFromStorage } from '~/store/actions/user';
+import { logIn } from '~/store/actions/auth';
 import { API_URL, KeychainOpts, PRIMARY } from '~/global/variables';
 import { milliseconds, millisecondsSince } from '~/global/helper';
 import PasswordInput from '~/components/PasswordInput';
 import { RootState, store } from '~/store/store';
 import { AuthStackParamList } from '~/../App';
-import { logIn } from '~/store/actions/auth';
 import styles from './style';
 
 type Credentials = {

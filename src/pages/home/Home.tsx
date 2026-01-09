@@ -50,28 +50,10 @@ export default function Home(props: IProps) {
                     return;
                 }
             }
-            // Load new messages from backend and old messages from storage
-            await loadMessagesAndContacts();
             // Start websocket connection to server
             await configureWebsocket();
-            // Setup axios interceptors
-            setupInterceptors(props.navigation);
             // Register Call Screen handler
-            RNNotificationCall.addEventListener('answer', (info) => {
-                console.debug('RNNotificationCall: User answered call', info.callUUID);
-                RNNotificationCall.backToApp();
-                const data = JSON.parse(info.payload || '{}') as { caller: UserData, data: SocketMessage };
-                props.navigation.navigate('Call', {
-                    data: {
-                        peer_user: data.caller,
-                        video_enabled: data.data.type === 'video',
-                    },
-                });
-            });
-            RNNotificationCall.addEventListener('endCall', (info) => {
-                console.debug('RNNotificationCall: User ended call', info.callUUID);
-                InCallManager.stopRingtone();
-            });
+            registerCallHandlers();
             // Check if user answered a call in the background
             setLoadingMsg('Checking call status');
             const callerRaw = await readFromStorage('call_answered_in_background');
@@ -85,6 +67,10 @@ export default function Home(props: IProps) {
                     },
                 });
             }
+            // Load new messages from backend and old messages from storage
+            await loadMessagesAndContacts();
+            // Setup axios interceptors
+            setupInterceptors(props.navigation);
             setLoadingMsg('');
         };
         initLoad();
@@ -132,6 +118,24 @@ export default function Home(props: IProps) {
         setLoadingMsg('Initializing websocket...');
         await store.dispatch(initializeWebsocket());
     }, []);
+
+    const registerCallHandlers = useCallback(() => {
+        RNNotificationCall.addEventListener('answer', (info) => {
+            console.debug('RNNotificationCall: User answered call', info.callUUID);
+            RNNotificationCall.backToApp();
+            const data = JSON.parse(info.payload || '{}') as { caller: UserData, data: SocketMessage };
+            props.navigation.navigate('Call', {
+                data: {
+                    peer_user: data.caller,
+                    video_enabled: data.data.type === 'video',
+                },
+            });
+        });
+        RNNotificationCall.addEventListener('endCall', (info) => {
+            console.debug('RNNotificationCall: User ended call', info.callUUID);
+            InCallManager.stopRingtone();
+        });
+    }, [props.navigation])
 
     return (
         <View style={globalStyle.wrapper}>

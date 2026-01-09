@@ -133,7 +133,6 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                         last_seen: Date.now(),
                         online: true
                     };
-                    console.warn('Received call from a user who is not a contact. Ignoring...', parsedData);
                 }
                 dispatch({ type: 'user/RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
 
