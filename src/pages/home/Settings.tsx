@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { Button, Dialog, Portal, Chip, Text, Divider, Switch, useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pick, types } from '@react-native-documents/picker';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -28,6 +29,7 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
     const keypair = useSelector((state: RootState) => state.userReducer.keys);
     const theme = useTheme();
+    const insets = useSafeAreaInsets();
 
     const [keys, setKeys] = useState<string[]>([]);
     const [hasIdentityKeys, setHasIdentityKeys] = useState(false);
@@ -39,7 +41,8 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
     const loadAllDeviceData = useCallback(() => {
         AsyncStorage.getAllKeys()
             .then(_keys => _keys.filter(key => showAllKeys || !key.includes('-chunk')))
-            .then(_keys => setKeys([..._keys]))
+            .then(_keys => _keys.sort((a, b) => a.localeCompare(b, undefined, { numeric: true })))
+            .then(_keys => setKeys(_keys))
             .catch(err => console.error('Error loading AsyncStorage items:', err));
         Keychain.hasInternetCredentials({ server: API_URL, service: `${user_data.phone_no}-keys` })
             .then(_hasKeys => setHasIdentityKeys(Boolean(_hasKeys)))
@@ -76,7 +79,6 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
     }, [user_data, props.navigation, dispatch]);
 
     const resetValue = useCallback(async (key: string) => {
-        console.debug('Deleting:', key);
         await deleteFromStorage(key);
         setKeys(keys.filter(k => k !== key));
     }, [keys]);
@@ -207,10 +209,10 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
 
     return (
         <View style={globalStyle.wrapper}>
-            <ScrollView style={{ paddingHorizontal: 40, paddingVertical: 15, marginBottom: 15, flex: 1 }}>
+            <ScrollView style={{ paddingHorizontal: 40, paddingTop: 15, paddingBottom: 15 + insets.bottom }}>
 
-                <Text variant="titleMedium">User Identity Keys</Text>
-                <View style={{ marginVertical: 15, flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text variant="titleMedium" style={{ marginBottom: 10 }}>User Identity Keys</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Button mode="contained"
                         icon="upload-circle"
                         onPress={() => setVisibleDialog('import')}
@@ -227,15 +229,25 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
 
                 <Divider style={{ marginVertical: 15 }} />
 
-                <Text variant="titleMedium">User Data</Text>
-                <View style={{ marginVertical: 15 }}>
+                <Text variant="titleMedium" style={{ marginBottom: 10 }}>User Data</Text>
+                <View style={{ marginBottom: insets.bottom, gap: 5 }}>
                     <Text>Click entry to delete:</Text>
-                    {/* KeyChain values */}
-                    {hasIdentityKeys && <Chip icon="key" selected style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-keys</Chip>}
-                    {hasPassword && <Chip icon="account-key" selected style={{ backgroundColor: DARKHEADER }}>{user_data?.phone_no}-credentials</Chip>}
-                    {/* Storage values */}
-                    {keys.map((key, idx) => <Chip icon="account" style={{ backgroundColor: DARKHEADER }} key={idx} onPress={() => resetValue(key)}>{key}</Chip>)}
-
+                    <View>
+                        {/* KeyChain values */}
+                        {hasIdentityKeys && <Chip selected icon="key" style={{ backgroundColor: DARKHEADER }}>
+                            {user_data?.phone_no}-keys
+                        </Chip>}
+                        {hasPassword && <Chip selected icon="account-key" style={{ backgroundColor: DARKHEADER }}>
+                            {user_data?.phone_no}-credentials
+                        </Chip>}
+                        {/* Storage values */}
+                        {keys.map((key, idx) => <Chip icon="account" style={{ backgroundColor: DARKHEADER }}
+                            closeIcon="close"
+                            onClose={() => resetValue(key)}
+                            key={idx}>
+                            {key}
+                        </Chip>)}
+                    </View>
                     <Button mode="contained"
                         icon="alert-circle"
                         buttonColor={theme.colors.errorContainer}
@@ -245,12 +257,13 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
                         loading={visibleDialog === 'reset'}>
                         Factory Reset App
                     </Button>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                        <Text>Show all db keys in storage</Text>
+                        <Switch value={showAllKeys} onValueChange={() => setShowAllKeys(!showAllKeys)} />
+                    </View>
                 </View>
 
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                    <Text>Show all db keys in storage</Text>
-                    <Switch value={showAllKeys} onValueChange={() => setShowAllKeys(!showAllKeys)} />
-                </View>
+                <Divider style={{ marginVertical: 15 }} />
             </ScrollView>
 
             <Portal>
