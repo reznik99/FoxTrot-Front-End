@@ -4,8 +4,10 @@ const chunk_separator = '-chunk'; // Used if data is > 1Mib (1048576)
 
 // Returns all existing keys that belong to the given key (key + chunks)
 async function getRelatedKeys(key: string) {
-    const allKeys = await AsyncStorage.getAllKeys();
-    return allKeys.filter(k => k === key || k.startsWith(key + chunk_separator));
+    // Get all keys, filter for the target keys and it's chunks, then sort the keys
+    return (await AsyncStorage.getAllKeys())
+        .filter(k => k === key || k.startsWith(key + chunk_separator))
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 }
 
 /**
@@ -17,14 +19,17 @@ async function getRelatedKeys(key: string) {
  * @param data Stringified data to store
  */
 export async function writeToStorage(key: string, data: string) {
-    // 1. Chunk data if greater than 1Mib
-    const chunks = data.match(/.{1,1048576}/g) || [data]; // Split on 1 Mib
-    // 2. Write chunks of data
-    // TODO: use `multiSet` for efficiency
-    for (let i = 0; i < chunks.length; i++) {
+    // 1. Clean up ALL previous chunks first
+    await deleteFromStorage(key);
+    // 2. Chunk data if greater than 1MiB
+    const chunks = data.match(/.{1,1048576}/g) || [data];
+    // 3. Prepare the batch
+    const keyValueSets: Array<[string, string]> = chunks.map((chunk, i) => {
         const index = i === 0 ? '' : chunk_separator + i;
-        await AsyncStorage.setItem(key + index, chunks[i]);
-    }
+        return [key + index, chunk];
+    });
+    // 4. Write everything
+    await AsyncStorage.multiSet(keyValueSets);
     console.debug('Wrote', chunks.length, 'chunk(s) to storage for', key);
 }
 
@@ -37,11 +42,9 @@ export async function readFromStorage(key: string) {
     // 1. Get all relevant keys (e.g., 'myKey', 'myKey-chunk1', etc.)
     const keys = await getRelatedKeys(key);
     if (keys.length === 0) return null;
-    // 2. Sort keys to ensure chunk1 comes after the base key, chunk2 after chunk1, etc.
-    keys.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    // 3. Fetch all chunks in parallel
+    // 2. Fetch all chunks in parallel
     const pairs = await AsyncStorage.multiGet(keys);
-    // 4. Join the values
+    // 3. Join the values
     const data = pairs.map(pair => pair[1]).join('');
     console.debug('Read', keys.length, 'chunk(s) from storage for', key);
     return data;
