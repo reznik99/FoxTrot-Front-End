@@ -16,7 +16,7 @@ import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
 import { RootState, store } from '~/store/store';
 import { Conversation, UserData } from '~/store/reducers/user';
-import { deleteFromStorage, readFromStorage } from '~/global/storage';
+import { popFromStorage } from '~/global/storage';
 
 type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
 
@@ -45,10 +45,9 @@ export default function Home(props: IProps) {
             store.dispatch(getTURNServerCreds())
                 .then(async () => {
                     // Check if user answered a call in the background
-                    const callerRaw = await readFromStorage('call_answered_in_background');
+                    const callerRaw = await popFromStorage('call_answered_in_background');
                     if (callerRaw) {
                         const data = JSON.parse(callerRaw || '{}') as { caller: UserData, data: SocketMessage };
-                        await deleteFromStorage('call_answered_in_background');
                         props.navigation.navigate('Call', {
                             data: {
                                 peer_user: data.caller,
