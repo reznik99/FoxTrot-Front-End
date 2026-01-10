@@ -47,13 +47,13 @@ export default function ConversationPeek(props: IProps) {
 
     const renderStatus = useCallback(() => {
         if (peer.online) {
-            return <Badge size={10} style={{ backgroundColor: '#039111ff' }} />
+            return <Badge size={10} style={{ backgroundColor: '#039111ff' }} />;
         } else if (millisecondsSince(new Date(peer.last_seen)) < milliseconds.hour) {
-            return <Badge size={10} style={{ backgroundColor: PRIMARY }} />
+            return <Badge size={10} style={{ backgroundColor: PRIMARY }} />;
         } else {
-            return <Badge size={10} style={{ backgroundColor: SECONDARY_LITE }} />
+            return <Badge size={10} style={{ backgroundColor: SECONDARY_LITE }} />;
         }
-    }, [peer])
+    }, [peer]);
 
     const boldIfUnseen = isNew ? styles.unseenMessage : null;
     return (

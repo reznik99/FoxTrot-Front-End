@@ -32,7 +32,7 @@ export default function HeaderConversation(props: IProps) {
 
     const contact = useMemo(() => {
         return contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
-    }, [contacts, data.peer_user.phone_no])
+    }, [contacts, data.peer_user.phone_no]);
 
     const showSecurityCode = useCallback(async () => {
         try {

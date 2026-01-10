@@ -39,8 +39,26 @@ export default function Home(props: IProps) {
         const initLoad = async () => {
             // [background] Register device for push notifications
             store.dispatch(registerPushNotifications());
+            // Start websocket connection to server
+            await configureWebsocket();
             // [background] Get TURN credentials for proxying calls if peer-to-peer ICE fails
-            store.dispatch(getTURNServerCreds());
+            store.dispatch(getTURNServerCreds())
+                .then(async () => {
+                    // Check if user answered a call in the background
+                    const callerRaw = await readFromStorage('call_answered_in_background');
+                    if (callerRaw) {
+                        const data = JSON.parse(callerRaw || '{}') as { caller: UserData, data: SocketMessage };
+                        await deleteFromStorage('call_answered_in_background');
+                        props.navigation.navigate('Call', {
+                            data: {
+                                peer_user: data.caller,
+                                video_enabled: data.data.type === 'video',
+                            },
+                        });
+                    }
+                });
+            // Register Call Screen handler
+            registerCallHandlers();
             // Load keys from TPM
             const loaded = await loadKeypair();
             if (!loaded) {
@@ -49,23 +67,6 @@ export default function Home(props: IProps) {
                     setLoadingMsg('');
                     return;
                 }
-            }
-            // Start websocket connection to server
-            await configureWebsocket();
-            // Register Call Screen handler
-            registerCallHandlers();
-            // Check if user answered a call in the background
-            setLoadingMsg('Checking call status');
-            const callerRaw = await readFromStorage('call_answered_in_background');
-            if (callerRaw) {
-                const data = JSON.parse(callerRaw || '{}') as { caller: UserData, data: SocketMessage };
-                await deleteFromStorage('call_answered_in_background');
-                props.navigation.navigate('Call', {
-                    data: {
-                        peer_user: data.caller,
-                        video_enabled: data.data.type === 'video',
-                    },
-                });
             }
             // Load new messages from backend and old messages from storage
             await loadMessagesAndContacts();
@@ -135,7 +136,7 @@ export default function Home(props: IProps) {
             console.debug('RNNotificationCall: User ended call', info.callUUID);
             InCallManager.stopRingtone();
         });
-    }, [props.navigation])
+    }, [props.navigation]);
 
     return (
         <View style={globalStyle.wrapper}>

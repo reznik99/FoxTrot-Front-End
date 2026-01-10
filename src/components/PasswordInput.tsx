@@ -13,7 +13,7 @@ type Props = {
 }
 
 export default function PasswordInput(props: Props) {
-    const [showPassword, setShowPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(false);
 
     return (
         <TextInput mode={props.mode}
@@ -30,5 +30,5 @@ export default function PasswordInput(props: Props) {
                 onPress={() => setShowPassword(!showPassword)}
             />}
         />
-    )
+    );
 }

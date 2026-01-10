@@ -5,5 +5,6 @@ module.exports = {
     'react-native/no-inline-styles': 0,
     'no-bitwise': 0,
     'react-hooks/exhaustive-deps': 'warn',
+    'semi': ['error', 'always']
   },
 };

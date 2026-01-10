@@ -26,7 +26,7 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
         const handleSearch = async () => {
             const users = await store.dispatch(searchUsers({ prefix: prefix })).unwrap();
             setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no) ? 1 : -1));
-        }
+        };
         if (timer.current) { clearTimeout(timer.current); }
         if (prefix.length > 2) { timer.current = setTimeout(handleSearch, 250); }
     }, [prefix]);

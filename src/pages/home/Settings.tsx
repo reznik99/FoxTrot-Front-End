@@ -27,7 +27,7 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
     const dispatch = useDispatch<AppDispatch>();
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
     const keypair = useSelector((state: RootState) => state.userReducer.keys);
-    const theme = useTheme()
+    const theme = useTheme();
 
     const [keys, setKeys] = useState<string[]>([]);
     const [hasIdentityKeys, setHasIdentityKeys] = useState(false);

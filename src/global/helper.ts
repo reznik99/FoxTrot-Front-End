@@ -4,10 +4,10 @@ export const milliseconds = {
     minute: 60 * 1_000,
     hour: 60 * 60 * 1_000,
     day: 24 * 60 * 60 * 1_000,
-}
+};
 
 export function millisecondsSince(datetime: Date) {
-    return Date.now() - datetime.getTime()
+    return Date.now() - datetime.getTime();
 }
 
 export function humanTime(lastTime: string | number | Date) {
@@ -15,13 +15,13 @@ export function humanTime(lastTime: string | number | Date) {
 
     const diff = millisecondsSince(new Date(lastTime));
     if (diff < milliseconds.minute) {
-        return 'just now'
+        return 'just now';
     } else if (diff < milliseconds.hour) {
-        return `${Math.round(diff / 1000 / 60)} m ago`
+        return `${Math.round(diff / 1000 / 60)} m ago`;
     } else if (diff < milliseconds.day) {
-        return `${Math.round((diff / 1000 / 60 / 60))} h ago`
+        return `${Math.round((diff / 1000 / 60 / 60))} h ago`;
     } else {
-        return new Date(lastTime).toLocaleDateString()
+        return new Date(lastTime).toLocaleDateString();
     }
 }
 

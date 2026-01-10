@@ -9,7 +9,7 @@ import { AppDispatch, GetState } from '../store';
 import { getAvatar } from '~/global/helper';
 
 export interface SocketData {
-    cmd: 'MSG' | 'CALL_OFFER' | 'CALL_ICE_CANDIDATE' | 'CALL_ANSWER' | 'CALL_CLOSED';
+    cmd: 'MSG' | 'CALL_OFFER' | 'CALL_ICE_CANDIDATE' | 'CALL_ANSWER';
     data: SocketMessage;
 }
 
