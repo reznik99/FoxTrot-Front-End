@@ -7,16 +7,16 @@ import InCallManager from 'react-native-incall-manager';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
+import ConversationPeek from '~/components/ConversationPeek';
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications, getTURNServerCreds } from '~/store/actions/user';
 import { initializeWebsocket, destroyWebsocket, SocketMessage } from '~/store/actions/websocket';
-import ConversationPeek from '~/components/ConversationPeek';
+import { Conversation, UserData } from '~/store/reducers/user';
 import { setupInterceptors } from '~/store/actions/auth';
+import { RootState, store } from '~/store/store';
+import { popFromStorage } from '~/global/storage';
 import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
-import { RootState, store } from '~/store/store';
-import { Conversation, UserData } from '~/store/reducers/user';
-import { popFromStorage } from '~/global/storage';
+import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '~/../App';
 
 type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
 

@@ -5,18 +5,18 @@ import { useSelector, useDispatch } from 'react-redux';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { FlashList } from '@shopify/flash-list';
 import Clipboard from '@react-native-clipboard/clipboard';
-import Toast from 'react-native-toast-message';
 import { StackScreenProps } from '@react-navigation/stack';
+import Toast from 'react-native-toast-message';
 
 import FullScreenImage from '~/components/FullScreenImage';
-import { decrypt } from '~/global/crypto';
+import AudioPlayer from '~/components/AudioPlayer';
+import Messaging from '~/components/Messaging';
 import { PRIMARY, SECONDARY } from '~/global/variables';
-import { HomeStackParamList } from '../../../App';
+import { decrypt } from '~/global/crypto';
 import { message, UserData } from '~/store/reducers/user';
 import { AppDispatch, RootState } from '~/store/store';
 import { sendMessage } from '~/store/actions/user';
-import Messaging from '~/components/Messaging';
-import AudioPlayer from '~/components/AudioPlayer';
+import { HomeStackParamList } from '~/../App';
 
 const todaysDate = new Date().toLocaleDateString();
 

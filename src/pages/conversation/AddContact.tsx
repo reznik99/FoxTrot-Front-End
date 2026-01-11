@@ -9,7 +9,7 @@ import globalStyle from '~/global/style';
 import { RootState, store } from '~/store/store';
 import { UserData } from '~/store/reducers/user';
 import ContactPeek from '~/components/ContactPeek';
-import { HomeStackParamList } from '../../../App';
+import { HomeStackParamList } from '~/../App';
 
 export default function AddContact(props: StackScreenProps<HomeStackParamList, 'AddContact'>) {
 

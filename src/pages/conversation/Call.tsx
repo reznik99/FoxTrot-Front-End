@@ -16,7 +16,7 @@ import { DARKHEADER } from '~/global/variables';
 import { resetCallState, SocketData } from '~/store/actions/websocket';
 import { UserData } from '~/store/reducers/user';
 import { RootState } from '~/store/store';
-import { HomeStackParamList } from '../../../App';
+import { HomeStackParamList } from '~/../App';
 
 class Call extends React.Component<Props, State> {
     callTimer: NodeJS.Timeout | undefined;
