@@ -30,12 +30,12 @@ export default function Drawer(props: DrawerContentComponentProps) {
     const loadSecurityCode = useCallback(async () => {
         try {
             setShowSecurityCode(true);
-            const code = await publicKeyFingerprint(state.user_data.public_key || '')
-            setSecurityCode(code)
+            const code = await publicKeyFingerprint(state.user_data.public_key || '');
+            setSecurityCode(code);
         } catch (err) {
-            console.error(err)
+            console.error(err);
         }
-    }, [state.user_data])
+    }, [state.user_data]);
 
     return (
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: SECONDARY }} {...props}>

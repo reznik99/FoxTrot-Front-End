@@ -9,7 +9,7 @@ import { AppDispatch, GetState } from '../store';
 import { getAvatar } from '~/global/helper';
 
 export interface SocketData {
-    cmd: 'MSG' | 'CALL_OFFER' | 'CALL_ICE_CANDIDATE' | 'CALL_ANSWER' | 'CALL_CLOSED';
+    cmd: 'MSG' | 'CALL_OFFER' | 'CALL_ICE_CANDIDATE' | 'CALL_ANSWER';
     data: SocketMessage;
 }
 
@@ -133,7 +133,6 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                         last_seen: Date.now(),
                         online: true
                     };
-                    console.warn('Received call from a user who is not a contact. Ignoring...', parsedData);
                 }
                 dispatch({ type: 'user/RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
 

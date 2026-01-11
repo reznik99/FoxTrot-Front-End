@@ -1,40 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Text, View, ScrollView } from 'react-native';
 import { Divider, Searchbar, ActivityIndicator } from 'react-native-paper';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import { searchUsers, addContact } from '~/store/actions/user';
 import globalStyle from '~/global/style';
-import { AppDispatch, RootState } from '~/store/store';
+import { RootState, store } from '~/store/store';
 import { UserData } from '~/store/reducers/user';
 import ContactPeek from '~/components/ContactPeek';
-import { HomeStackParamList } from '../../../App';
+import { HomeStackParamList } from '~/../App';
 
 export default function AddContact(props: StackScreenProps<HomeStackParamList, 'AddContact'>) {
 
     const { navigation } = props;
     const loading = useSelector<RootState, boolean>(state => state.userReducer.loading);
     const contact_ids = useSelector<RootState, UserData[]>(state => state.userReducer.contacts).map(c => c.id);
-    const dispatch = useDispatch<AppDispatch>();
 
     const [results, setResults] = useState<UserData[] | undefined>(undefined);
     const [addingContact, setAddingContact] = useState<UserData | undefined>(undefined);
     const [prefix, setPrefix] = useState('');
-    const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         const handleSearch = async () => {
-            const users = await dispatch(searchUsers({ prefix: prefix })).unwrap();
+            const users = await store.dispatch(searchUsers({ prefix: prefix })).unwrap();
             setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no) ? 1 : -1));
-        }
-        if (timer) { clearTimeout(timer); }
-        if (prefix.length > 2) { setTimer(setTimeout(handleSearch, 250)); }
-    }, [prefix, timer, dispatch]);
+        };
+        if (timer.current) { clearTimeout(timer.current); }
+        if (prefix.length > 2) { timer.current = setTimeout(handleSearch, 250); }
+    }, [prefix]);
 
     const handleAddContact = async (user: UserData) => {
         setAddingContact(user);
-        const success = await dispatch(addContact({ user: user })).unwrap();
+        const success = await store.dispatch(addContact({ user: user })).unwrap();
         if (success) { navigation.replace('Conversation', { data: { peer_user: user } }); }
 
         setAddingContact(undefined);

@@ -7,16 +7,16 @@ import InCallManager from 'react-native-incall-manager';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '../../../App';
+import ConversationPeek from '~/components/ConversationPeek';
 import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications, getTURNServerCreds } from '~/store/actions/user';
 import { initializeWebsocket, destroyWebsocket, SocketMessage } from '~/store/actions/websocket';
-import ConversationPeek from '~/components/ConversationPeek';
+import { Conversation, UserData } from '~/store/reducers/user';
 import { setupInterceptors } from '~/store/actions/auth';
+import { RootState, store } from '~/store/store';
+import { popFromStorage } from '~/global/storage';
 import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
-import { RootState, store } from '~/store/store';
-import { Conversation, UserData } from '~/store/reducers/user';
-import { deleteFromStorage, readFromStorage } from '~/global/storage';
+import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '~/../App';
 
 type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
 
@@ -39,8 +39,25 @@ export default function Home(props: IProps) {
         const initLoad = async () => {
             // [background] Register device for push notifications
             store.dispatch(registerPushNotifications());
+            // Start websocket connection to server
+            await configureWebsocket();
             // [background] Get TURN credentials for proxying calls if peer-to-peer ICE fails
-            store.dispatch(getTURNServerCreds());
+            store.dispatch(getTURNServerCreds())
+                .then(async () => {
+                    // Check if user answered a call in the background
+                    const callerRaw = await popFromStorage('call_answered_in_background');
+                    if (callerRaw) {
+                        const data = JSON.parse(callerRaw || '{}') as { caller: UserData, data: SocketMessage };
+                        props.navigation.navigate('Call', {
+                            data: {
+                                peer_user: data.caller,
+                                video_enabled: data.data.type === 'video',
+                            },
+                        });
+                    }
+                });
+            // Register Call Screen handler
+            registerCallHandlers();
             // Load keys from TPM
             const loaded = await loadKeypair();
             if (!loaded) {
@@ -52,39 +69,8 @@ export default function Home(props: IProps) {
             }
             // Load new messages from backend and old messages from storage
             await loadMessagesAndContacts();
-            // Start websocket connection to server
-            await configureWebsocket();
             // Setup axios interceptors
             setupInterceptors(props.navigation);
-            // Register Call Screen handler
-            RNNotificationCall.addEventListener('answer', (info) => {
-                console.debug('RNNotificationCall: User answered call', info.callUUID);
-                RNNotificationCall.backToApp();
-                const data = JSON.parse(info.payload || '{}') as { caller: UserData, data: SocketMessage };
-                props.navigation.navigate('Call', {
-                    data: {
-                        peer_user: data.caller,
-                        video_enabled: data.data.type === 'video',
-                    },
-                });
-            });
-            RNNotificationCall.addEventListener('endCall', (info) => {
-                console.debug('RNNotificationCall: User ended call', info.callUUID);
-                InCallManager.stopRingtone();
-            });
-            // Check if user answered a call in the background
-            setLoadingMsg('Checking call status');
-            const callerRaw = await readFromStorage('call_answered_in_background');
-            if (callerRaw) {
-                const data = JSON.parse(callerRaw || '{}') as { caller: UserData, data: SocketMessage };
-                await deleteFromStorage('call_answered_in_background');
-                props.navigation.navigate('Call', {
-                    data: {
-                        peer_user: data.caller,
-                        video_enabled: data.data.type === 'video',
-                    },
-                });
-            }
             setLoadingMsg('');
         };
         initLoad();
@@ -132,6 +118,24 @@ export default function Home(props: IProps) {
         setLoadingMsg('Initializing websocket...');
         await store.dispatch(initializeWebsocket());
     }, []);
+
+    const registerCallHandlers = useCallback(() => {
+        RNNotificationCall.addEventListener('answer', (info) => {
+            console.debug('RNNotificationCall: User answered call', info.callUUID);
+            RNNotificationCall.backToApp();
+            const data = JSON.parse(info.payload || '{}') as { caller: UserData, data: SocketMessage };
+            props.navigation.navigate('Call', {
+                data: {
+                    peer_user: data.caller,
+                    video_enabled: data.data.type === 'video',
+                },
+            });
+        });
+        RNNotificationCall.addEventListener('endCall', (info) => {
+            console.debug('RNNotificationCall: User ended call', info.callUUID);
+            InCallManager.stopRingtone();
+        });
+    }, [props.navigation]);
 
     return (
         <View style={globalStyle.wrapper}>

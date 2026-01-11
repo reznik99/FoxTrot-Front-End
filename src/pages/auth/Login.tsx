@@ -7,12 +7,12 @@ import SplashScreen from 'react-native-splash-screen';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import { validateToken, syncFromStorage } from '~/store/actions/user';
+import { logIn } from '~/store/actions/auth';
 import { API_URL, KeychainOpts, PRIMARY } from '~/global/variables';
 import { milliseconds, millisecondsSince } from '~/global/helper';
 import PasswordInput from '~/components/PasswordInput';
 import { RootState, store } from '~/store/store';
 import { AuthStackParamList } from '~/../App';
-import { logIn } from '~/store/actions/auth';
 import styles from './style';
 
 type Credentials = {
@@ -27,16 +27,16 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
     const loading = useSelector((state: RootState) => state.userReducer.loading);
     const loginErr = useSelector((state: RootState) => state.userReducer.loginErr);
 
-    const [globalLoading, setGlobalLoading] = useState(false)
-    const [username, setUsername] = useState('')
-    const [password, setPassword] = useState('')
+    const [globalLoading, setGlobalLoading] = useState(false);
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
 
     useEffect(() => {
         // Hide app splashscreen
         SplashScreen.hide();
         // Auto-fill username field from signup page
         if (user_data?.phone_no) {
-            setUsername(user_data?.phone_no)
+            setUsername(user_data?.phone_no);
         }
         // If user manually logged out, don't try autologin
         if (props.route.params?.data?.loggedOut) {
@@ -49,27 +49,27 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
             return console.debug('User logged out');
         }
         // Read user info from storage
-        readStorage()
+        readStorage();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, []);
 
     const readStorage = async () => {
         try {
-            setGlobalLoading(true)
+            setGlobalLoading(true);
             // Load data from disk into redux store
             if (!user_data?.phone_no && !username) {
-                const new_user_data = await store.dispatch(syncFromStorage()).unwrap()
+                const new_user_data = await store.dispatch(syncFromStorage()).unwrap();
                 if (new_user_data?.phone_no) {
                     setUsername(new_user_data.phone_no);
-                    await attemptAutoLogin(new_user_data.phone_no)
+                    await attemptAutoLogin(new_user_data.phone_no);
                 }
             }
         } catch (err) {
             console.error('Error on auto-login:', err);
         } finally {
-            setGlobalLoading(false)
+            setGlobalLoading(false);
         }
-    }
+    };
 
     const attemptAutoLogin = async (user_name: string) => {
         const creds = await loadCredentials(user_name);
@@ -78,7 +78,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
         // If auth token is recent (<30min) then validate it
         if (millisecondsSince(new Date(creds.time)) < milliseconds.hour / 2) {
             // TODO: place token in store
-            const tokenIsValid = await store.dispatch(validateToken(creds.auth_token)).unwrap()
+            const tokenIsValid = await store.dispatch(validateToken(creds.auth_token)).unwrap();
             if (tokenIsValid) {
                 console.debug('JWT auth token still valid, skipping login...');
                 props.navigation.replace('App');
@@ -87,7 +87,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
         }
         // Auth token expired, use password
         await handleLogin(user_name, creds.password);
-    }
+    };
 
     const loadCredentials = async (user_name: string) => {
         try {
@@ -106,7 +106,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
             console.error('Failed to load creds:', err);
             return undefined;
         }
-    }
+    };
 
     const handleLogin = async (user_name: string, password_: string) => {
         if (loading) { return; }
@@ -117,7 +117,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
             console.debug('Routing to home page');
             props.navigation.replace('App');
         }
-    }
+    };
 
     return (
         <ScrollView contentContainerStyle={styles.container}>

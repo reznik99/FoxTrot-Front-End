@@ -32,7 +32,7 @@ export default function HeaderConversation(props: IProps) {
 
     const contact = useMemo(() => {
         return contacts.find(_contact => _contact.phone_no === data.peer_user.phone_no);
-    }, [contacts, data.peer_user.phone_no])
+    }, [contacts, data.peer_user.phone_no]);
 
     const showSecurityCode = useCallback(async () => {
         try {
@@ -60,7 +60,7 @@ export default function HeaderConversation(props: IProps) {
             <View style={styles.backAndTitle}>
                 {
                     allowBack ?
-                        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home', undefined, { pop: true })}>
+                        <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
                             <Icon source="arrow-left" color={styles.topBarText.color} size={20} />
                         </TouchableOpacity>
                         :

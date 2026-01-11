@@ -5,12 +5,12 @@ import { useSelector } from 'react-redux';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import globalStyle from '~/global/style';
-import { RootState } from '~/store/store';
 import { UserData } from '~/store/reducers/user';
+import { RootState } from '~/store/store';
 import { ACCENT } from '~/global/variables';
+import globalStyle from '~/global/style';
 import ContactPeek from '~/components/ContactPeek';
-import { HomeStackParamList } from '../../../App';
+import { HomeStackParamList } from '~/../App';
 
 export default function NewConversation(props: StackScreenProps<HomeStackParamList, 'NewConversation'>) {
 

@@ -142,7 +142,7 @@ export const userSlice = createSlice({
             const data = action.payload;
             const conversationR = state.conversations.get(data.sender);
             // Update contact online status
-            let contact = state.contacts.find(c => c.id === data.sender_id)
+            let contact = state.contacts.find(c => c.id === data.sender_id);
             if (!contact) {
                 contact = {
                     id: data.sender_id,
@@ -150,13 +150,13 @@ export const userSlice = createSlice({
                     last_seen: Number(data.sent_at),
                     online: true,
                     pic: getAvatar(data.sender_id),
-                }
+                };
             }
-            contact.last_seen = Number(data.sent_at)
-            contact.online = true
+            contact.last_seen = Number(data.sent_at);
+            contact.online = true;
             // Update conversation
             if (conversationR) {
-                conversationR.other_user = contact
+                conversationR.other_user = contact;
                 conversationR.messages = [data, ...conversationR.messages];
             } else {
                 state.conversations.set(data.sender, {

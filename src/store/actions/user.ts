@@ -320,7 +320,6 @@ export const syncFromStorage = createDefaultAsyncThunk('syncFromStorage', async 
 
         console.debug('Loading user from local storage');
         // TODO: Load existing contacts from async storage
-        // const token = await readFromStorage('auth_token')
         const user_data = await readFromStorage('user_data');
         if (!user_data) { return undefined; }
 
