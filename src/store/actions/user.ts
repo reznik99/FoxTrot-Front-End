@@ -165,7 +165,16 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
 
         if (newMessagesLoaded > 0) {
             // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries())));
+            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries())))
+                .catch(err => {
+                    console.error('Error writing messages to disk:', err);
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Error writing messages to disk',
+                        text2: err.message ?? err.toString(),
+                        visibilityTime: 5000,
+                    });
+                });
         }
         await writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
     } catch (err: any) {
