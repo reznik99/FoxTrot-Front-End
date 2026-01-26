@@ -70,8 +70,9 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
 
         setVisibleDialog('');
         // Delete everything from the device
+        const allKeys = await AsyncStorage.getAllKeys()
         Promise.all([
-            deleteFromStorage(''),
+            ...allKeys.map(key => deleteFromStorage(key)),
             Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys` }),
             Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
             dispatch(logOut({ navigation: props.navigation as any })),
