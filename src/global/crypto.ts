@@ -12,7 +12,7 @@ interface exportedKeypair {
 /** Generates an Identity Keypair for this account/device */
 export async function generateIdentityKeypair(): Promise<CryptoKeyPair> {
     // react-native-quick-crypto ✅
-    const keyPair = await window.crypto.subtle.generateKey(
+    const keyPair = await crypto.subtle.generateKey(
         KeypairAlgorithm,
         true,
         ['deriveKey']
@@ -25,7 +25,7 @@ export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKey
     // react-native-quick-crypto ✅
     const privateKey = await crypto.subtle.importKey(
         'pkcs8',
-        Buffer.from(keyPair.privateKey, 'base64'),
+        Buffer.from(keyPair.privateKey, 'base64').buffer,
         KeypairAlgorithm,
         true,
         ['deriveKey', 'deriveBits']
@@ -33,7 +33,7 @@ export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKey
     // react-native-quick-crypto ✅
     const publicKey = await crypto.subtle.importKey(
         'spki',
-        Buffer.from(keyPair.publicKey, 'base64'),
+        Buffer.from(keyPair.publicKey, 'base64').buffer,
         KeypairAlgorithm,
         true,
         []
@@ -59,7 +59,7 @@ export async function generateSessionKeyECDH(peerPublic: string, userPrivate: Cr
     // react-native-quick-crypto ✅
     const publicKey = await crypto.subtle.importKey(
         'spki',
-        Buffer.from(peerPublic, 'base64'),
+        Buffer.from(peerPublic, 'base64').buffer,
         KeypairAlgorithm,
         true,
         []
