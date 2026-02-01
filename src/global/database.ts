@@ -114,7 +114,6 @@ function initializeSchema(): void {
             sender TEXT NOT NULL,
             sender_id TEXT NOT NULL,
             conversation_id TEXT NOT NULL,
-            content_type TEXT,
             is_decrypted INTEGER DEFAULT 0
         )
     `);
@@ -181,7 +180,7 @@ export function dbGetMessages(conversationId: string, limit = 100, offset = 0): 
     const database = requireDb();
 
     const result = database.executeSync(
-        `SELECT id, message, sent_at, seen, receiver, receiver_id, sender, sender_id
+        `SELECT id, message, sent_at, seen, receiver, receiver_id, sender, sender_id, is_decrypted
          FROM messages WHERE conversation_id = ?
          ORDER BY sent_at DESC LIMIT ? OFFSET ?`,
         [conversationId, limit, offset],
@@ -196,24 +195,17 @@ export function dbGetMessages(conversationId: string, limit = 100, offset = 0): 
         reciever_id: row.receiver_id as string,
         sender: row.sender as string,
         sender_id: row.sender_id as string,
+        is_decrypted: Boolean(row.is_decrypted),
     }));
 }
 
-export function dbUpdateMessageDecrypted(messageId: number, decryptedContent: string, contentType: string): void {
+export function dbUpdateMessageDecrypted(messageId: number, decryptedContent: string): void {
     const database = requireDb();
 
-    database.executeSync(`UPDATE messages SET message = ?, content_type = ?, is_decrypted = 1 WHERE id = ?`, [
+    database.executeSync(`UPDATE messages SET message = ?, is_decrypted = 1 WHERE id = ?`, [
         decryptedContent,
-        contentType,
         messageId,
     ]);
-}
-
-export function dbIsMessageDecrypted(messageId: number): boolean {
-    const database = requireDb();
-
-    const result = database.executeSync('SELECT is_decrypted FROM messages WHERE id = ?', [messageId]);
-    return Boolean(result.rows?.[0]?.is_decrypted);
 }
 
 // Conversations

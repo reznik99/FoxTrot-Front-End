@@ -49,6 +49,7 @@ export interface message {
     reciever_id: string | number;
     sender: string;
     sender_id: string | number;
+    is_decrypted?: boolean;
 }
 
 export interface TURNCredentials {

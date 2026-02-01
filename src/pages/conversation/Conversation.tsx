@@ -13,6 +13,7 @@ import AudioPlayer from '~/components/AudioPlayer';
 import Messaging from '~/components/Messaging';
 import { PRIMARY, SECONDARY } from '~/global/variables';
 import { decrypt } from '~/global/crypto';
+import { dbUpdateMessageDecrypted } from '~/global/database';
 import { message, UserData } from '~/store/reducers/user';
 import { AppDispatch, RootState } from '~/store/store';
 import { sendMessage } from '~/store/actions/user';
@@ -21,16 +22,16 @@ import { HomeStackParamList } from '~/../App';
 const todaysDate = new Date().toLocaleDateString();
 
 export default function Conversation(props: StackScreenProps<HomeStackParamList, 'Conversation'>) {
-
     const { peer_user } = props.route.params.data;
 
     const dispatch = useDispatch<AppDispatch>();
     const conversation = useSelector((state: RootState) => {
-        return state.userReducer.conversations.get(peer_user.phone_no)
-            ?? { messages: [], other_user: peer_user };
+        return state.userReducer.conversations.get(peer_user.phone_no) ?? { messages: [], other_user: peer_user };
     });
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
-    const peer = useSelector((state: RootState) => state.userReducer.contacts.find((contact) => contact.id === peer_user.id)) || peer_user;
+    const peer =
+        useSelector((state: RootState) => state.userReducer.contacts.find(contact => contact.id === peer_user.id)) ||
+        peer_user;
 
     const [loading, setLoading] = useState(false);
     const [inputMessage, setInputMessage] = useState('');
@@ -42,7 +43,9 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     }, [conversation.messages]);
 
     const handleSend = useCallback(async () => {
-        if (inputMessage.trim() === '') { return; }
+        if (inputMessage.trim() === '') {
+            return;
+        }
 
         try {
             setLoading(true);
@@ -60,30 +63,37 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
         }
     }, [inputMessage, peer, dispatch]);
 
-    const handleSendAudio = useCallback(async (data: string, duration: number) => {
-        if (data.trim() === '') { return; }
+    const handleSendAudio = useCallback(
+        async (data: string, duration: number) => {
+            if (data.trim() === '') {
+                return;
+            }
 
-        try {
-            setLoading(true);
+            try {
+                setLoading(true);
 
-            const toSend = JSON.stringify({
-                type: 'AUDIO',
-                message: data,
-                duration: duration,
-            });
-            await dispatch(sendMessage({ message: toSend, to_user: peer }));
-        } catch (err) {
-            console.error('Error sending message:', err);
-        } finally {
-            setLoading(false);
-        }
-    }, [peer, dispatch]);
+                const toSend = JSON.stringify({
+                    type: 'AUDIO',
+                    message: data,
+                    duration: duration,
+                });
+                await dispatch(sendMessage({ message: toSend, to_user: peer }));
+            } catch (err) {
+                console.error('Error sending message:', err);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [peer, dispatch],
+    );
 
     const handleImageSelect = useCallback(async () => {
         try {
             setLoading(true);
             const { didCancel, assets } = await launchImageLibrary({ mediaType: 'photo', quality: 0.3 });
-            if (didCancel || !assets?.length) { return; }
+            if (didCancel || !assets?.length) {
+                return;
+            }
 
             // Render Camera page pre-filled with selected image
             props.navigation.navigate('CameraView', { data: { peer: peer, picturePath: assets[0].uri! } });
@@ -99,16 +109,24 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
         props.navigation.navigate('CameraView', { data: { peer: peer, picturePath: '' } });
     }, [props.navigation, peer]);
 
-    const renderListEmpty = useCallback(() => (
-        <View><Text style={[styles.message, styles.system]}> No messages </Text></View>
-    ), []);
+    const renderListEmpty = useCallback(
+        () => (
+            <View>
+                <Text style={[styles.message, styles.system]}> No messages </Text>
+            </View>
+        ),
+        [],
+    );
 
-    const renderListFooter = useCallback(() => (
-        <View style={styles.footer}>
-            <Icon source="lock" color="#77f777" size={20} />
-            <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
-        </View>
-    ), []);
+    const renderListFooter = useCallback(
+        () => (
+            <View style={styles.footer}>
+                <Icon source="lock" color="#77f777" size={20} />
+                <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
+            </View>
+        ),
+        [],
+    );
 
     return (
         <View style={styles.container}>
@@ -121,7 +139,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                     autoscrollToBottomThreshold: 0.25,
                     startRenderingFromBottom: true,
                 }}
-                keyExtractor={(t) => t.id.toString()}
+                keyExtractor={t => t.id.toString()}
                 onStartReached={() => Vibration.vibrate()}
                 ListEmptyComponent={renderListEmpty}
                 ListFooterComponent={renderListFooter}
@@ -131,11 +149,13 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                         item={item}
                         peer={peer}
                         isSent={item.sender === user_data.phone_no}
-                        zoomMedia={(data) => setZoomMedia(data)} />
+                        zoomMedia={data => setZoomMedia(data)}
+                    />
                 )}
             />
             {/* Messaging controls */}
-            <Messaging loading={loading}
+            <Messaging
+                loading={loading}
                 inputMessage={inputMessage}
                 setInputMessage={setInputMessage}
                 handleCameraSelect={handleCameraSelect}
@@ -145,9 +165,11 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
             />
             {/* Media viewer */}
             <Portal>
-                <Modal visible={!!zoomMedia}
+                <Modal
+                    visible={!!zoomMedia}
                     onDismiss={() => setZoomMedia('')}
-                    contentContainerStyle={{ width: '100%', height: '100%' }}>
+                    contentContainerStyle={{ width: '100%', height: '100%' }}
+                >
                     {zoomMedia && <FullScreenImage media={zoomMedia} onDismiss={() => setZoomMedia('')} />}
                 </Modal>
             </Portal>
@@ -159,17 +181,17 @@ type decryptedMessage = {
     type: string;
     message: string;
     duration?: number;
-}
+};
 type MProps = {
     item: message;
     isSent: boolean;
     peer: UserData;
     zoomMedia: (data: string) => void;
-}
+};
 type MState = {
     loading: boolean;
     decryptedMessage?: decryptedMessage;
-}
+};
 class Message extends PureComponent<MProps, MState> {
     constructor(props: MProps) {
         super(props);
@@ -179,15 +201,28 @@ class Message extends PureComponent<MProps, MState> {
         };
     }
 
+    componentDidMount() {
+        // If message was previously decrypted, parse the content
+        if (this.props.item.is_decrypted) {
+            try {
+                this.setState({ decryptedMessage: JSON.parse(this.props.item.message) });
+            } catch (err) {
+                // Parse error, treat as plain text
+                this.setState({ decryptedMessage: { type: 'MSG', message: this.props.item.message } });
+            }
+        }
+    }
+
     copyMessage = () => {
-        if (!this.state.decryptedMessage) { return; }
-        if (this.state.decryptedMessage?.type !== 'MSG') { return; }
+        if (!this.state.decryptedMessage) {
+            return;
+        }
+        if (this.state.decryptedMessage?.type !== 'MSG') {
+            return;
+        }
 
         Clipboard.setString(this.state.decryptedMessage.message);
-        ToastAndroid.show(
-            'Message Copied',
-            ToastAndroid.SHORT
-        );
+        ToastAndroid.show('Message Copied', ToastAndroid.SHORT);
     };
 
     decryptMessage = async (item: message): Promise<decryptedMessage> => {
@@ -202,28 +237,42 @@ class Message extends PureComponent<MProps, MState> {
     };
 
     renderMessage = (item: decryptedMessage | undefined, _isSent: boolean) => {
-        if (!item || !item?.message) { return; }
+        if (!item || !item?.message) {
+            return;
+        }
 
         switch (item.type) {
             // TODO: Add VIDEO and GIF message types
             case 'IMG':
                 return (
-                    <Image source={{ uri: `data:image/jpeg;base64,${item.message}` }}
+                    <Image
+                        source={{ uri: `data:image/jpeg;base64,${item.message}` }}
                         style={{ width: 200, height: 'auto', aspectRatio: 1.5 }}
-                        resizeMode="contain" />
+                        resizeMode="contain"
+                    />
                 );
             case 'MSG':
                 const messageChunks = item.message.split(' ');
-                const linkIndex = messageChunks.findIndex(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'));
+                const linkIndex = messageChunks.findIndex(
+                    chunk => chunk.startsWith('https://') || chunk.startsWith('http://'),
+                );
 
                 if (linkIndex < 0) {
-                    return <Text style={styles.text} selectable>{item.message}</Text>;
+                    return (
+                        <Text style={styles.text} selectable>
+                            {item.message}
+                        </Text>
+                    );
                 }
 
                 return (
                     <Text style={styles.text}>
                         <Text selectable>{messageChunks.slice(0, linkIndex).join(' ')}</Text>
-                        <Text selectable style={{ color: 'blue' }}>{linkIndex > 0 ? ' ' : ''}{messageChunks[linkIndex]}{linkIndex < messageChunks.length - 1 ? ' ' : ''}</Text>
+                        <Text selectable style={{ color: 'blue' }}>
+                            {linkIndex > 0 ? ' ' : ''}
+                            {messageChunks[linkIndex]}
+                            {linkIndex < messageChunks.length - 1 ? ' ' : ''}
+                        </Text>
                         <Text selectable>{messageChunks.slice(linkIndex + 1, messageChunks.length).join(' ')}</Text>
                     </Text>
                 );
@@ -251,7 +300,15 @@ class Message extends PureComponent<MProps, MState> {
             // Check if message is encrypted, if so, decrypt it
             if (!msgObject) {
                 const decryptedMessage = await this.decryptMessage(item);
-                return this.setState({ decryptedMessage: decryptedMessage });
+                this.setState({ decryptedMessage });
+
+                // Persist decrypted message to database
+                try {
+                    dbUpdateMessageDecrypted(item.id, JSON.stringify(decryptedMessage));
+                } catch (err) {
+                    console.warn('Failed to persist decrypted message:', err);
+                }
+                return;
             }
             // Message is decrypted so behaviour depends on content
             switch (msgObject?.type) {
@@ -260,8 +317,12 @@ class Message extends PureComponent<MProps, MState> {
                     break;
                 case 'MSG': // If message contains URL open it in browser
                     const messageChunks = this.state.decryptedMessage?.message?.split(' ') || [];
-                    const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'));
-                    if (link) { Linking.openURL(link); }
+                    const link = messageChunks.find(
+                        chunk => chunk.startsWith('https://') || chunk.startsWith('http://'),
+                    );
+                    if (link) {
+                        Linking.openURL(link);
+                    }
                     break;
             }
         } catch (err: any) {
@@ -282,33 +343,41 @@ class Message extends PureComponent<MProps, MState> {
         const sent_at = new Date(item.sent_at);
 
         return (
-            <Pressable style={[styles.messageContainer, isSent ? styles.sent : styles.received]}
+            <Pressable
+                style={[styles.messageContainer, isSent ? styles.sent : styles.received]}
                 onPress={() => this.handleClick(item)}
-                onLongPress={() => this.copyMessage()}>
+                onLongPress={() => this.copyMessage()}
+            >
                 <View style={[styles.message]}>
                     {/* Loader */}
-                    <ActivityIndicator style={{ position: 'absolute', zIndex: 10 }} animating={this.state.loading && !this.state.decryptedMessage} />
+                    <ActivityIndicator
+                        style={{ position: 'absolute', zIndex: 10 }}
+                        animating={this.state.loading && !this.state.decryptedMessage}
+                    />
                     {/* Message preview */}
-                    {isEncrypted &&
+                    {isEncrypted && (
                         <>
                             <Text selectable style={styles.text}>
-                                {item.message?.length < 200 ? item.message : item.message?.substring(0, 197).padEnd(200, '...')}
+                                {item.message?.length < 200
+                                    ? item.message
+                                    : item.message?.substring(0, 197).padEnd(200, '...')}
                             </Text>
                             <View style={{ position: 'absolute', zIndex: 10 }}>
                                 <Icon source="lock" color="#000" size={25} />
                             </View>
                         </>
-                    }
+                    )}
                     {/* Message */}
                     {this.renderMessage(this.state.decryptedMessage, isSent)}
                     {/* Footers of message */}
                     <View style={{ flexDirection: 'row', alignSelf: 'stretch', justifyContent: 'space-between' }}>
-                        {isEncrypted && <Text style={[styles.messageTime, { alignSelf: 'flex-start' }]}> Message Encrypted </Text>}
+                        {isEncrypted && (
+                            <Text style={[styles.messageTime, { alignSelf: 'flex-start' }]}> Message Encrypted </Text>
+                        )}
                         <Text style={styles.messageTime}>
                             {sent_at.toLocaleDateString() === todaysDate
                                 ? sent_at.toLocaleTimeString()
-                                : sent_at.toLocaleDateString()
-                            }
+                                : sent_at.toLocaleDateString()}
                         </Text>
                     </View>
                 </View>
@@ -322,36 +391,45 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         backgroundColor: SECONDARY,
-    }, messageList: {
+    },
+    messageList: {
         paddingHorizontal: 10,
-    }, messageContainer: {
+    },
+    messageContainer: {
         marginVertical: 5,
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
         maxWidth: '75%',
-    }, message: {
+    },
+    message: {
         padding: 15,
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
-    }, received: {
+    },
+    received: {
         alignSelf: 'flex-start',
         backgroundColor: '#333333a0',
-    }, text: {
+    },
+    text: {
         color: '#f2f0f0',
         fontFamily: 'Roboto',
-    }, sent: {
+    },
+    sent: {
         alignSelf: 'flex-end',
         backgroundColor: PRIMARY,
-    }, system: {
+    },
+    system: {
         alignSelf: 'center',
         backgroundColor: 'gray',
-    }, messageTime: {
+    },
+    messageTime: {
         color: '#969393',
         alignContent: 'flex-end',
         fontSize: 13,
-    }, footer: {
+    },
+    footer: {
         width: '100%',
         display: 'flex',
         flexDirection: 'row',

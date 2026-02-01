@@ -117,11 +117,12 @@ const asyncStorageData = new Map<string, Conversation>([
     ],
 ]);
 
-// Normalize for comparison (DB stores IDs as strings, online is always false)
+// Normalize for comparison (DB stores IDs as strings, is_decrypted defaults to false)
 const normalizeMessage = (msg: message): message => ({
     ...msg,
     reciever_id: String(msg.reciever_id),
     sender_id: String(msg.sender_id),
+    is_decrypted: false,
 });
 
 const normalizeUser = (user: UserData): UserData => ({
