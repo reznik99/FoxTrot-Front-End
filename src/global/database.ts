@@ -1,10 +1,16 @@
 import { open, DB } from '@op-engineering/op-sqlite';
+
 import * as Keychain from 'react-native-keychain';
 import QuickCrypto from 'react-native-quick-crypto';
 import { Buffer } from 'buffer';
 
 import { message, Conversation, UserData } from '~/store/reducers/user';
-import { readFromStorage, writeToStorage } from '~/global/storage';
+import {
+    readFromStorage,
+    writeToStorage,
+    legacyReadFromAsyncStorage,
+    legacyDeleteFromAsyncStorage,
+} from '~/global/storage';
 
 const DB_NAME = 'foxtrot.db';
 const DB_KEY_SERVICE = 'foxtrot-db-key';
@@ -288,16 +294,25 @@ export async function migrateFromAsyncStorage(userId: string): Promise<boolean> 
         return false;
     }
 
+    const messagesKey = `messages-${userId}`;
+
     try {
-        const cachedConversations = await readFromStorage(`messages-${userId}`);
+        // Read from the actual AsyncStorage (old storage system with chunking)
+        const asyncReadStart = performance.now();
+        const cachedConversations = await legacyReadFromAsyncStorage(messagesKey);
+        console.debug('AsyncStorage read took:', (performance.now() - asyncReadStart).toLocaleString(), 'ms');
+
         if (cachedConversations) {
+            const parseStart = performance.now();
             const conversationsMap = new Map<string, Conversation>(JSON.parse(cachedConversations));
+            console.debug('JSON parse took:', (performance.now() - parseStart).toLocaleString(), 'ms');
             console.debug('Migrating', conversationsMap.size, 'conversations from AsyncStorage to SQLite...');
 
             const database = requireDb();
             let convCount = 0;
             let msgCount = 0;
 
+            const sqliteWriteStart = performance.now();
             database.executeSync('BEGIN TRANSACTION');
             try {
                 for (const [phoneNo, conversation] of conversationsMap) {
@@ -311,7 +326,12 @@ export async function migrateFromAsyncStorage(userId: string): Promise<boolean> 
                     msgCount += conversation.messages.length;
                 }
                 database.executeSync('COMMIT');
+                console.debug('SQLite write took:', (performance.now() - sqliteWriteStart).toLocaleString(), 'ms');
                 console.debug('Migration complete:', convCount, 'conversations,', msgCount, 'messages');
+
+                // Clean up old AsyncStorage data after successful migration (including chunks)
+                await legacyDeleteFromAsyncStorage(messagesKey);
+                console.debug('Cleaned up old AsyncStorage data');
             } catch (err) {
                 database.executeSync('ROLLBACK');
                 console.error('Migration failed:', err);
@@ -322,6 +342,6 @@ export async function migrateFromAsyncStorage(userId: string): Promise<boolean> 
         console.warn('Failed to migrate messages from AsyncStorage:', err);
     }
 
-    await writeToStorage(MIGRATION_FLAG, 'true');
+    writeToStorage(MIGRATION_FLAG, 'true');
     return true;
 }

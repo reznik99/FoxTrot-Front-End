@@ -140,15 +140,25 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
         // Load bulk messages from storage if there aren't any in the redux state
         if (!state.conversations.size) {
             // Migrate from AsyncStorage if needed (no-op if already migrated)
-            await migrateFromAsyncStorage(String(state.user_data.id));
+            const migrationStart = performance.now();
+            const didMigrate = await migrateFromAsyncStorage(String(state.user_data.id));
+            if (didMigrate) {
+                console.debug(
+                    'AsyncStorage migration took:',
+                    (performance.now() - migrationStart).toLocaleString(),
+                    'ms',
+                );
+            }
 
             // Load from SQLite
+            const sqliteStart = performance.now();
             for (const conv of dbGetConversations()) {
                 const fullConv = dbGetConversation(conv.other_user.phone_no);
                 if (fullConv) {
                     previousConversations.set(conv.other_user.phone_no, fullConv);
                 }
             }
+            console.debug('SQLite load took:', (performance.now() - sqliteStart).toLocaleString(), 'ms');
             console.debug('Loaded', previousConversations.size, 'conversations from SQLite. Last checked', lastChecked);
         } else {
             previousConversations = new Map(state.conversations);
@@ -207,7 +217,7 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
 
         // Save all new conversations to redux state
         thunkAPI.dispatch(LOAD_CONVERSATIONS(conversations));
-        await writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
+        writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
     } catch (err: any) {
         console.error('Error loading messages:', err);
         Toast.show({

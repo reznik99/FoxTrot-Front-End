@@ -41,12 +41,18 @@ jest.mock('react-native-quick-crypto', () => ({
     },
 }));
 
-// Mock storage
-const mockStorage: Record<string, string> = {};
+// Mock MMKV storage (async API for backwards compatibility)
+const mockMMKVStorage: Record<string, string> = {};
+// Mock AsyncStorage (for legacy chunked reads during migration)
+const mockAsyncStorage: Record<string, string> = {};
 jest.mock('~/global/storage', () => ({
-    readFromStorage: jest.fn((key: string) => Promise.resolve(mockStorage[key] || null)),
+    readFromStorage: jest.fn((key: string) => Promise.resolve(mockMMKVStorage[key] ?? null)),
     writeToStorage: jest.fn((key: string, value: string) => {
-        mockStorage[key] = value;
+        mockMMKVStorage[key] = value;
+    }),
+    legacyReadFromAsyncStorage: jest.fn((key: string) => Promise.resolve(mockAsyncStorage[key] ?? null)),
+    legacyDeleteFromAsyncStorage: jest.fn((key: string) => {
+        delete mockAsyncStorage[key];
         return Promise.resolve();
     }),
 }));
@@ -139,9 +145,11 @@ describe('database migration', () => {
     });
 
     beforeEach(() => {
-        // Clear mock storage and set up AsyncStorage data
-        Object.keys(mockStorage).forEach(key => delete mockStorage[key]);
-        mockStorage['messages-test-user'] = JSON.stringify(Array.from(asyncStorageData.entries()));
+        // Clear mock storages
+        Object.keys(mockMMKVStorage).forEach(key => delete mockMMKVStorage[key]);
+        Object.keys(mockAsyncStorage).forEach(key => delete mockAsyncStorage[key]);
+        // Set up old AsyncStorage data for migration
+        mockAsyncStorage['messages-test-user'] = JSON.stringify(Array.from(asyncStorageData.entries()));
 
         // Create fresh in-memory database with adapter
         const sqlJsDb = new SQL.Database();
@@ -178,7 +186,7 @@ describe('database migration', () => {
     });
 
     it('should handle empty data', async () => {
-        mockStorage['messages-empty-user'] = JSON.stringify([]);
+        mockAsyncStorage['messages-empty-user'] = JSON.stringify([]);
         await migrateFromAsyncStorage('empty-user');
 
         expect(dbGetConversations()).toHaveLength(0);
@@ -193,7 +201,7 @@ describe('database migration', () => {
     });
 
     it('should skip migration if already migrated', async () => {
-        mockStorage['sqlite-migrated'] = 'true';
+        mockMMKVStorage['sqlite-migrated'] = 'true';
 
         const result = await migrateFromAsyncStorage('test-user');
 
@@ -202,10 +210,18 @@ describe('database migration', () => {
     });
 
     it('should set migration flag after migration', async () => {
-        expect(mockStorage['sqlite-migrated']).toBeUndefined();
+        expect(mockMMKVStorage['sqlite-migrated']).toBeUndefined();
 
         await migrateFromAsyncStorage('test-user');
 
-        expect(mockStorage['sqlite-migrated']).toBe('true');
+        expect(mockMMKVStorage['sqlite-migrated']).toBe('true');
+    });
+
+    it('should clean up AsyncStorage after successful migration', async () => {
+        expect(mockAsyncStorage['messages-test-user']).toBeDefined();
+
+        await migrateFromAsyncStorage('test-user');
+
+        expect(mockAsyncStorage['messages-test-user']).toBeUndefined();
     });
 });
