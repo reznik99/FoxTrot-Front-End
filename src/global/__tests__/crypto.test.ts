@@ -11,6 +11,10 @@ const TEST_VECTORS = {
     gcmMessage: 'MQ==:WyPWnpu+rCFmK5P0:x1V7URvfnn7hMCI+mckwOjVDfCvuS9eyPb9Ouog=',
     gcmPlaintext: 'Hello, World!',
 
+    // "Hello, World!" encrypted with GCM without version prefix (format: iv:ciphertext, 12-byte IV)
+    gcmNoVersion: 'WyPWnpu+rCFmK5P0:x1V7URvfnn7hMCI+mckwOjVDfCvuS9eyPb9Ouog=',
+    gcmNoVersionPlaintext: 'Hello, World!',
+
     // "Hello, World!" encrypted with CBC legacy (format: iv:ciphertext)
     cbcSingleChunk: 'oZYIgo24l9yYXwBm9+QV+Q==:z7eECS1KfKmxqG7OXpN6SQ==',
     cbcSinglePlaintext: 'Hello, World!',
@@ -25,7 +29,7 @@ const TEST_VECTORS = {
 async function createSessionKey(base64Key: string) {
     const keyData = Buffer.from(base64Key, 'base64');
     return QuickCrypto.subtle.importKey('raw', keyData, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-} 
+}
 
 describe('crypto.ts', () => {
     describe('encrypt', () => {
@@ -81,6 +85,14 @@ describe('crypto.ts', () => {
                 const decrypted = await decrypt(sessionKey, TEST_VECTORS.gcmMessage);
 
                 expect(decrypted).toBe(TEST_VECTORS.gcmPlaintext);
+            });
+
+            it('should decrypt GCM message without version prefix', async () => {
+                const sessionKey = await createSessionKey(TEST_KEY_BASE64);
+
+                const decrypted = await decrypt(sessionKey, TEST_VECTORS.gcmNoVersion);
+
+                expect(decrypted).toBe(TEST_VECTORS.gcmNoVersionPlaintext);
             });
         });
 
