@@ -3,7 +3,7 @@ import { CryptoKey as QCCryptoKey } from 'react-native-quick-crypto';
 import { RTCIceCandidate } from 'react-native-webrtc';
 import { getAvatar } from '~/global/helper';
 import { writeToStorage } from '~/global/storage';
-import { dbSaveMessage, dbSaveConversation } from '~/global/database';
+import { dbSaveMessage, dbSaveConversation, dbUpdateMessageDecrypted } from '~/global/database';
 
 export interface State {
     tokenValid: boolean;
@@ -185,6 +185,26 @@ export const userSlice = createSlice({
             }
             writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
         },
+        UPDATE_MESSAGE_DECRYPTED: (
+            state,
+            action: PayloadAction<{ conversationId: string; messageId: number; decryptedContent: string }>,
+        ) => {
+            const { conversationId, messageId, decryptedContent } = action.payload;
+            const conversation = state.conversations.get(conversationId);
+            if (conversation) {
+                const msg = conversation.messages.find(m => m.id === messageId);
+                if (msg) {
+                    msg.message = decryptedContent;
+                    msg.is_decrypted = true;
+                }
+            }
+            // Save to SQLite
+            try {
+                dbUpdateMessageDecrypted(messageId, decryptedContent);
+            } catch (err) {
+                console.error('Error persisting decrypted message to SQLite:', err);
+            }
+        },
         RECV_CALL_OFFER: (state, action: PayloadAction<{ offer: RTCSessionDescription; caller: UserData }>) => {
             state.callOffer = action.payload?.offer;
             state.caller = action.payload?.caller;
@@ -229,6 +249,7 @@ export const {
     SET_REFRESHING,
     SEND_MESSAGE,
     RECV_MESSAGE,
+    UPDATE_MESSAGE_DECRYPTED,
     RECV_CALL_OFFER,
     RECV_CALL_ANSWER,
     RECV_CALL_ICE_CANDIDATE,

@@ -1,7 +1,7 @@
 import React, { PureComponent, useState, useCallback, useMemo } from 'react';
 import { StyleSheet, Text, Pressable, View, Linking, ToastAndroid, Image, Vibration } from 'react-native';
 import { ActivityIndicator, Icon, Modal, Portal } from 'react-native-paper';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { FlashList } from '@shopify/flash-list';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -13,9 +13,9 @@ import AudioPlayer from '~/components/AudioPlayer';
 import Messaging from '~/components/Messaging';
 import { PRIMARY, SECONDARY } from '~/global/variables';
 import { decrypt } from '~/global/crypto';
-import { dbUpdateMessageDecrypted } from '~/global/database';
-import { message, UserData } from '~/store/reducers/user';
-import { AppDispatch, RootState } from '~/store/store';
+
+import { message, UserData, UPDATE_MESSAGE_DECRYPTED } from '~/store/reducers/user';
+import { RootState, store } from '~/store/store';
 import { sendMessage } from '~/store/actions/user';
 import { HomeStackParamList } from '~/../App';
 
@@ -24,7 +24,6 @@ const todaysDate = new Date().toLocaleDateString();
 export default function Conversation(props: StackScreenProps<HomeStackParamList, 'Conversation'>) {
     const { peer_user } = props.route.params.data;
 
-    const dispatch = useDispatch<AppDispatch>();
     const conversation = useSelector((state: RootState) => {
         return state.userReducer.conversations.get(peer_user.phone_no) ?? { messages: [], other_user: peer_user };
     });
@@ -55,13 +54,13 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                 type: 'MSG',
                 message: inputMessage.trim(),
             });
-            await dispatch(sendMessage({ message: toSend, to_user: peer }));
+            await store.dispatch(sendMessage({ message: toSend, to_user: peer }));
         } catch (err) {
             console.error('Error sending message:', err);
         } finally {
             setLoading(false);
         }
-    }, [inputMessage, peer, dispatch]);
+    }, [inputMessage, peer]);
 
     const handleSendAudio = useCallback(
         async (data: string, duration: number) => {
@@ -77,14 +76,14 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                     message: data,
                     duration: duration,
                 });
-                await dispatch(sendMessage({ message: toSend, to_user: peer }));
+                await store.dispatch(sendMessage({ message: toSend, to_user: peer }));
             } catch (err) {
                 console.error('Error sending message:', err);
             } finally {
                 setLoading(false);
             }
         },
-        [peer, dispatch],
+        [peer],
     );
 
     const handleImageSelect = useCallback(async () => {
@@ -150,6 +149,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                         peer={peer}
                         isSent={item.sender === user_data.phone_no}
                         zoomMedia={data => setZoomMedia(data)}
+                        conversationId={peer.phone_no}
                     />
                 )}
             />
@@ -187,6 +187,7 @@ type MProps = {
     isSent: boolean;
     peer: UserData;
     zoomMedia: (data: string) => void;
+    conversationId: string;
 };
 type MState = {
     loading: boolean;
@@ -302,12 +303,14 @@ class Message extends PureComponent<MProps, MState> {
                 const decryptedMessage = await this.decryptMessage(item);
                 this.setState({ decryptedMessage });
 
-                // Persist decrypted message to database
-                try {
-                    dbUpdateMessageDecrypted(item.id, JSON.stringify(decryptedMessage));
-                } catch (err) {
-                    console.warn('Failed to persist decrypted message:', err);
-                }
+                // Update Redux store (also persists to SQLite)
+                store.dispatch(
+                    UPDATE_MESSAGE_DECRYPTED({
+                        conversationId: this.props.conversationId,
+                        messageId: item.id,
+                        decryptedContent: JSON.stringify(decryptedMessage),
+                    }),
+                );
                 return;
             }
             // Message is decrypted so behaviour depends on content
