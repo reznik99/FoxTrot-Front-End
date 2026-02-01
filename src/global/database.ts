@@ -188,7 +188,7 @@ export function dbGetMessages(conversationId: string, limit = 100, offset = 0): 
     const result = database.executeSync(
         `SELECT id, message, sent_at, seen, receiver, receiver_id, sender, sender_id, is_decrypted
          FROM messages WHERE conversation_id = ?
-         ORDER BY sent_at DESC LIMIT ? OFFSET ?`,
+         ORDER BY datetime(sent_at) DESC LIMIT ? OFFSET ?`,
         [conversationId, limit, offset],
     );
 

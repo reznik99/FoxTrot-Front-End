@@ -351,7 +351,7 @@ export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: s
                 sender_id: state.user_data.id,
                 reciever: data.to_user.phone_no,
                 reciever_id: data.to_user.id,
-                sent_at: new Date().toString(),
+                sent_at: new Date().toISOString(),
                 seen: false,
             },
         };
