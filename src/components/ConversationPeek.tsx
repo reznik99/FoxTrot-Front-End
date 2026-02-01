@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
-import { Avatar, Badge, Button } from 'react-native-paper';
+import { Avatar, Badge, Button, Icon } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { humanTime, milliseconds, millisecondsSince } from '~/global/helper';
@@ -11,27 +11,33 @@ import { Conversation, message } from '~/store/reducers/user';
 import { AppDispatch, RootState } from '~/store/store';
 import { RootNavigation } from '~/store/actions/auth';
 
-function getMessagePreview(msg: message): string {
+interface MessagePreview {
+    text: string;
+    icon?: string;
+    isMedia?: boolean;
+}
+
+function getMessagePreview(msg: message): MessagePreview {
     if (!msg.is_decrypted) {
         // Still encrypted, show truncated base64
-        return msg.message?.substring(0, 50) || '';
+        return { text: msg.message?.substring(0, 50) || '' };
     }
 
     try {
         const parsed = JSON.parse(msg.message);
         switch (parsed.type) {
             case 'MSG':
-                return parsed.message?.substring(0, 50) || '';
+                return { text: parsed.message?.substring(0, 50) || '' };
             case 'IMG':
-                return 'Sent an image';
+                return { text: 'Image', icon: 'image', isMedia: true };
             case 'AUDIO':
-                return 'Sent an audio message';
+                return { text: 'Audio', icon: 'microphone', isMedia: true };
             default:
-                return parsed.message?.substring(0, 50) || '';
+                return { text: parsed.message?.substring(0, 50) || '' };
         }
     } catch {
         // If parsing fails, show raw message
-        return msg.message?.substring(0, 50) || '';
+        return { text: msg.message?.substring(0, 50) || '' };
     }
 }
 
@@ -96,7 +102,26 @@ export default function ConversationPeek(props: IProps) {
                 </View>
                 <View style={{ flex: 1 }}>
                     <Text style={[globalStyle.textInfo, boldIfUnseen]}>{peer.phone_no}</Text>
-                    <Text style={[globalStyle.textInfo, boldIfUnseen]}>{getMessagePreview(lastMessage)}</Text>
+                    {(() => {
+                        const preview = getMessagePreview(lastMessage);
+                        if (preview.icon) {
+                            return (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                    <Icon source={preview.icon} size={14} color={SECONDARY_LITE} />
+                                    <Text
+                                        style={[
+                                            globalStyle.textInfo,
+                                            boldIfUnseen,
+                                            { color: SECONDARY_LITE, fontStyle: 'italic' },
+                                        ]}
+                                    >
+                                        {preview.text}
+                                    </Text>
+                                </View>
+                            );
+                        }
+                        return <Text style={[globalStyle.textInfo, boldIfUnseen]}>{preview.text}</Text>;
+                    })()}
                 </View>
                 <View
                     style={{
