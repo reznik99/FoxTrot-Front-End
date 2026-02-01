@@ -8,6 +8,7 @@ import {
     SaltLenGCM,
     SymmetricAlgorithm,
 } from '~/global/variables';
+import { milliseconds } from '~/global/helper';
 
 interface exportedKeypair {
     privateKey: string;
@@ -274,4 +275,209 @@ function extractVersioningFromMessage(encryptedMessage: string): [ProtocolVersio
     }
     // "iv:ciphertext:iv:ciphertext..."
     return [ProtocolVersion.LEGACY_CBC_CHUNKED, encryptedMessage];
+}
+
+// ============================================================================
+// EXPERIMENTAL - V2 CHAINED RATCHET ENCRYPTION
+// ============================================================================
+// This implements time-based symmetric key ratcheting for forward secrecy.
+// Each day's key is derived from the previous day's key, and old keys are
+// deleted after 7 days. This means a key compromise only exposes recent messages.
+// ============================================================================
+
+const RATCHET_KEY_RETENTION_DAYS = 7;
+const RATCHET_SALT = 'foxtrot-ratchet';
+
+/** Ratchet state stored per contact */
+export interface RatchetState {
+    epoch: number; // Unix timestamp (ms) of day 0, clipped to midnight UTC
+    currentDayOffset: number; // days since epoch
+    currentDayKey: string; // base64 encoded current day key
+    recentKeys: Record<number, string>; // dayOffset -> base64 key (last 7 days)
+}
+
+/** Returns today's midnight UTC as Unix timestamp (ms) */
+export function getTodayTimestamp(): number {
+    return Math.floor(Date.now() / milliseconds.day) * milliseconds.day;
+}
+
+/** Calculates day offset from epoch timestamp to a target timestamp */
+export function getDayOffset(epoch: number, timestamp: number): number {
+    return Math.floor((timestamp - epoch) / milliseconds.day);
+}
+
+/** Derives a new key from input key material (used for both initial derivation and ratchet steps) */
+export async function deriveRatchetKey(inputKeyMaterial: ArrayBuffer): Promise<QCCryptoKey> {
+    const newKeyMaterial = await QuickCrypto.subtle.digest(
+        { name: 'SHA-256' },
+        Buffer.concat([Buffer.from(inputKeyMaterial), Buffer.from(RATCHET_SALT)]),
+    );
+    return QuickCrypto.subtle.importKey('raw', newKeyMaterial, SymmetricAlgorithm, true, ['encrypt', 'decrypt']);
+}
+
+/** Derives a new key from the current key (one ratchet step) */
+export async function ratchetKey(currentKey: QCCryptoKey): Promise<QCCryptoKey> {
+    const keyMaterial = (await QuickCrypto.subtle.exportKey('raw', currentKey)) as ArrayBuffer;
+    return deriveRatchetKey(keyMaterial);
+}
+
+/** Creates initial ratchet state from X25519 shared secret */
+export async function initRatchetState(sharedSecret: ArrayBuffer): Promise<RatchetState> {
+    const epoch = getTodayTimestamp();
+    const day0Key = await deriveRatchetKey(sharedSecret);
+    const day0KeyBase64 = Buffer.from((await QuickCrypto.subtle.exportKey('raw', day0Key)) as ArrayBuffer).toString(
+        'base64',
+    );
+
+    return {
+        epoch,
+        currentDayOffset: 0,
+        currentDayKey: day0KeyBase64,
+        recentKeys: { 0: day0KeyBase64 },
+    };
+}
+
+/** Imports a key from base64 string */
+async function importKeyFromBase64(base64Key: string): Promise<QCCryptoKey> {
+    return QuickCrypto.subtle.importKey('raw', Buffer.from(base64Key, 'base64'), SymmetricAlgorithm, true, [
+        'encrypt',
+        'decrypt',
+    ]);
+}
+
+/** Exports a key to base64 string */
+async function exportKeyToBase64(key: QCCryptoKey): Promise<string> {
+    return Buffer.from((await QuickCrypto.subtle.exportKey('raw', key)) as ArrayBuffer).toString('base64');
+}
+
+/** Advances ratchet state to target day offset, returns updated state */
+export async function advanceRatchetToDay(state: RatchetState, targetDayOffset: number): Promise<RatchetState> {
+    if (targetDayOffset < state.currentDayOffset) {
+        throw new Error('Cannot ratchet backwards');
+    }
+    if (targetDayOffset === state.currentDayOffset) {
+        return state;
+    }
+
+    let currentKey = await importKeyFromBase64(state.currentDayKey);
+    const newRecentKeys = { ...state.recentKeys };
+
+    for (let offset = state.currentDayOffset + 1; offset <= targetDayOffset; offset++) {
+        currentKey = await ratchetKey(currentKey);
+        const keyBase64 = await exportKeyToBase64(currentKey);
+        newRecentKeys[offset] = keyBase64;
+    }
+
+    // Prune old keys (keep only last RATCHET_KEY_RETENTION_DAYS days)
+    const minOffset = targetDayOffset - RATCHET_KEY_RETENTION_DAYS;
+    for (const offsetStr of Object.keys(newRecentKeys)) {
+        const offset = parseInt(offsetStr, 10);
+        if (offset < minOffset) {
+            delete newRecentKeys[offset];
+        }
+    }
+
+    return {
+        epoch: state.epoch,
+        currentDayOffset: targetDayOffset,
+        currentDayKey: await exportKeyToBase64(currentKey),
+        recentKeys: newRecentKeys,
+    };
+}
+
+/** Gets key for a specific day offset from state, returns null if too old */
+export async function getKeyForDayOffset(state: RatchetState, targetOffset: number): Promise<QCCryptoKey | null> {
+    // Too old - key was deleted
+    const minOffset = state.currentDayOffset - RATCHET_KEY_RETENTION_DAYS;
+    if (targetOffset < minOffset) {
+        return null;
+    }
+    // Check cache
+    if (state.recentKeys[targetOffset]) {
+        return importKeyFromBase64(state.recentKeys[targetOffset]);
+    }
+    // Future key - should not happen during decrypt (state should be advanced first)
+    if (targetOffset > state.currentDayOffset) {
+        return null;
+    }
+    return null;
+}
+
+/** Encrypts a message using V2 ratchet format. Returns updated state and ciphertext. */
+export async function encryptV2(
+    state: RatchetState,
+    message: string,
+): Promise<{ state: RatchetState; ciphertext: string }> {
+    const todayOffset = getDayOffset(state.epoch, getTodayTimestamp());
+
+    // Advance ratchet if needed
+    const newState = await advanceRatchetToDay(state, todayOffset);
+
+    const dayKey = await importKeyFromBase64(newState.currentDayKey);
+    const iv = QuickCrypto.getRandomValues(new Uint8Array(SaltLenGCM));
+    const plaintext = Buffer.from(message);
+
+    const ciphertext = await QuickCrypto.subtle.encrypt({ name: 'AES-GCM', iv }, dayKey, plaintext);
+
+    // Format: version:epoch:dayOffset:iv:ciphertext
+    const encoded =
+        Buffer.from(`${ProtocolVersion.GCM_RATCHET_V2}`).toString('base64') +
+        ':' +
+        newState.epoch +
+        ':' +
+        newState.currentDayOffset +
+        ':' +
+        Buffer.from(iv).toString('base64') +
+        ':' +
+        Buffer.from(ciphertext).toString('base64');
+
+    return { state: newState, ciphertext: encoded };
+}
+
+/** Decrypts a V2 ratchet message. Returns updated state and plaintext. */
+export async function decryptV2(
+    state: RatchetState,
+    encryptedMessage: string,
+): Promise<{ state: RatchetState; plaintext: string }> {
+    const parts = encryptedMessage.split(':');
+    if (parts.length !== 5) {
+        throw new Error('Invalid V2 message format');
+    }
+
+    const [versionB64, epochStr, dayOffsetStr, ivB64, ciphertextB64] = parts;
+
+    // Validate version
+    const version = parseInt(Buffer.from(versionB64, 'base64').toString(), 10);
+    if (version !== ProtocolVersion.GCM_RATCHET_V2) {
+        throw new Error(`Expected V2 message, got version ${version}`);
+    }
+
+    // Validate epoch matches
+    const epoch = parseInt(epochStr, 10);
+    if (epoch !== state.epoch) {
+        throw new Error(`Epoch mismatch: expected ${state.epoch}, got ${epoch}`);
+    }
+
+    const targetOffset = parseInt(dayOffsetStr, 10);
+
+    // Advance ratchet if message is from the future (relative to our state)
+    let newState = state;
+    if (targetOffset > state.currentDayOffset) {
+        newState = await advanceRatchetToDay(state, targetOffset);
+    }
+
+    // Get key for target day
+    const dayKey = await getKeyForDayOffset(newState, targetOffset);
+    if (!dayKey) {
+        throw new Error(`Message too old - key for day offset ${targetOffset} has been deleted for forward secrecy`);
+    }
+
+    // Decrypt
+    const plaintext = await QuickCrypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: Buffer.from(ivB64, 'base64') },
+        dayKey,
+        Buffer.from(ciphertextB64, 'base64'),
+    );
+
+    return { state: newState, plaintext: Buffer.from(plaintext).toString() };
 }

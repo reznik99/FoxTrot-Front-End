@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer';
 import QuickCrypto from 'react-native-quick-crypto';
-import { encrypt, decrypt } from '../crypto';
+import { encrypt, decrypt, initRatchetState, encryptV2, decryptV2, advanceRatchetToDay, RatchetState } from '../crypto';
 
 // Hardcoded test key (256-bit AES key)
 const TEST_KEY_BASE64 = '5ZFymSUme/8XA3T7f+FbGX7te8ri8N7iOQ5iHvyr/+A=';
@@ -148,5 +148,89 @@ describe('crypto.ts', () => {
                 await expect(decrypt(sessionKey, corruptedMessage)).rejects.toThrow();
             });
         });
+    });
+});
+
+// ============================================================================
+// EXPERIMENTAL V2 RATCHET TESTS
+// ============================================================================
+
+describe('V2 Ratchet (experimental)', () => {
+    // Hardcoded shared secret (simulating X25519 output)
+    const TEST_SHARED_SECRET = Buffer.from(TEST_KEY_BASE64, 'base64');
+
+    it('should encrypt and decrypt with ratchet - with logging', async () => {
+        console.log('\n=== V2 Ratchet Test ===\n');
+
+        // Initialize ratchet state (simulates first contact setup)
+        const state = await initRatchetState(TEST_SHARED_SECRET.buffer);
+        console.log('Initial state:', state);
+
+        // Encrypt first message (day 0)
+        const msg1 = 'Hello from day 0!';
+        const result1 = await encryptV2(state, msg1);
+        console.log('\nMessage 1 encrypted:', { plaintext: msg1, ciphertext: result1.ciphertext });
+        console.log('State after encrypt:', result1.state);
+
+        // Decrypt it back
+        const decrypted1 = await decryptV2(result1.state, result1.ciphertext);
+        console.log('Message 1 decrypted:', decrypted1.plaintext);
+        console.log('State after decrypt:', decrypted1.state);
+        expect(decrypted1.plaintext).toBe(msg1);
+
+        // Simulate advancing to day 3 (manually advance state, simulating 3 days passing)
+        console.log('\n--- Simulating day 3 (advancing ratchet) ---');
+        const stateDay3 = await advanceRatchetToDay(result1.state, 3);
+        console.log('State after advancing to day 3:', stateDay3);
+
+        // Manually build a day 3 message (since encryptV2 uses real time)
+        // We'll just test that we can decrypt a message encrypted at day 3
+        const msg2 = 'Hello from day 3!';
+        // Manually encrypt using day 3 state's key
+        const dayKey = await QuickCrypto.subtle.importKey(
+            'raw',
+            Buffer.from(stateDay3.currentDayKey, 'base64'),
+            { name: 'AES-GCM', length: 256 },
+            true,
+            ['encrypt', 'decrypt'],
+        );
+        const iv = QuickCrypto.getRandomValues(new Uint8Array(12));
+        const ciphertext = await QuickCrypto.subtle.encrypt({ name: 'AES-GCM', iv }, dayKey, Buffer.from(msg2));
+        const msg2Encrypted =
+            Buffer.from('2').toString('base64') +
+            ':' +
+            stateDay3.epoch +
+            ':' +
+            stateDay3.currentDayOffset +
+            ':' +
+            Buffer.from(iv).toString('base64') +
+            ':' +
+            Buffer.from(ciphertext).toString('base64');
+        console.log('\nMessage 2 encrypted (day 3):', { plaintext: msg2, ciphertext: msg2Encrypted });
+
+        // Decrypt day 3 message
+        const decrypted2 = await decryptV2(stateDay3, msg2Encrypted);
+        console.log('Message 2 decrypted:', decrypted2.plaintext);
+        console.log('State after decrypt:', decrypted2.state);
+        expect(decrypted2.plaintext).toBe(msg2);
+
+        // Can still decrypt day 0 message (within 7 day window)
+        console.log('\n--- Decrypting old message from day 0 ---');
+        const decryptedOld = await decryptV2(stateDay3, result1.ciphertext);
+        console.log('Old message decrypted:', decryptedOld.plaintext);
+        console.log('State after decrypt:', decryptedOld.state);
+        expect(decryptedOld.plaintext).toBe(msg1);
+
+        // Advance to day 10 (day 0 key should be pruned)
+        console.log('\n--- Advancing to day 10 (day 0 key will be pruned) ---');
+        const stateDay10 = await advanceRatchetToDay(stateDay3, 10);
+        console.log('State after advancing to day 10:', stateDay10);
+
+        // Day 0 message should now fail (key pruned)
+        console.log('\n--- Attempting to decrypt pruned day 0 message ---');
+        await expect(decryptV2(stateDay10, result1.ciphertext)).rejects.toThrow('Message too old');
+        console.log('Correctly rejected old message (forward secrecy working!)');
+
+        console.log('\n=== Test Complete ===\n');
     });
 });
