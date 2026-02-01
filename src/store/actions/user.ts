@@ -28,6 +28,14 @@ import {
 } from '~/global/crypto';
 import { readFromStorage, writeToStorage } from '~/global/storage';
 import { getPushNotificationPermission } from '~/global/permissions';
+import {
+    getDb,
+    dbGetConversations,
+    dbGetConversation,
+    dbSaveMessage,
+    dbSaveConversation,
+    migrateFromAsyncStorage,
+} from '~/global/database';
 import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { AppDispatch, RootState } from '~/store/store';
 import { getAvatar } from '~/global/helper';
@@ -120,6 +128,9 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
 
         const state = thunkAPI.getState().userReducer;
 
+        // Initialize database
+        await getDb();
+
         // Check last time we hit the API for messages
         const cachedLastChecked = (await readFromStorage(`messages-${state.user_data.id}-last-checked`)) || '0';
 
@@ -128,22 +139,17 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
 
         // Load bulk messages from storage if there aren't any in the redux state
         if (!state.conversations.size) {
-            try {
-                const cachedConversations = await readFromStorage(`messages-${state.user_data.id}`);
-                if (!cachedConversations) {
-                    throw new Error('No cached messages');
-                }
+            // Migrate from AsyncStorage if needed (no-op if already migrated)
+            await migrateFromAsyncStorage(String(state.user_data.id));
 
-                previousConversations = new Map(JSON.parse(cachedConversations));
-                console.debug(
-                    'Loaded',
-                    previousConversations.size,
-                    'conversations from storage. Last checked',
-                    lastChecked,
-                );
-            } catch (err: any) {
-                console.warn('Failed to load messages from storage: ', err);
+            // Load from SQLite
+            for (const conv of dbGetConversations()) {
+                const fullConv = dbGetConversation(conv.other_user.phone_no);
+                if (fullConv) {
+                    previousConversations.set(conv.other_user.phone_no, fullConv);
+                }
             }
+            console.debug('Loaded', previousConversations.size, 'conversations from SQLite. Last checked', lastChecked);
         } else {
             previousConversations = new Map(state.conversations);
             console.debug('Found', previousConversations.size, 'conversations in memory. Last checked', lastChecked);
@@ -162,7 +168,7 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
         );
 
         response.data.toReversed().forEach(msg => {
-            const peer = {
+            const peer: UserData = {
                 id: msg.sender_id,
                 phone_no: msg.sender,
                 pic: getAvatar(msg.sender_id),
@@ -187,27 +193,20 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
                     messages: [msg],
                 });
             }
+
+            // Save to SQLite
+            try {
+                dbSaveConversation(peer, new Date(msg.sent_at).getTime());
+                dbSaveMessage(msg, peer.phone_no);
+            } catch (err: any) {
+                console.error('Error saving message to SQLite:', err);
+            }
         });
         const newMessagesLoaded = response.data?.length;
         console.debug('Loaded', newMessagesLoaded, 'new messages from api');
 
         // Save all new conversations to redux state
         thunkAPI.dispatch(LOAD_CONVERSATIONS(conversations));
-
-        if (newMessagesLoaded > 0) {
-            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries()))).catch(
-                err => {
-                    console.error('Error writing messages to disk:', err);
-                    Toast.show({
-                        type: 'error',
-                        text1: 'Error writing messages to disk',
-                        text2: err.message ?? err.toString(),
-                        visibilityTime: 5000,
-                    });
-                },
-            );
-        }
         await writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
     } catch (err: any) {
         console.error('Error loading messages:', err);

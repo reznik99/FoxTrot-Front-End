@@ -3,6 +3,7 @@ import { CryptoKey as QCCryptoKey } from 'react-native-quick-crypto';
 import { RTCIceCandidate } from 'react-native-webrtc';
 import { getAvatar } from '~/global/helper';
 import { writeToStorage } from '~/global/storage';
+import { dbSaveMessage, dbSaveConversation } from '~/global/database';
 
 export interface State {
     tokenValid: boolean;
@@ -25,18 +26,18 @@ export interface State {
 }
 
 export interface UserData {
-    id: string | number,
-    phone_no: string,
-    last_seen: number,
-    online: boolean,
-    pic?: string
-    public_key?: string,
-    session_key?: QCCryptoKey,
+    id: string | number;
+    phone_no: string;
+    last_seen: number;
+    online: boolean;
+    pic?: string;
+    public_key?: string;
+    session_key?: QCCryptoKey;
 }
 
 export interface Conversation {
-    other_user: UserData,
-    messages: message[]
+    other_user: UserData;
+    messages: message[];
 }
 
 export interface message {
@@ -60,7 +61,11 @@ const initialState: State = {
     token: '',
     keys: undefined,
     user_data: {
-        id: '', phone_no: '', pic: '', last_seen: 0, online: false,
+        id: '',
+        phone_no: '',
+        pic: '',
+        last_seen: 0,
+        online: false,
     },
     contacts: [],
     conversations: new Map(),
@@ -99,11 +104,11 @@ export const userSlice = createSlice({
         KEY_LOAD: (state, action: PayloadAction<CryptoKeyPair>) => {
             state.keys = action.payload;
         },
-        TOKEN_VALID: (state, action: PayloadAction<{ token: string, valid: boolean }>) => {
+        TOKEN_VALID: (state, action: PayloadAction<{ token: string; valid: boolean }>) => {
             state.token = action.payload.token;
             state.tokenValid = action.payload.valid;
         },
-        LOGGED_IN: (state, action: PayloadAction<{ token: string, user_data: UserData }>) => {
+        LOGGED_IN: (state, action: PayloadAction<{ token: string; user_data: UserData }>) => {
             state.token = action.payload.token;
             state.user_data = action.payload.user_data;
             state.loginErr = '';
@@ -123,20 +128,26 @@ export const userSlice = createSlice({
         SET_REFRESHING: (state, action: PayloadAction<boolean>) => {
             state.refreshing = action.payload;
         },
-        SEND_MESSAGE: (state, action: PayloadAction<{ sender: UserData, reciever: UserData, rawMessage: message }>) => {
+        SEND_MESSAGE: (state, action: PayloadAction<{ sender: UserData; reciever: UserData; rawMessage: message }>) => {
             const reciever = action.payload.reciever;
             const message = action.payload.rawMessage;
             const converastionS = state.conversations.get(reciever.phone_no);
-            if (converastionS) { converastionS.messages = [message, ...converastionS.messages]; }
-            else {
+            if (converastionS) {
+                converastionS.messages = [message, ...converastionS.messages];
+            } else {
                 state.conversations.set(reciever.phone_no, {
                     other_user: reciever,
                     messages: [message],
                 });
             }
-            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
+            // Save to SQLite
+            try {
+                dbSaveConversation(reciever, Date.now());
+                dbSaveMessage(message, reciever.phone_no);
+            } catch (err) {
+                console.error('Error saving sent message to SQLite:', err);
+            }
             writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
-            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(state.conversations.entries())));
         },
         RECV_MESSAGE: (state, action: PayloadAction<message>) => {
             const data = action.payload;
@@ -164,11 +175,16 @@ export const userSlice = createSlice({
                     messages: [data],
                 });
             }
-            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
+            // Save to SQLite
+            try {
+                dbSaveConversation(contact, Date.now());
+                dbSaveMessage(data, data.sender);
+            } catch (err) {
+                console.error('Error saving received message to SQLite:', err);
+            }
             writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
-            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(state.conversations.entries())));
         },
-        RECV_CALL_OFFER: (state, action: PayloadAction<{ offer: RTCSessionDescription, caller: UserData }>) => {
+        RECV_CALL_OFFER: (state, action: PayloadAction<{ offer: RTCSessionDescription; caller: UserData }>) => {
             state.callOffer = action.payload?.offer;
             state.caller = action.payload?.caller;
         },
