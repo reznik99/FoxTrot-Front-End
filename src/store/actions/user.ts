@@ -22,14 +22,7 @@ import {
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { readFromStorage, writeToStorage } from '~/global/storage';
 import { getPushNotificationPermission } from '~/global/permissions';
-import {
-    getDb,
-    dbGetConversations,
-    dbGetConversation,
-    dbSaveMessage,
-    dbSaveConversation,
-    migrateFromAsyncStorage,
-} from '~/global/database';
+import { getDb, dbGetConversations, dbGetConversation, dbSaveMessage, dbSaveConversation } from '~/global/database';
 import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { AppDispatch, RootState } from '~/store/store';
 import { getAvatar } from '~/global/helper';
@@ -126,29 +119,20 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
         await getDb();
 
         // Check last time we hit the API for messages
-        const cachedLastChecked = (await readFromStorage(`messages-${state.user_data.id}-last-checked`)) || '0';
+        const cachedLastChecked = readFromStorage(`messages-${state.user_data.id}-last-checked`) || '0';
 
         let lastChecked = parseInt(cachedLastChecked, 10);
         let previousConversations = new Map<string, Conversation>();
 
         // Load bulk messages from storage if there aren't any in the redux state
         if (!state.conversations.size) {
-            // Migrate from AsyncStorage if needed (no-op if already migrated)
-            const migrationStart = performance.now();
-            const didMigrate = await migrateFromAsyncStorage(String(state.user_data.id));
-            if (didMigrate) {
-                console.debug('AsyncStorage migration took:', (performance.now() - migrationStart).toLocaleString(), 'ms');
-            }
-
             // Load from SQLite
-            const sqliteStart = performance.now();
             for (const conv of dbGetConversations()) {
                 const fullConv = dbGetConversation(conv.other_user.phone_no);
                 if (fullConv) {
                     previousConversations.set(conv.other_user.phone_no, fullConv);
                 }
             }
-            console.debug('SQLite load took:', (performance.now() - sqliteStart).toLocaleString(), 'ms');
             console.debug('Loaded', previousConversations.size, 'conversations from SQLite. Last checked', lastChecked);
         } else {
             previousConversations = new Map(state.conversations);
@@ -376,7 +360,7 @@ export const syncFromStorage = createDefaultAsyncThunk('syncFromStorage', async 
 
         console.debug('Loading user from local storage');
         // TODO: Load existing contacts from async storage
-        const user_data = await readFromStorage('user_data');
+        const user_data = readFromStorage('user_data');
         if (!user_data) {
             return undefined;
         }

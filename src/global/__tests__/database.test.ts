@@ -1,9 +1,9 @@
 /**
- * Database migration tests using sql.js in-memory database.
- * Tests that data migrated from AsyncStorage format is identical when queried back.
+ * Database tests using sql.js in-memory database.
+ * Tests that data is correctly stored and retrieved from SQLite.
  */
 import initSqlJs, { Database } from 'sql.js';
-import { Conversation, message, UserData } from '~/store/reducers/user';
+import { message, UserData } from '~/store/reducers/user';
 
 // Adapter to make sql.js match op-sqlite's executeSync API
 function createOpSqliteAdapter(sqlJsDb: Database) {
@@ -30,7 +30,7 @@ jest.mock('react-native-keychain', () => ({
     getGenericPassword: jest.fn().mockResolvedValue({ password: 'test-key' }),
     setGenericPassword: jest.fn().mockResolvedValue(true),
     ACCESSIBLE: { WHEN_UNLOCKED_THIS_DEVICE_ONLY: '' },
-    STORAGE_TYPE: { AES_GCM: '' },
+    STORAGE_TYPE: { AES_GCM_NO_AUTH: '' },
 }));
 
 // Mock QuickCrypto
@@ -41,87 +41,49 @@ jest.mock('react-native-quick-crypto', () => ({
     },
 }));
 
-// Mock MMKV storage (async API for backwards compatibility)
-const mockMMKVStorage: Record<string, string> = {};
-// Mock AsyncStorage (for legacy chunked reads during migration)
-const mockAsyncStorage: Record<string, string> = {};
-jest.mock('~/global/storage', () => ({
-    readFromStorage: jest.fn((key: string) => Promise.resolve(mockMMKVStorage[key] ?? null)),
-    writeToStorage: jest.fn((key: string, value: string) => {
-        mockMMKVStorage[key] = value;
-    }),
-    legacyReadFromAsyncStorage: jest.fn((key: string) => Promise.resolve(mockAsyncStorage[key] ?? null)),
-    legacyDeleteFromAsyncStorage: jest.fn((key: string) => {
-        delete mockAsyncStorage[key];
-        return Promise.resolve();
-    }),
-}));
+import {
+    setDb,
+    dbSaveMessage,
+    dbSaveMessages,
+    dbGetMessages,
+    dbSaveConversation,
+    dbGetConversations,
+    dbGetConversation,
+    dbUpdateMessageDecrypted,
+} from '../database';
 
-import { setDb, dbGetMessages, dbGetConversations, migrateFromAsyncStorage } from '../database';
+// Sample test data
+const testUser: UserData = {
+    id: '101',
+    phone_no: '+1111111111',
+    last_seen: 1700000000000,
+    online: true,
+    pic: 'https://example.com/pic1.jpg',
+    public_key: 'pubkey-101',
+};
 
-// Sample AsyncStorage data
-const asyncStorageData = new Map<string, Conversation>([
-    [
-        '+1111111111',
-        {
-            other_user: {
-                id: '101',
-                phone_no: '+1111111111',
-                last_seen: 1700000000000,
-                online: true,
-                pic: 'https://example.com/pic1.jpg',
-                public_key: 'pubkey-101',
-            },
-            messages: [
-                {
-                    id: 1,
-                    message: 'MQ==:iv:encrypted-hello',
-                    sent_at: '2024-01-15T10:30:00.000Z',
-                    seen: true,
-                    reciever: '+1111111111',
-                    reciever_id: '101',
-                    sender: '+0000000000',
-                    sender_id: '100',
-                },
-                {
-                    id: 2,
-                    message: 'MQ==:iv:encrypted-reply',
-                    sent_at: '2024-01-15T10:31:00.000Z',
-                    seen: false,
-                    reciever: '+0000000000',
-                    reciever_id: '100',
-                    sender: '+1111111111',
-                    sender_id: '101',
-                },
-            ],
-        },
-    ],
-    [
-        '+2222222222',
-        {
-            other_user: {
-                id: '102',
-                phone_no: '+2222222222',
-                last_seen: 1700000001000,
-                online: false,
-                pic: undefined,
-                public_key: undefined,
-            },
-            messages: [
-                {
-                    id: 3,
-                    message: 'MQ==:iv:encrypted-other',
-                    sent_at: '2024-01-16T12:00:00.000Z',
-                    seen: true,
-                    reciever: '+2222222222',
-                    reciever_id: '102',
-                    sender: '+0000000000',
-                    sender_id: '100',
-                },
-            ],
-        },
-    ],
-]);
+const testMessages: message[] = [
+    {
+        id: 1,
+        message: 'MQ==:iv:encrypted-hello',
+        sent_at: '2024-01-15T10:30:00.000Z',
+        seen: true,
+        reciever: '+1111111111',
+        reciever_id: '101',
+        sender: '+0000000000',
+        sender_id: '100',
+    },
+    {
+        id: 2,
+        message: 'MQ==:iv:encrypted-reply',
+        sent_at: '2024-01-15T10:31:00.000Z',
+        seen: false,
+        reciever: '+0000000000',
+        reciever_id: '100',
+        sender: '+1111111111',
+        sender_id: '101',
+    },
+];
 
 // Normalize for comparison (DB stores IDs as strings, is_decrypted defaults to false)
 const normalizeMessage = (msg: message): message => ({
@@ -131,13 +93,7 @@ const normalizeMessage = (msg: message): message => ({
     is_decrypted: false,
 });
 
-const normalizeUser = (user: UserData): UserData => ({
-    ...user,
-    id: String(user.id),
-    online: false,
-});
-
-describe('database migration', () => {
+describe('database operations', () => {
     let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 
     beforeAll(async () => {
@@ -145,12 +101,6 @@ describe('database migration', () => {
     });
 
     beforeEach(() => {
-        // Clear mock storages
-        Object.keys(mockMMKVStorage).forEach(key => delete mockMMKVStorage[key]);
-        Object.keys(mockAsyncStorage).forEach(key => delete mockAsyncStorage[key]);
-        // Set up old AsyncStorage data for migration
-        mockAsyncStorage['messages-test-user'] = JSON.stringify(Array.from(asyncStorageData.entries()));
-
         // Create fresh in-memory database with adapter
         const sqlJsDb = new SQL.Database();
         const adapter = createOpSqliteAdapter(sqlJsDb);
@@ -161,67 +111,101 @@ describe('database migration', () => {
         setDb(null);
     });
 
-    it('messages should be identical after migration', async () => {
-        await migrateFromAsyncStorage('test-user');
+    describe('messages', () => {
+        it('should save and retrieve a single message', () => {
+            const conversationId = '+1111111111';
+            dbSaveMessage(testMessages[0], conversationId);
 
-        const originalMessages = asyncStorageData.get('+1111111111')!.messages;
-        const migratedMessages = dbGetMessages('+1111111111');
+            const messages = dbGetMessages(conversationId);
+            expect(messages).toHaveLength(1);
+            expect(messages[0]).toEqual(normalizeMessage(testMessages[0]));
+        });
 
-        // DB returns messages in DESC order (newest first), so reverse for comparison
-        const expectedMessages = originalMessages.toReversed().map(normalizeMessage);
-        expect(migratedMessages).toEqual(expectedMessages);
+        it('should save and retrieve multiple messages', () => {
+            const conversationId = '+1111111111';
+            dbSaveMessages(testMessages, conversationId);
+
+            const messages = dbGetMessages(conversationId);
+            expect(messages).toHaveLength(2);
+        });
+
+        it('should return messages in descending order by sent_at', () => {
+            const conversationId = '+1111111111';
+            dbSaveMessages(testMessages, conversationId);
+
+            const messages = dbGetMessages(conversationId);
+            // Most recent message first
+            expect(messages[0].id).toBe(2);
+            expect(messages[1].id).toBe(1);
+        });
+
+        it('should update message decrypted status', () => {
+            const conversationId = '+1111111111';
+            dbSaveMessage(testMessages[0], conversationId);
+
+            const decryptedContent = JSON.stringify({ type: 'MSG', message: 'Hello!' });
+            dbUpdateMessageDecrypted(testMessages[0].id, decryptedContent);
+
+            const messages = dbGetMessages(conversationId);
+            expect(messages[0].message).toBe(decryptedContent);
+            expect(messages[0].is_decrypted).toBe(true);
+        });
+
+        it('should respect limit and offset', () => {
+            const conversationId = '+1111111111';
+            dbSaveMessages(testMessages, conversationId);
+
+            const limited = dbGetMessages(conversationId, 1, 0);
+            expect(limited).toHaveLength(1);
+
+            const offset = dbGetMessages(conversationId, 1, 1);
+            expect(offset).toHaveLength(1);
+            expect(offset[0].id).not.toBe(limited[0].id);
+        });
     });
 
-    it('conversations should be identical after migration', async () => {
-        await migrateFromAsyncStorage('test-user');
+    describe('conversations', () => {
+        it('should save and retrieve a conversation', () => {
+            dbSaveConversation(testUser, Date.now());
 
-        const migratedConversations = dbGetConversations();
-        expect(migratedConversations).toHaveLength(asyncStorageData.size);
+            const conversations = dbGetConversations();
+            expect(conversations).toHaveLength(1);
+            expect(conversations[0].other_user.phone_no).toBe(testUser.phone_no);
+        });
 
-        for (const migrated of migratedConversations) {
-            const original = asyncStorageData.get(migrated.other_user.phone_no);
-            expect(original).toBeDefined();
-            expect(migrated.other_user).toEqual(normalizeUser(original!.other_user));
-        }
-    });
+        it('should get full conversation with messages', () => {
+            dbSaveConversation(testUser, Date.now());
+            dbSaveMessages(testMessages, testUser.phone_no);
 
-    it('should handle empty data', async () => {
-        mockAsyncStorage['messages-empty-user'] = JSON.stringify([]);
-        await migrateFromAsyncStorage('empty-user');
+            const conversation = dbGetConversation(testUser.phone_no);
+            expect(conversation).not.toBeNull();
+            expect(conversation!.other_user.phone_no).toBe(testUser.phone_no);
+            expect(conversation!.messages).toHaveLength(2);
+        });
 
-        expect(dbGetConversations()).toHaveLength(0);
-    });
+        it('should return null for non-existent conversation', () => {
+            const conversation = dbGetConversation('+9999999999');
+            expect(conversation).toBeNull();
+        });
 
-    it('should handle multiple conversations', async () => {
-        await migrateFromAsyncStorage('test-user');
+        it('should update existing conversation on conflict', () => {
+            const initialTime = 1000;
+            const updatedTime = 2000;
 
-        expect(dbGetConversations()).toHaveLength(2);
-        expect(dbGetMessages('+1111111111')).toHaveLength(2);
-        expect(dbGetMessages('+2222222222')).toHaveLength(1);
-    });
+            dbSaveConversation(testUser, initialTime);
+            dbSaveConversation({ ...testUser, last_seen: 9999 }, updatedTime);
 
-    it('should skip migration if already migrated', async () => {
-        mockMMKVStorage['sqlite-migrated'] = 'true';
+            const conversations = dbGetConversations();
+            expect(conversations).toHaveLength(1);
+            expect(conversations[0].updatedAt).toBe(updatedTime);
+        });
 
-        const result = await migrateFromAsyncStorage('test-user');
+        it('should include message count in conversation list', () => {
+            dbSaveConversation(testUser, Date.now());
+            dbSaveMessages(testMessages, testUser.phone_no);
 
-        expect(result).toBe(false);
-        expect(dbGetConversations()).toHaveLength(0);
-    });
-
-    it('should set migration flag after migration', async () => {
-        expect(mockMMKVStorage['sqlite-migrated']).toBeUndefined();
-
-        await migrateFromAsyncStorage('test-user');
-
-        expect(mockMMKVStorage['sqlite-migrated']).toBe('true');
-    });
-
-    it('should clean up AsyncStorage after successful migration', async () => {
-        expect(mockAsyncStorage['messages-test-user']).toBeDefined();
-
-        await migrateFromAsyncStorage('test-user');
-
-        expect(mockAsyncStorage['messages-test-user']).toBeUndefined();
+            const conversations = dbGetConversations();
+            expect(conversations[0].messageCount).toBe(2);
+        });
     });
 });
