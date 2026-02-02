@@ -113,7 +113,6 @@ const AuthNavigator = () => {
     );
 };
 
-
 const darkTheme = {
     ...MD3DarkTheme,
     colors: {
@@ -133,7 +132,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
     const callerRaw = remoteMessage.data?.caller as string;
     if (!callerRaw) { return console.error('Caller data is not defined'); }
 
-    RNNotificationCall.addEventListener('answer', (info) => {
+    RNNotificationCall.addEventListener('answer', async info => {
         console.debug('RNNotificationCall: User answered call', info.callUUID);
         RNNotificationCall.backToApp();
         if (!info.payload) {
@@ -141,10 +140,10 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
             return;
         }
         // Write caller info to special storage key that is checked after app login
-        writeToStorage('call_answered_in_background', info.payload);
+        await writeToStorage('call_answered_in_background', info.payload);
         // User will be opening app and authenticating after this...
     });
-    RNNotificationCall.addEventListener('endCall', (info) => {
+    RNNotificationCall.addEventListener('endCall', async info => {
         console.debug('RNNotificationCall: User ended call', info.callUUID);
         InCallManager.stopRingtone();
         const data = info as DeclinePayload;
@@ -155,7 +154,7 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
                 channelName: 'Notifications for missed calls',
                 channelDescription: 'Notifications for missed calls',
             },
-            () => { },
+            () => {},
         );
         if (data.endAction === 'ACTION_HIDE_CALL') {
             PushNotification.localNotification({
@@ -170,11 +169,11 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
             });
         }
         // Delete storage info about caller so they don't get routed to call screen on next app open
-        deleteFromStorage('call_answered_in_background');
+        await deleteFromStorage('call_answered_in_background');
     });
     InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
 
-    const eventData = JSON.parse(remoteMessage.data?.data as string || '{}') as SocketMessage;
+    const eventData = JSON.parse((remoteMessage.data?.data as string) || '{}') as SocketMessage;
     const caller = JSON.parse(callerRaw) as UserData;
     RNNotificationCall.displayNotification(
         QuickCrypto.randomUUID(),

@@ -119,7 +119,7 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
         await getDb();
 
         // Check last time we hit the API for messages
-        const cachedLastChecked = readFromStorage(`messages-${state.user_data.id}-last-checked`) || '0';
+        const cachedLastChecked = (await readFromStorage(`messages-${state.user_data.id}-last-checked`)) || '0';
 
         let lastChecked = parseInt(cachedLastChecked, 10);
         let previousConversations = new Map<string, Conversation>();
@@ -360,7 +360,7 @@ export const syncFromStorage = createDefaultAsyncThunk('syncFromStorage', async 
 
         console.debug('Loading user from local storage');
         // TODO: Load existing contacts from async storage
-        const user_data = readFromStorage('user_data');
+        const user_data = await readFromStorage('user_data');
         if (!user_data) {
             return undefined;
         }
