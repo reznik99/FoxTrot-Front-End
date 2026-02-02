@@ -50,8 +50,7 @@ async function getOrCreateDbKey(): Promise<string> {
 
     await Keychain.setGenericPassword(DB_KEY_SERVICE, key, {
         service: DB_KEY_SERVICE,
-        accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-        storage: Keychain.STORAGE_TYPE.AES_GCM,
+        storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
     });
 
     console.debug('Generated and stored new database encryption key');
