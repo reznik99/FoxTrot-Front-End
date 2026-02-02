@@ -49,7 +49,7 @@ export default function Home(props: IProps) {
             // [background] Get TURN credentials for proxying calls if peer-to-peer ICE fails
             store.dispatch(getTURNServerCreds()).then(async () => {
                 // Check if user answered a call in the background
-                const callerRaw = await popFromStorage('call_answered_in_background');
+                const callerRaw = popFromStorage('call_answered_in_background');
                 if (callerRaw) {
                     const data = JSON.parse(callerRaw || '{}') as { caller: UserData; data: SocketMessage };
                     props.navigation.navigate('Call', {
