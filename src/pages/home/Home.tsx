@@ -32,12 +32,11 @@ export default function Home(props: IProps) {
     const { conversations, loading, refreshing, socketErr } = useSelector((state: RootState) => state.userReducer);
     const [loadingMsg, setLoadingMsg] = useState('');
     const convos: Array<Conversation> = useMemo(() => {
-        return [...conversations.values()]
-            .map(convo => ({
-                ...convo,
-                _latest: convo.messages?.[0]?.sent_at ? new Date(convo.messages[0].sent_at).getTime() : 0,
-            }))
-            .sort((a, b) => b._latest - a._latest);
+        return [...conversations.values()].sort((a, b) => {
+            const aTime = a.messages?.[0]?.sent_at ? new Date(a.messages[0].sent_at).getTime() : 0;
+            const bTime = b.messages?.[0]?.sent_at ? new Date(b.messages[0].sent_at).getTime() : 0;
+            return bTime - aTime;
+        });
     }, [conversations]);
 
     useEffect(() => {
