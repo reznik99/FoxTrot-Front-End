@@ -4,7 +4,6 @@ import QuickCrypto from 'react-native-quick-crypto';
 import { Buffer } from 'buffer';
 
 const MMKV_KEY_SERVICE = 'foxtrot-mmkv-key';
-const MMKV_ENCRYPTION_MIGRATED_FLAG = 'mmkv-encryption-migrated';
 
 // MMKV storage is encrypted using AES-CFB-128.
 // Key: 16 bytes (128-bit), stored in device Keychain.
@@ -12,16 +11,19 @@ const MMKV_ENCRYPTION_MIGRATED_FLAG = 'mmkv-encryption-migrated';
 let storage: MMKV | null = null;
 let storageInitPromise: Promise<MMKV> | null = null;
 
-async function getOrCreateMmkvKey(): Promise<string> {
+async function getMmkvKey(): Promise<string | null> {
     try {
         const credentials = await Keychain.getGenericPassword({ service: MMKV_KEY_SERVICE });
         if (credentials && credentials.password) {
             return credentials.password;
         }
     } catch (err) {
-        console.debug('No existing MMKV key found, generating new one');
+        console.debug('No existing MMKV key found');
     }
+    return null;
+}
 
+async function createMmkvKey(): Promise<string> {
     const keyBytes = QuickCrypto.getRandomValues(new Uint8Array(16));
     const key = Buffer.from(keyBytes).toString('hex');
 
@@ -37,6 +39,10 @@ async function getOrCreateMmkvKey(): Promise<string> {
 /**
  * Gets the storage instance, initializing it with encryption if needed.
  * Handles migration from unencrypted to encrypted storage on first run.
+ *
+ * Migration logic: If no key exists in Keychain, this is either a fresh install
+ * or an existing install with unencrypted data. We open unencrypted first,
+ * then recrypt with a new key. If a key exists, storage is already encrypted.
  */
 async function getStorage(): Promise<MMKV> {
     if (storage) {
@@ -49,28 +55,29 @@ async function getStorage(): Promise<MMKV> {
     }
 
     storageInitPromise = (async () => {
-        const encryptionKey = await getOrCreateMmkvKey();
+        const existingKey = await getMmkvKey();
 
-        // Check if encryption migration has occurred using a separate unencrypted instance
-        // We need to read the flag before we know whether to use encryption
-        const tempStorage = createMMKV({ id: 'foxtrot-storage' });
-        const migrated = tempStorage.getString(MMKV_ENCRYPTION_MIGRATED_FLAG);
-
-        if (migrated === 'true') {
-            // Already migrated, open with encryption directly
+        if (existingKey) {
+            // Key exists, storage is already encrypted
             storage = createMMKV({
                 id: 'foxtrot-storage',
-                encryptionKey,
+                encryptionKey: existingKey,
             });
             console.debug('MMKV storage opened with encryption');
         } else {
-            console.debug('MMKV storage opened without encryption, migrating...');
-            storage = tempStorage;
-            // Encrypt all existing data
-            storage.recrypt(encryptionKey);
-            // Set the migration flag (now encrypted)
-            storage.set(MMKV_ENCRYPTION_MIGRATED_FLAG, 'true');
-            console.debug('MMKV encryption migration complete');
+            // No key exists - fresh install or needs migration
+            // Open unencrypted first to preserve any existing data
+            storage = createMMKV({ id: 'foxtrot-storage' });
+            const hasExistingData = storage.getAllKeys().length > 0;
+
+            // Generate and store new key
+            const newKey = await createMmkvKey();
+
+            // Encrypt storage (migrates existing data if any)
+            storage.recrypt(newKey);
+            console.debug(
+                hasExistingData ? 'MMKV storage migrated to encrypted' : 'MMKV storage initialized with encryption',
+            );
         }
 
         return storage;

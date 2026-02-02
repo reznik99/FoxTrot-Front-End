@@ -187,7 +187,7 @@ export function dbGetMessages(conversationId: string, limit = 100, offset = 0): 
          ORDER BY datetime(sent_at) DESC LIMIT ? OFFSET ?`,
         [conversationId, limit, offset],
     );
-
+    console.debug('Loaded', result.rows.length, 'messages from database');
     return (result.rows || []).map(row => ({
         id: row.id as number,
         message: row.message as string,
