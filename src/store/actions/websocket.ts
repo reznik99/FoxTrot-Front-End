@@ -148,25 +148,20 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                 }
                 // Ring and show notification
                 InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
-                RNNotificationCall.displayNotification(
-                    QuickCrypto.randomUUID(),
-                    caller.pic || getAvatar(caller.id),
-                    30000,
-                    {
-                        channelId: 'com.foxtrot.callNotifications',
-                        channelName: 'Notifications for incoming calls',
-                        notificationIcon: '@mipmap/foxtrot', // mipmap
-                        notificationTitle: caller?.phone_no || 'Unknown User',
-                        notificationBody: `Incoming ${parsedData.data.type || 'audio'} call`,
-                        answerText: 'Answer',
-                        declineText: 'Decline',
-                        notificationColor: 'colorAccent',
-                        payload: { caller: caller, data: parsedData.data },
-                        isVideo: parsedData.data.type === 'video',
-                        // notificationSound: 'skype_ring',
-                        // mainComponent: "CallScreen"
-                    },
-                );
+                RNNotificationCall.displayNotification(QuickCrypto.randomUUID(), caller.pic || getAvatar(caller.id), 30000, {
+                    channelId: 'com.foxtrot.callNotifications',
+                    channelName: 'Notifications for incoming calls',
+                    notificationIcon: '@mipmap/foxtrot', // mipmap
+                    notificationTitle: caller?.phone_no || 'Unknown User',
+                    notificationBody: `Incoming ${parsedData.data.type || 'audio'} call`,
+                    answerText: 'Answer',
+                    declineText: 'Decline',
+                    notificationColor: 'colorAccent',
+                    payload: { caller: caller, data: parsedData.data },
+                    isVideo: parsedData.data.type === 'video',
+                    // notificationSound: 'skype_ring',
+                    // mainComponent: "CallScreen"
+                });
                 break;
             case 'CALL_ANSWER':
                 console.debug('Websocket CALL_ANSWER Recieved', parsedData.data?.sender);

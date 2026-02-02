@@ -76,9 +76,7 @@ export default function HeaderConversation(props: IProps) {
             <View style={[styles.buttonContainer]}>
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() =>
-                        navigation.navigate('Call', { data: { peer_user: data.peer_user, video_enabled: true } })
-                    }
+                    onPress={() => navigation.navigate('Call', { data: { peer_user: data.peer_user, video_enabled: true } })}
                 >
                     <Icon source="video" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
@@ -101,8 +99,7 @@ export default function HeaderConversation(props: IProps) {
                     <Dialog.Title style={{ textAlign: 'center' }}>Security Code</Dialog.Title>
                     <Dialog.Content>
                         <Text style={globalStyle.dialogText}>
-                            Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile
-                            code
+                            Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code
                         </Text>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
                             <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>

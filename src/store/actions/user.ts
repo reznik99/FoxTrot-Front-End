@@ -19,13 +19,7 @@ import {
     UserData,
     TURN_CREDS,
 } from '~/store/reducers/user';
-import {
-    importKeypair,
-    exportKeypair,
-    generateSessionKeyECDH,
-    encrypt,
-    generateIdentityKeypair,
-} from '~/global/crypto';
+import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { readFromStorage, writeToStorage } from '~/global/storage';
 import { getPushNotificationPermission } from '~/global/permissions';
 import {
@@ -143,11 +137,7 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
             const migrationStart = performance.now();
             const didMigrate = await migrateFromAsyncStorage(String(state.user_data.id));
             if (didMigrate) {
-                console.debug(
-                    'AsyncStorage migration took:',
-                    (performance.now() - migrationStart).toLocaleString(),
-                    'ms',
-                );
+                console.debug('AsyncStorage migration took:', (performance.now() - migrationStart).toLocaleString(), 'ms');
             }
 
             // Load from SQLite
@@ -231,47 +221,41 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
     }
 });
 
-export const loadContacts = createDefaultAsyncThunk(
-    'loadContacts',
-    async ({ atomic }: { atomic: boolean }, thunkAPI) => {
-        try {
-            thunkAPI.dispatch(SET_REFRESHING(true));
-            const state = thunkAPI.getState().userReducer;
+export const loadContacts = createDefaultAsyncThunk('loadContacts', async ({ atomic }: { atomic: boolean }, thunkAPI) => {
+    try {
+        thunkAPI.dispatch(SET_REFRESHING(true));
+        const state = thunkAPI.getState().userReducer;
 
-            // Load contacts
-            const response = await axios.get<UserData[]>(`${API_URL}/getContacts`, axiosBearerConfig(state.token));
-            const contacts = await Promise.all<UserData>(
-                response.data.map(async contact => {
-                    try {
-                        const session_key = await generateSessionKeyECDH(
-                            contact.public_key || '',
-                            state.keys?.privateKey,
-                        );
-                        console.debug('Generated session key for contact:', contact.phone_no);
-                        return { ...contact, pic: getAvatar(contact.id), session_key };
-                    } catch (err: any) {
-                        console.warn('Failed to generate session key:', contact.phone_no, err.message || err);
-                        return { ...contact, pic: getAvatar(contact.id) };
-                    }
-                }),
-            );
+        // Load contacts
+        const response = await axios.get<UserData[]>(`${API_URL}/getContacts`, axiosBearerConfig(state.token));
+        const contacts = await Promise.all<UserData>(
+            response.data.map(async contact => {
+                try {
+                    const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey);
+                    console.debug('Generated session key for contact:', contact.phone_no);
+                    return { ...contact, pic: getAvatar(contact.id), session_key };
+                } catch (err: any) {
+                    console.warn('Failed to generate session key:', contact.phone_no, err.message || err);
+                    return { ...contact, pic: getAvatar(contact.id) };
+                }
+            }),
+        );
 
-            thunkAPI.dispatch(LOAD_CONTACTS(contacts));
-        } catch (err: any) {
-            console.error('Error loading contacts:', err);
-            Toast.show({
-                type: 'error',
-                text1: 'Error loading contacts',
-                text2: err.message ?? err.toString(),
-                visibilityTime: 5000,
-            });
-        } finally {
-            if (atomic) {
-                thunkAPI.dispatch(SET_REFRESHING(false));
-            }
+        thunkAPI.dispatch(LOAD_CONTACTS(contacts));
+    } catch (err: any) {
+        console.error('Error loading contacts:', err);
+        Toast.show({
+            type: 'error',
+            text1: 'Error loading contacts',
+            text2: err.message ?? err.toString(),
+            visibilityTime: 5000,
+        });
+    } finally {
+        if (atomic) {
+            thunkAPI.dispatch(SET_REFRESHING(false));
         }
-    },
-);
+    }
+});
 
 export const addContact = createDefaultAsyncThunk('addContact', async ({ user }: { user: UserData }, thunkAPI) => {
     try {
@@ -300,10 +284,7 @@ export const searchUsers = createDefaultAsyncThunk<UserData[], { prefix: string 
             thunkAPI.dispatch({ type: 'SET_LOADING', payload: true });
             const state = thunkAPI.getState().userReducer;
 
-            const response = await axios.get<UserData[]>(
-                `${API_URL}/searchUsers/${prefix}`,
-                axiosBearerConfig(state.token),
-            );
+            const response = await axios.get<UserData[]>(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token));
 
             // Append robot picture to users
             const results = response.data.map(user => ({

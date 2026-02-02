@@ -123,9 +123,7 @@ export default function Messaging(props: IProps) {
                         <TouchableOpacity style={styles.button} onPress={resetAudio}>
                             <Icon source="close" color={SECONDARY_LITE} size={20} />
                         </TouchableOpacity>
-                        <Text>
-                            Duration: {Sound.mmssss(audioPlaybackTime ? ~~audioPlaybackTime : ~~audioRecordTime)}
-                        </Text>
+                        <Text>Duration: {Sound.mmssss(audioPlaybackTime ? ~~audioPlaybackTime : ~~audioRecordTime)}</Text>
                         {playingAudio ? (
                             <TouchableOpacity style={styles.button} onPress={stopAudio}>
                                 <Icon source="pause" color={PRIMARY} size={20} />
@@ -149,12 +147,7 @@ export default function Messaging(props: IProps) {
                 </View>
             )}
             {/* Messaging controls */}
-            <View
-                style={[
-                    styles.inputContainer,
-                    { paddingBottom: edgeInsets.bottom, paddingHorizontal: edgeInsets.left },
-                ]}
-            >
+            <View style={[styles.inputContainer, { paddingBottom: edgeInsets.bottom, paddingHorizontal: edgeInsets.left }]}>
                 <TouchableOpacity style={styles.button} onPress={props.handleCameraSelect}>
                     <Icon source="camera" color={PRIMARY} size={20} />
                 </TouchableOpacity>

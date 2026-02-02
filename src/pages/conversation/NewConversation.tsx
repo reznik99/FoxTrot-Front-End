@@ -55,9 +55,7 @@ export default function NewConversation(props: StackScreenProps<HomeStackParamLi
                                     key={index}
                                     data={{ ...contact }}
                                     isContact={true}
-                                    onSelect={() =>
-                                        navigation.navigate('Conversation', { data: { peer_user: contact } })
-                                    }
+                                    onSelect={() => navigation.navigate('Conversation', { data: { peer_user: contact } })}
                                 />
                             );
                         })

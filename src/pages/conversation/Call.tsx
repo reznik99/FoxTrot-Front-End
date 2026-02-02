@@ -55,10 +55,7 @@ class Call extends React.Component<Props, State> {
     }
 
     componentDidMount = () => {
-        this.callTimer = setInterval(
-            () => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }),
-            1000,
-        );
+        this.callTimer = setInterval(() => this.setState({ callTime: (Date.now() - this.state.startTime) / 1000 }), 1000);
         this.callStatsTimer = setInterval(this.calculatePing, 2500);
 
         InCallManager.start({ media: this.state.videoEnabled ? 'video' : 'audio', auto: true });
@@ -223,9 +220,7 @@ class Call extends React.Component<Props, State> {
             });
             newConnection.addEventListener('datachannel', event => {
                 this.setState({ peerChannel: event.channel }, () => {
-                    event.channel.addEventListener('open', e =>
-                        console.log('[WebRTC] Channel opened:', e.channel.label),
-                    );
+                    event.channel.addEventListener('open', e => console.log('[WebRTC] Channel opened:', e.channel.label));
                     event.channel.addEventListener('error', this.onWebrtcError);
                     event.channel.addEventListener('close', e => console.log('[WebRTC] Channel closed:', e));
                     event.channel.addEventListener('message', this.onChannelMessage);
@@ -429,10 +424,7 @@ class Call extends React.Component<Props, State> {
         const minutes = ~~(this.state.callTime / 60);
         const seconds = ~~(this.state.callTime - minutes * 60);
 
-        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
-            2,
-            '0',
-        )}`;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     };
 
     renderCallInfo = () => {
@@ -519,10 +511,7 @@ class Call extends React.Component<Props, State> {
                                     />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={this.toggleVoiceEnabled} style={styles.actionButton}>
-                                    <Icon
-                                        source={this.state.voiceEnabled ? 'microphone' : 'microphone-off'}
-                                        size={20}
-                                    />
+                                    <Icon source={this.state.voiceEnabled ? 'microphone' : 'microphone-off'} size={20} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={this.toggleVideoEnabled} style={styles.actionButton}>
                                     <Icon source={this.state.videoEnabled ? 'video' : 'video-off'} size={20} />
