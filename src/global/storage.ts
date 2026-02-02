@@ -64,14 +64,10 @@ async function getStorage(): Promise<MMKV> {
             });
             console.debug('MMKV storage opened with encryption');
         } else {
-            // Not yet migrated - use unencrypted instance, then recrypt
-            storage = tempStorage;
             console.debug('MMKV storage opened without encryption, migrating...');
-
+            storage = tempStorage;
             // Encrypt all existing data
             storage.recrypt(encryptionKey);
-            console.debug('MMKV storage encrypted with recrypt()');
-
             // Set the migration flag (now encrypted)
             storage.set(MMKV_ENCRYPTION_MIGRATED_FLAG, 'true');
             console.debug('MMKV encryption migration complete');

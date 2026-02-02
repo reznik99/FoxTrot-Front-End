@@ -109,7 +109,7 @@ export const logOut = createAsyncThunk('logOut', async ({ navigation }: { naviga
     // Clear redux state
     thunkAPI.dispatch(LOGOUT(undefined));
     // Clear storage
-    deleteFromStorage('user_data');
+    await deleteFromStorage('user_data');
 
     navigation.replace('Login', { data: { loggedOut: true, errorMsg: '' } });
 });
