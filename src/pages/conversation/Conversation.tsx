@@ -149,22 +149,32 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
         [],
     );
 
+    const renderListHeader = useCallback(() => {
+        if (loadingMore) {
+            return (
+                <View style={styles.footer}>
+                    <ActivityIndicator size="small" color="#77f777" />
+                </View>
+            );
+        }
+        if (hasMore) {
+            return (
+                <View style={styles.footer}>
+                    <Text style={{ color: '#969393' }}>Scroll up to load more</Text>
+                </View>
+            );
+        }
+        return null;
+    }, [loadingMore, hasMore]);
+
     const renderListFooter = useCallback(
         () => (
             <View style={styles.footer}>
-                {loadingMore ? (
-                    <ActivityIndicator size="small" color="#77f777" />
-                ) : hasMore ? (
-                    <Text style={{ color: '#969393' }}>Scroll up to load more</Text>
-                ) : (
-                    <>
-                        <Icon source="lock" color="#77f777" size={20} />
-                        <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
-                    </>
-                )}
+                <Icon source="lock" color="#77f777" size={20} />
+                <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
             </View>
         ),
-        [loadingMore, hasMore],
+        [],
     );
 
     return (
@@ -182,6 +192,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                 onStartReached={loadMoreMessages}
                 onStartReachedThreshold={0.5}
                 ListEmptyComponent={renderListEmpty}
+                ListHeaderComponent={renderListHeader}
                 ListFooterComponent={renderListFooter}
                 renderItem={({ item }) => (
                     <Message
