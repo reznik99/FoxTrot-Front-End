@@ -10,6 +10,9 @@ const DB_NAME = 'foxtrot.db';
 const DB_KEY_SERVICE = 'foxtrot-db-key';
 const SCHEMA_VERSION = 1;
 
+// SQLite database is encrypted using SQLCipher (AES-256-CBC with HMAC-SHA512).
+// Key: 32 bytes (256-bit), stored in device Keychain.
+
 let db: DB | null = null;
 
 /**

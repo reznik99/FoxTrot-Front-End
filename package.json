@@ -1,6 +1,6 @@
 {
     "name": "foxtrot",
-    "version": "1.17.9",
+    "version": "1.17.10",
     "private": true,
     "scripts": {
         "android": "react-native run-android",

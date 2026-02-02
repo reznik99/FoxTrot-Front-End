@@ -35,8 +35,8 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
     const [visibleDialog, setVisibleDialog] = useState('');
     const [encPassword, setEncPassword] = useState('');
 
-    const loadAllDeviceData = useCallback(() => {
-        const allKeys = getAllStorageKeys();
+    const loadAllDeviceData = useCallback(async () => {
+        const allKeys = await getAllStorageKeys();
         const sortedKeys = allKeys.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
         setKeys(sortedKeys);
         Keychain.hasInternetCredentials({ server: API_URL, service: `${user_data.phone_no}-keys` })
@@ -67,8 +67,8 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
 
         setVisibleDialog('');
         // Delete everything from the device
-        const allKeys = getAllStorageKeys();
-        allKeys.forEach(key => deleteFromStorage(key));
+        const allKeys = await getAllStorageKeys();
+        await Promise.all(allKeys.map(key => deleteFromStorage(key)));
         Promise.all([
             Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys` }),
             Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
