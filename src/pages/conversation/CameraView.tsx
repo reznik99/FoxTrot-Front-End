@@ -16,7 +16,6 @@ import { HomeStackParamList } from '~/../App';
 import { AppDispatch } from '~/store/store';
 
 export default function CameraView(props: StackScreenProps<HomeStackParamList, 'CameraView'>) {
-
     const dispatch = useDispatch<AppDispatch>();
     const edgeInsets = useSafeAreaInsets();
     const isActive = useIsFocused();
@@ -31,7 +30,9 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (props.route.params?.data?.picturePath) { return; }
+        if (props.route.params?.data?.picturePath) {
+            return;
+        }
         requestPermissions();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -44,7 +45,7 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                 Toast.show({
                     type: 'error',
                     text1: 'Camera permissions denied',
-                    text2: 'Unable to use phone\'s camera',
+                    text2: "Unable to use phone's camera",
                 });
                 return false;
             }
@@ -59,11 +60,15 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     const reset = useCallback(() => {
         setPicture('');
         setInitialized(false);
-        if (!hasPermission) { requestPermissions(); }
+        if (!hasPermission) {
+            requestPermissions();
+        }
     }, [hasPermission, requestPermissions]);
 
     const swapCamera = useCallback(() => {
-        if (!device) { return; }
+        if (!device) {
+            return;
+        }
         if (device.position === 'front') {
             setCameraType('back');
         } else {
@@ -72,7 +77,9 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
     }, [device]);
 
     const takePic = useCallback(async () => {
-        if (!cameraRef.current) { return; }
+        if (!cameraRef.current) {
+            return;
+        }
         setLoading(true);
         try {
             const pic = await cameraRef.current.takePhoto({ enableAutoDistortionCorrection: true });
@@ -95,8 +102,12 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                 message: rawPic,
             });
 
-            const success = await dispatch(sendMessage({ message: toSend, to_user: props.route.params?.data?.peer })).unwrap();
-            if (success) { props.navigation.goBack(); }
+            const success = await dispatch(
+                sendMessage({ message: toSend, to_user: props.route.params?.data?.peer }),
+            ).unwrap();
+            if (success) {
+                props.navigation.goBack();
+            }
         } catch (err) {
             console.error('Error sending image:', err);
         } finally {
@@ -104,53 +115,55 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
         }
     }, [picture, props.navigation, props.route.params?.data?.peer, dispatch]);
 
-
     return (
         <View style={[styles.container, { paddingTop: edgeInsets.top, paddingBottom: edgeInsets.bottom }]}>
             {/* Loading screen */}
-            {!device && !picture &&
+            {!device && !picture && (
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" />
                 </View>
-            }
+            )}
             {/* Permission error screen */}
-            {device && !picture && !hasPermission &&
+            {device && !picture && !hasPermission && (
                 <View style={styles.loaderContainer}>
                     <Text variant="titleLarge">Permission to use camera denied</Text>
                 </View>
-            }
+            )}
             {/* Image preview and actions */}
-            {picture &&
+            {picture && (
                 <>
                     <View style={{ flex: 1, backgroundColor: DARKHEADER }}>
-                        <Image style={{ width: '100%', height: '100%' }}
-                            source={{ uri: picture }}
-                            resizeMode="cover" />
+                        <Image style={{ width: '100%', height: '100%' }} source={{ uri: picture }} resizeMode="cover" />
                     </View>
                     <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
-                        <Button style={styles.button}
+                        <Button
+                            style={styles.button}
                             buttonColor={SECONDARY_LITE}
                             icon="refresh"
                             mode="contained"
-                            onPress={reset}>
+                            onPress={reset}
+                        >
                             Take again
                         </Button>
-                        <Button style={styles.button}
+                        <Button
+                            style={styles.button}
                             icon="send"
                             mode="contained"
                             onPress={send}
                             loading={loading}
-                            disabled={loading}>
+                            disabled={loading}
+                        >
                             Send
                         </Button>
                     </View>
                 </>
-            }
+            )}
             {/* Camera View and actions */}
-            {device && hasPermission && !picture &&
+            {device && hasPermission && !picture && (
                 <>
                     <View style={{ flex: 1, backgroundColor: DARKHEADER }}>
-                        <Camera style={initialized && { width: '100%', height: '100%' }}
+                        <Camera
+                            style={initialized && { width: '100%', height: '100%' }}
                             ref={cameraRef}
                             device={device}
                             isActive={isActive}
@@ -165,28 +178,31 @@ export default function CameraView(props: StackScreenProps<HomeStackParamList, '
                         />
                     </View>
                     <View style={[styles.buttonContainer, { marginBottom: edgeInsets.bottom }]}>
-                        <Button style={styles.button}
+                        <Button
+                            style={styles.button}
                             buttonColor={SECONDARY_LITE}
                             icon="camera-party-mode"
                             mode="contained"
-                            onPress={swapCamera}>
+                            onPress={swapCamera}
+                        >
                             Swap Camera
                         </Button>
-                        <Button style={styles.button}
+                        <Button
+                            style={styles.button}
                             icon="camera"
                             mode="contained"
                             onPress={takePic}
                             loading={loading}
-                            disabled={loading}>
+                            disabled={loading}
+                        >
                             Take pic
                         </Button>
                     </View>
                 </>
-            }
+            )}
         </View>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: {
@@ -194,18 +210,21 @@ const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         backgroundColor: SECONDARY,
-    }, loaderContainer: {
+    },
+    loaderContainer: {
         position: 'absolute',
         width: '100%',
         height: '100%',
         justifyContent: 'center',
-    }, buttonContainer: {
+    },
+    buttonContainer: {
         width: '100%',
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'space-evenly',
         paddingVertical: 10,
-    }, button: {
+    },
+    button: {
         borderRadius: 100,
     },
 });

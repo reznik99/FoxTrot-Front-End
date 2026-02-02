@@ -12,7 +12,6 @@ import ContactPeek from '~/components/ContactPeek';
 import { HomeStackParamList } from '~/../App';
 
 export default function AddContact(props: StackScreenProps<HomeStackParamList, 'AddContact'>) {
-
     const { navigation } = props;
     const loading = useSelector<RootState, boolean>(state => state.userReducer.loading);
     const contact_ids = useSelector<RootState, UserData[]>(state => state.userReducer.contacts).map(c => c.id);
@@ -25,16 +24,22 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
     useEffect(() => {
         const handleSearch = async () => {
             const users = await store.dispatch(searchUsers({ prefix: prefix })).unwrap();
-            setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no) ? 1 : -1));
+            setResults(users.sort((u1, u2) => (u1.phone_no > u2.phone_no ? 1 : -1)));
         };
-        if (timer.current) { clearTimeout(timer.current); }
-        if (prefix.length > 2) { timer.current = setTimeout(handleSearch, 250); }
+        if (timer.current) {
+            clearTimeout(timer.current);
+        }
+        if (prefix.length > 2) {
+            timer.current = setTimeout(handleSearch, 250);
+        }
     }, [prefix]);
 
     const handleAddContact = async (user: UserData) => {
         setAddingContact(user);
         const success = await store.dispatch(addContact({ user: user })).unwrap();
-        if (success) { navigation.replace('Conversation', { data: { peer_user: user } }); }
+        if (success) {
+            navigation.replace('Conversation', { data: { peer_user: user } });
+        }
 
         setAddingContact(undefined);
     };
@@ -43,7 +48,8 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
         <View style={globalStyle.wrapper}>
             {/* Search */}
             <View style={globalStyle.searchContainer}>
-                <Searchbar icon="magnify"
+                <Searchbar
+                    icon="magnify"
                     iconColor="#fff"
                     placeholderTextColor="#fff"
                     style={{ color: '#fff', borderRadius: 0 }}
@@ -53,33 +59,39 @@ export default function AddContact(props: StackScreenProps<HomeStackParamList, '
                 />
             </View>
 
-            {loading &&
+            {loading && (
                 <View style={{ flex: 1, justifyContent: 'center' }}>
                     <ActivityIndicator size="large" />
                 </View>
-            }
+            )}
 
-            { /* Contact List */}
-            {!loading &&
+            {/* Contact List */}
+            {!loading && (
                 <ScrollView>
-                    {results?.length
-                        ? results.map((user, index) => {
+                    {results?.length ? (
+                        results.map((user, index) => {
                             const isContact = contact_ids.includes(user.id);
                             return (
                                 <View key={index}>
-                                    <ContactPeek data={user}
+                                    <ContactPeek
+                                        data={user}
                                         loading={addingContact?.phone_no === user.phone_no}
-                                        onSelect={() => isContact ? navigation.navigate('Conversation', { data: { peer_user: user } }) : handleAddContact(user)}
+                                        onSelect={() =>
+                                            isContact
+                                                ? navigation.navigate('Conversation', { data: { peer_user: user } })
+                                                : handleAddContact(user)
+                                        }
                                         isContact={isContact}
                                     />
                                     <Divider />
                                 </View>
                             );
                         })
-                        : <Text style={[globalStyle.errorMsg, { color: '#fff' }]}>No results</Text>
-                    }
+                    ) : (
+                        <Text style={[globalStyle.errorMsg, { color: '#fff' }]}>No results</Text>
+                    )}
                 </ScrollView>
-            }
+            )}
         </View>
     );
 }

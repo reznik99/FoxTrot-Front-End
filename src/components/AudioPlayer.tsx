@@ -10,7 +10,7 @@ import { DARKHEADER, PRIMARY, SECONDARY } from '~/global/variables';
 type IProps = {
     audioData: string;
     audioDuration: number;
-}
+};
 
 export default function AudioPlayer(props: IProps) {
     const [audioPlaybackTime, setAudioPlaybackTime] = useState(0);
@@ -42,7 +42,7 @@ export default function AudioPlayer(props: IProps) {
         try {
             await Sound.setVolume(1.0);
             await Sound.startPlayer(audioFilePath);
-            Sound.addPlayBackListener((e) => setAudioPlaybackTime(e.currentPosition));
+            Sound.addPlayBackListener(e => setAudioPlaybackTime(e.currentPosition));
             Sound.addPlaybackEndListener(() => setPlayingAudio(false));
             setPlayingAudio(true);
         } catch (err) {
@@ -67,27 +67,25 @@ export default function AudioPlayer(props: IProps) {
             <View style={styles.audioContainer}>
                 <View style={styles.inputContainer}>
                     <Text>{Sound.mmssss(audioPlaybackTime ? ~~audioPlaybackTime : ~~props.audioDuration)}</Text>
-                    {playingAudio
-                        ? <TouchableOpacity style={styles.button} onPress={stopAudio}>
-                            <Icon source="pause"
-                                color={PRIMARY}
-                                size={25} />
+                    {playingAudio ? (
+                        <TouchableOpacity style={styles.button} onPress={stopAudio}>
+                            <Icon source="pause" color={PRIMARY} size={25} />
                         </TouchableOpacity>
-                        : <TouchableOpacity style={styles.button} onPress={playAudio}>
-                            <Icon source="play"
-                                color={PRIMARY}
-                                size={25} />
+                    ) : (
+                        <TouchableOpacity style={styles.button} onPress={playAudio}>
+                            <Icon source="play" color={PRIMARY} size={25} />
                         </TouchableOpacity>
-                    }
+                    )}
                 </View>
                 {/* Audio playback indicator */}
                 <View style={{ width: '75%' }}>
-                    <View style={{
-                        width: `${(audioPlaybackTime / props.audioDuration) * 100}%`, // TODO: send length
-                        height: 1,
-                        backgroundColor: playingAudio ? SECONDARY : 'transparent',
-                    }
-                    } />
+                    <View
+                        style={{
+                            width: `${(audioPlaybackTime / props.audioDuration) * 100}%`, // TODO: send length
+                            height: 1,
+                            backgroundColor: playingAudio ? SECONDARY : 'transparent',
+                        }}
+                    />
                 </View>
             </View>
         </CustomKeyboardAvoidingView>
@@ -100,12 +98,14 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingHorizontal: 10,
         backgroundColor: DARKHEADER,
-    }, inputContainer: {
+    },
+    inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
         paddingVertical: 10,
-    }, button: {
+    },
+    button: {
         padding: 10,
     },
 });

@@ -1,26 +1,16 @@
 {
-  "extends": "@react-native/typescript-config",
-  "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "resolvePackageJsonExports": false,
-    "strict": true,
-    "target": "esnext",
-    "baseUrl": "./src",
-    "paths": {
-      "~/*": [
-        "*"
-      ]
+    "extends": "@react-native/typescript-config",
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "resolvePackageJsonExports": false,
+        "strict": true,
+        "target": "esnext",
+        "baseUrl": "./src",
+        "paths": {
+            "~/*": ["*"]
+        },
+        "types": ["react-native", "jest"],
+        "lib": ["es2023", "dom"]
     },
-    "types": [
-      "react-native",
-      "jest"
-    ],
-    "lib": [
-      "es2023",
-      "dom"
-    ]
-  },
-  "exclude": [
-    "node_modules"
-  ]
+    "exclude": ["node_modules"]
 }

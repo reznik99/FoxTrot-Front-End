@@ -20,12 +20,16 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
     const [rePassword, setRePassword] = useState('');
 
     const signup = async () => {
-        if (loading) { return; }
+        if (loading) {
+            return;
+        }
         try {
             const success = await dispatch(signUp({ username, password, rePassword })).unwrap();
-            if (success) { return props.navigation.navigate('Login', { data: { errorMsg: '', loggedOut: false } }); }
+            if (success) {
+                return props.navigation.navigate('Login', { data: { errorMsg: '', loggedOut: false } });
+            }
         } catch (err) {
-            console.error("Signup error:", err);
+            console.error('Signup error:', err);
         }
     };
 
@@ -39,20 +43,23 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
                 {signupErr && <Text style={styles.errorMsg}>{signupErr}</Text>}
 
                 <View style={{ gap: 8 }}>
-                    <TextInput mode="outlined"
+                    <TextInput
+                        mode="outlined"
                         onChangeText={val => setUsername(val.trim())}
                         value={username}
                         label="Username"
                         outlineColor={signupErr && !username ? 'red' : undefined}
                     />
-                    <PasswordInput mode="outlined"
+                    <PasswordInput
+                        mode="outlined"
                         autoCapitalize="none"
                         onChangeText={val => setPassword(val.trim())}
                         value={password}
                         label="Password"
                         outlineColor={signupErr && !password ? 'red' : undefined}
                     />
-                    <PasswordInput mode="outlined"
+                    <PasswordInput
+                        mode="outlined"
                         autoCapitalize="none"
                         onChangeText={val => setRePassword(val.trim())}
                         value={rePassword}
@@ -63,14 +70,17 @@ export default function Signup(props: StackScreenProps<AuthStackParamList, 'Sign
 
                 {/* Actions */}
                 <View style={{ marginTop: 30, display: 'flex', alignItems: 'center' }}>
-                    <Button mode="contained"
+                    <Button
+                        mode="contained"
                         icon="account-plus"
                         style={styles.button}
                         onPress={signup}
-                        loading={loading}>Signup</Button>
+                        loading={loading}
+                    >
+                        Signup
+                    </Button>
                 </View>
             </View>
         </ScrollView>
     );
 }
-

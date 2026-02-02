@@ -36,7 +36,9 @@ export default function HeaderConversation(props: IProps) {
 
     const showSecurityCode = useCallback(async () => {
         try {
-            if (!contact || !contact.public_key) { throw new Error('No contact public key found'); }
+            if (!contact || !contact.public_key) {
+                throw new Error('No contact public key found');
+            }
 
             setVisibleDialog('SecurityCode');
             const digest = await publicKeyFingerprint(contact.public_key);
@@ -49,43 +51,46 @@ export default function HeaderConversation(props: IProps) {
     const copySecurityCode = useCallback(() => {
         setVisibleDialog('');
         Clipboard.setString(securityCode);
-        ToastAndroid.show(
-            'Security Code Copied',
-            ToastAndroid.SHORT
-        );
+        ToastAndroid.show('Security Code Copied', ToastAndroid.SHORT);
     }, [securityCode]);
 
     return (
         <View style={[styles.topBar, { paddingTop: edgeInsets.top, paddingHorizontal: edgeInsets.left }]}>
             <View style={styles.backAndTitle}>
-                {
-                    allowBack ?
-                        <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-                            <Icon source="arrow-left" color={styles.topBarText.color} size={20} />
-                        </TouchableOpacity>
-                        :
-                        null
-                }
+                {allowBack ? (
+                    <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
+                        <Icon source="arrow-left" color={styles.topBarText.color} size={20} />
+                    </TouchableOpacity>
+                ) : null}
                 <TouchableOpacity style={styles.profileBtn} onPress={showSecurityCode}>
                     <View style={styles.profilePicContainer}>
-                        <Image source={{ uri: `${data?.peer_user?.pic}` }}
+                        <Image
+                            source={{ uri: `${data?.peer_user?.pic}` }}
                             style={styles.profilePic}
-                            PlaceholderContent={<ActivityIndicator />} />
+                            PlaceholderContent={<ActivityIndicator />}
+                        />
                     </View>
                     <Text style={styles.topBarText}>{data.peer_user.phone_no}</Text>
                 </TouchableOpacity>
             </View>
             <View style={[styles.buttonContainer]}>
-                <TouchableOpacity style={styles.button}
-                    onPress={() => navigation.navigate('Call', { data: { peer_user: data.peer_user, video_enabled: true } })}>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() =>
+                        navigation.navigate('Call', { data: { peer_user: data.peer_user, video_enabled: true } })
+                    }
+                >
                     <Icon source="video" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button}
-                    onPress={() => navigation.navigate('Call', { data: { peer_user: data.peer_user, video_enabled: false } })}>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() =>
+                        navigation.navigate('Call', { data: { peer_user: data.peer_user, video_enabled: false } })
+                    }
+                >
                     <Icon source="phone" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button}
-                    onPress={() => setVisibleDialog('UserInfo')}>
+                <TouchableOpacity style={styles.button} onPress={() => setVisibleDialog('UserInfo')}>
                     <Icon source="information" color={styles.topBarText.color} size={styles.topBarText.fontSize} />
                 </TouchableOpacity>
             </View>
@@ -96,20 +101,31 @@ export default function HeaderConversation(props: IProps) {
                     <Dialog.Title style={{ textAlign: 'center' }}>Security Code</Dialog.Title>
                     <Dialog.Content>
                         <Text style={globalStyle.dialogText}>
-                            Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile code
+                            Verify with your contact ({data?.peer_user?.phone_no}) that this code matches their profile
+                            code
                         </Text>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
-                            <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Text>
+                            <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>
+                                {val}
+                            </Text>
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button mode="contained-tonal"
+                        <Button
+                            mode="contained-tonal"
                             onPress={() => setVisibleDialog('')}
-                            style={{ paddingHorizontal: 15 }}>Close</Button>
-                        <Button mode="contained"
+                            style={{ paddingHorizontal: 15 }}
+                        >
+                            Close
+                        </Button>
+                        <Button
+                            mode="contained"
                             onPress={() => copySecurityCode()}
                             icon="content-copy"
-                            style={{ paddingHorizontal: 15 }}>Copy</Button>
+                            style={{ paddingHorizontal: 15 }}
+                        >
+                            Copy
+                        </Button>
                     </Dialog.Actions>
                 </Dialog>
                 <Dialog visible={visibleDialog === 'UserInfo'} onDismiss={() => setVisibleDialog('')}>
@@ -117,14 +133,18 @@ export default function HeaderConversation(props: IProps) {
                     <Dialog.Title style={{ textAlign: 'center' }}>User Information</Dialog.Title>
                     <Dialog.Content>
                         <Text>Username: {contact?.phone_no}</Text>
-                        <Text>Status: {contact?.online ? "✅Online" : "❌Offline"}</Text>
+                        <Text>Status: {contact?.online ? '✅Online' : '❌Offline'}</Text>
                         <Text>Last seen: {humanTime(contact?.last_seen || '0')}</Text>
                         <Text>Identity Key: {contact?.public_key}</Text>
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button mode="contained-tonal"
+                        <Button
+                            mode="contained-tonal"
                             onPress={() => setVisibleDialog('')}
-                            style={{ paddingHorizontal: 15 }}>Close</Button>
+                            style={{ paddingHorizontal: 15 }}
+                        >
+                            Close
+                        </Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
@@ -139,37 +159,47 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         backgroundColor: DARKHEADER,
         paddingBottom: 8,
-    }, backAndTitle: {
+    },
+    backAndTitle: {
         flexDirection: 'row',
         justifyContent: 'flex-start',
         alignItems: 'center',
         overflow: 'hidden',
-    }, topBarText: {
+    },
+    topBarText: {
         color: '#fff',
         fontSize: 16,
-    }, buttonContainer: {
+    },
+    buttonContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-    }, button: {
+    },
+    button: {
         height: 50,
         padding: 10,
         marginHorizontal: 5,
         justifyContent: 'center',
         alignItems: 'center',
-    }, rightFloat: {
+    },
+    rightFloat: {
         justifyContent: 'flex-end',
-    }, padded: {
+    },
+    padded: {
         paddingHorizontal: 15,
-    }, wider: {
+    },
+    wider: {
         overflow: 'visible',
-    }, profileBtn: {
+    },
+    profileBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-    }, profilePicContainer: {
+    },
+    profilePicContainer: {
         overflow: 'hidden',
         borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,
         marginRight: 8,
-    }, profilePic: {
+    },
+    profilePic: {
         width: 40,
         height: 40,
         borderRadius: Platform.OS === 'ios' ? 150 / 2 : 150,

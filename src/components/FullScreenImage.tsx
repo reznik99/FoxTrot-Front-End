@@ -10,16 +10,17 @@ import { getWriteExtPermission } from '~/global/permissions';
 
 interface IProps {
     media: string;
-    onDismiss: () => void
+    onDismiss: () => void;
 }
 
 const FullScreenImage = (props: IProps) => {
-
     const [showMenu, setShowMenu] = useState(false);
 
     const download = useCallback(async () => {
         const granted = await getWriteExtPermission();
-        if (!granted) { return; }
+        if (!granted) {
+            return;
+        }
 
         const fullPath = RNFS.DownloadDirectoryPath + `/foxtrot-${Date.now()}.jpeg`;
         await RNFS.writeFile(fullPath, props.media, 'base64');
@@ -31,7 +32,8 @@ const FullScreenImage = (props: IProps) => {
     return (
         <View style={styles.container}>
             <GestureHandlerRootView style={{ flex: 1 }}>
-                <ImageZoom uri={`data:image/jpeg;base64,${props.media}`}
+                <ImageZoom
+                    uri={`data:image/jpeg;base64,${props.media}`}
                     resizeMode="contain"
                     resizeMethod="auto"
                     isDoubleTapEnabled={true}
@@ -43,7 +45,8 @@ const FullScreenImage = (props: IProps) => {
                 <Menu
                     visible={showMenu}
                     onDismiss={() => setShowMenu(false)}
-                    anchor={<IconButton icon="dots-vertical" size={25} onPress={() => setShowMenu(true)} />}>
+                    anchor={<IconButton icon="dots-vertical" size={25} onPress={() => setShowMenu(true)} />}
+                >
                     <Menu.Item title="Report" leadingIcon="information" />
                     <Divider />
                     <Menu.Item onPress={download} title="Download" leadingIcon="download" />

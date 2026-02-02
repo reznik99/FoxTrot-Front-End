@@ -34,10 +34,14 @@ export function initializeWebsocket() {
             dispatch({ type: 'user/SET_LOADING', payload: true });
 
             const state = getState().userReducer;
-            if (!state.token) { throw new Error('Token is not present. Re-auth required'); }
+            if (!state.token) {
+                throw new Error('Token is not present. Re-auth required');
+            }
 
             // Already opened so return early
-            if (state.socketConn) { state.socketConn.close(); }
+            if (state.socketConn) {
+                state.socketConn.close();
+            }
 
             // Enstablish websocket
             const socketConn = new WebSocket(`${WEBSOCKET_URL}?token=${state.token}`);
@@ -49,7 +53,7 @@ export function initializeWebsocket() {
                         channelName: 'Notifications for incoming messages',
                         channelDescription: 'Notifications for incoming messages',
                     },
-                    () => { },
+                    () => {},
                 );
             };
             socketConn.onclose = () => {
@@ -65,7 +69,7 @@ export function initializeWebsocket() {
                 });
                 dispatch({ type: 'user/WEBSOCKET_ERROR', payload: err });
             };
-            socketConn.onmessage = (event) => {
+            socketConn.onmessage = event => {
                 handleSocketMessage(event.data, dispatch, getState);
             };
             dispatch({ type: 'user/WEBSOCKET_CONNECT', payload: socketConn });
@@ -83,7 +87,9 @@ export function destroyWebsocket() {
             const state = getState().userReducer;
 
             // Close existing socket
-            if (state.socketConn) { state.socketConn.close(); }
+            if (state.socketConn) {
+                state.socketConn.close();
+            }
 
             dispatch({ type: 'user/WEBSOCKET_CONNECT', payload: null });
         } catch (err) {
@@ -131,13 +137,15 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                         id: parsedData.data.sender_id,
                         phone_no: parsedData.data.sender,
                         last_seen: Date.now(),
-                        online: true
+                        online: true,
                     };
                 }
                 dispatch({ type: 'user/RECV_CALL_OFFER', payload: { offer: parsedData.data?.offer, caller: caller } });
 
                 // Don't ring if offer was cached and received after app open on answer event
-                if (parsedData.data.ring === false) { break; }
+                if (parsedData.data.ring === false) {
+                    break;
+                }
                 // Ring and show notification
                 InCallManager.startRingtone('_DEFAULT_', VibratePattern, '', 20);
                 RNNotificationCall.displayNotification(
@@ -154,10 +162,10 @@ function handleSocketMessage(data: any, dispatch: AppDispatch, getState: GetStat
                         declineText: 'Decline',
                         notificationColor: 'colorAccent',
                         payload: { caller: caller, data: parsedData.data },
-                        isVideo: parsedData.data.type === 'video'
+                        isVideo: parsedData.data.type === 'video',
                         // notificationSound: 'skype_ring',
                         // mainComponent: "CallScreen"
-                    }
+                    },
                 );
                 break;
             case 'CALL_ANSWER':
