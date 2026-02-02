@@ -4,7 +4,12 @@ import { StatusBar } from 'react-native';
 import { Provider } from 'react-redux';
 import { Provider as PaperProvider, MD3DarkTheme, Icon } from 'react-native-paper';
 import { NavigationContainer, DarkTheme as NavDarkTheme, RouteProp } from '@react-navigation/native';
-import { createStackNavigator, CardStyleInterpolators, StackNavigationOptions, StackHeaderProps } from '@react-navigation/stack';
+import {
+    createStackNavigator,
+    CardStyleInterpolators,
+    StackNavigationOptions,
+    StackHeaderProps,
+} from '@react-navigation/stack';
 import { createDrawerNavigator, DrawerContentComponentProps, DrawerNavigationOptions } from '@react-navigation/drawer';
 import Toast from 'react-native-toast-message';
 import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging'; // Push Notifications
@@ -37,9 +42,7 @@ const defaultHeaderOptions: StackNavigationOptions & DrawerNavigationOptions = {
     headerTitleStyle: {
         fontWeight: 'bold',
     },
-    drawerIcon: ({ color }) => (
-        <Icon source="home" color={color} size={20} />
-    ),
+    drawerIcon: ({ color }) => <Icon source="home" color={color} size={20} />,
 };
 const animationDefaults: StackNavigationOptions = {
     cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
@@ -53,24 +56,20 @@ export type RootDrawerParamList = {
 const AppNavigator = createDrawerNavigator<RootDrawerParamList>();
 const AppDrawer = () => {
     return (
-        <AppNavigator.Navigator
-            screenOptions={{ swipeEdgeWidth: 200 }}
-            drawerContent={renderDrawerContent} >
+        <AppNavigator.Navigator screenOptions={{ swipeEdgeWidth: 200 }} drawerContent={renderDrawerContent}>
             <AppNavigator.Screen name="FoxTrot" component={Home} options={defaultHeaderOptions} />
         </AppNavigator.Navigator>
     );
 };
-const renderDrawerContent = (props: DrawerContentComponentProps) => (
-    <Drawer {...props} />
-);
+const renderDrawerContent = (props: DrawerContentComponentProps) => <Drawer {...props} />;
 
 export type HomeStackParamList = {
     Home: undefined;
-    Conversation: { data: { peer_user: UserData; } };
+    Conversation: { data: { peer_user: UserData } };
     NewConversation: undefined;
     AddContact: undefined;
     Call: { data: { peer_user: UserData; video_enabled: boolean } };
-    CameraView: { data: { peer: UserData, picturePath: string } };
+    CameraView: { data: { peer: UserData; picturePath: string } };
     Settings: undefined;
 };
 const HomeStack = createStackNavigator<HomeStackParamList>();
@@ -87,16 +86,18 @@ const HomeNavigator = () => {
         </HomeStack.Navigator>
     );
 };
-const renderHeaderConversation = ({ route }: { route: RouteProp<HomeStackParamList, 'Call' | 'Conversation'> }): StackNavigationOptions => (
-    {
-        header: (props: StackHeaderProps) => (
-            <HeaderConversation navigation={props.navigation as any} data={route.params.data} allowBack={true} />
-        ),
-    }
-);
+const renderHeaderConversation = ({
+    route,
+}: {
+    route: RouteProp<HomeStackParamList, 'Call' | 'Conversation'>;
+}): StackNavigationOptions => ({
+    header: (props: StackHeaderProps) => (
+        <HeaderConversation navigation={props.navigation as any} data={route.params.data} allowBack={true} />
+    ),
+});
 
 export type AuthStackParamList = {
-    Login: { data: { errorMsg: string; loggedOut: boolean; } };
+    Login: { data: { errorMsg: string; loggedOut: boolean } };
     Signup: undefined;
     App: undefined;
 };
@@ -118,7 +119,7 @@ const darkTheme = {
     colors: {
         ...MD3DarkTheme.colors,
         primary: PRIMARY,
-        onPrimary: "#fff",
+        onPrimary: '#fff',
         background: SECONDARY,
         accent: ACCENT,
     },
@@ -130,7 +131,9 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
     InCallManager.stopRingtone();
     console.log('Message handled in the background!', remoteMessage);
     const callerRaw = remoteMessage.data?.caller as string;
-    if (!callerRaw) { return console.error('Caller data is not defined'); }
+    if (!callerRaw) {
+        return console.error('Caller data is not defined');
+    }
 
     RNNotificationCall.addEventListener('answer', async info => {
         console.debug('RNNotificationCall: User answered call', info.callUUID);
@@ -175,25 +178,20 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
 
     const eventData = JSON.parse((remoteMessage.data?.data as string) || '{}') as SocketMessage;
     const caller = JSON.parse(callerRaw) as UserData;
-    RNNotificationCall.displayNotification(
-        QuickCrypto.randomUUID(),
-        caller.pic || getAvatar(caller.id),
-        20000,
-        {
-            channelId: 'com.foxtrot.callNotifications',
-            channelName: 'Notifications for incoming calls',
-            notificationIcon: '@mipmap/foxtrot', // mipmap
-            notificationTitle: caller.phone_no || 'Unknown User',
-            notificationBody: `Incoming ${eventData.type || 'audio'} call`,
-            answerText: 'Answer',
-            declineText: 'Decline',
-            notificationColor: 'colorAccent',
-            payload: { caller: caller, data: eventData },
-            isVideo: eventData.type === 'video'
-            // notificationSound: 'skype_ring',
-            // mainComponent: "CallScreen"
-        }
-    );
+    RNNotificationCall.displayNotification(QuickCrypto.randomUUID(), caller.pic || getAvatar(caller.id), 20000, {
+        channelId: 'com.foxtrot.callNotifications',
+        channelName: 'Notifications for incoming calls',
+        notificationIcon: '@mipmap/foxtrot', // mipmap
+        notificationTitle: caller.phone_no || 'Unknown User',
+        notificationBody: `Incoming ${eventData.type || 'audio'} call`,
+        answerText: 'Answer',
+        declineText: 'Decline',
+        notificationColor: 'colorAccent',
+        payload: { caller: caller, data: eventData },
+        isVideo: eventData.type === 'video',
+        // notificationSound: 'skype_ring',
+        // mainComponent: "CallScreen"
+    });
 });
 
 export default function App() {
