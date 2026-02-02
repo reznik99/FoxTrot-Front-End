@@ -1,5 +1,5 @@
 import React, { PureComponent, useState, useCallback, useMemo } from 'react';
-import { StyleSheet, Text, Pressable, View, Linking, ToastAndroid, Image, Vibration } from 'react-native';
+import { StyleSheet, Text, Pressable, View, Linking, ToastAndroid, Image } from 'react-native';
 import { ActivityIndicator, Icon, Modal, Portal } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -14,10 +14,13 @@ import Messaging from '~/components/Messaging';
 import { PRIMARY, SECONDARY } from '~/global/variables';
 import { decrypt } from '~/global/crypto';
 
-import { message, UserData, UPDATE_MESSAGE_DECRYPTED } from '~/store/reducers/user';
+import { message, UserData, UPDATE_MESSAGE_DECRYPTED, APPEND_OLDER_MESSAGES } from '~/store/reducers/user';
 import { RootState, store } from '~/store/store';
 import { sendMessage } from '~/store/actions/user';
+import { dbGetMessages } from '~/global/database';
 import { HomeStackParamList } from '~/../App';
+
+const PAGE_SIZE = 100;
 
 const todaysDate = new Date().toLocaleDateString();
 
@@ -36,11 +39,45 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     const [loading, setLoading] = useState(false);
     const [inputMessage, setInputMessage] = useState('');
     const [zoomMedia, setZoomMedia] = useState('');
+    const [offset, setOffset] = useState(PAGE_SIZE);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     // Memoize the reversed messages
     const reversedMessages = useMemo(() => {
         return [...conversation.messages].reverse();
     }, [conversation.messages]);
+
+    const loadMoreMessages = useCallback(async () => {
+        if (loadingMore || !hasMore) {
+            return;
+        }
+
+        setLoadingMore(true);
+        try {
+            const olderMessages = dbGetMessages(peer.phone_no, PAGE_SIZE, offset);
+            if (olderMessages.length === 0) {
+                setHasMore(false);
+                return;
+            }
+
+            store.dispatch(
+                APPEND_OLDER_MESSAGES({
+                    conversationId: peer.phone_no,
+                    messages: olderMessages,
+                }),
+            );
+
+            setOffset(prev => prev + olderMessages.length);
+            if (olderMessages.length < PAGE_SIZE) {
+                setHasMore(false);
+            }
+        } catch (err) {
+            console.error('Error loading more messages:', err);
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [loadingMore, hasMore, offset, peer.phone_no]);
 
     const handleSend = useCallback(async () => {
         if (inputMessage.trim() === '') {
@@ -121,11 +158,19 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     const renderListFooter = useCallback(
         () => (
             <View style={styles.footer}>
-                <Icon source="lock" color="#77f777" size={20} />
-                <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
+                {loadingMore ? (
+                    <ActivityIndicator size="small" color="#77f777" />
+                ) : hasMore ? (
+                    <Text style={{ color: '#969393' }}>Scroll up to load more</Text>
+                ) : (
+                    <>
+                        <Icon source="lock" color="#77f777" size={20} />
+                        <Text style={{ color: 'white' }}> Click a message to decrypt it</Text>
+                    </>
+                )}
             </View>
         ),
-        [],
+        [loadingMore, hasMore],
     );
 
     return (
@@ -140,7 +185,8 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                     startRenderingFromBottom: true,
                 }}
                 keyExtractor={t => t.id.toString()}
-                onStartReached={() => Vibration.vibrate()}
+                onStartReached={loadMoreMessages}
+                onStartReachedThreshold={0.5}
                 ListEmptyComponent={renderListEmpty}
                 ListFooterComponent={renderListFooter}
                 renderItem={({ item }) => (
