@@ -11,12 +11,13 @@ import Toast from 'react-native-toast-message';
 import FullScreenImage from '~/components/FullScreenImage';
 import AudioPlayer from '~/components/AudioPlayer';
 import Messaging from '~/components/Messaging';
-import { PRIMARY, SECONDARY } from '~/global/variables';
+import { DB_MSG_PAGE_SIZE, PRIMARY, SECONDARY } from '~/global/variables';
 import { decrypt } from '~/global/crypto';
 
-import { message, UserData, UPDATE_MESSAGE_DECRYPTED } from '~/store/reducers/user';
+import { message, UserData, UPDATE_MESSAGE_DECRYPTED, APPEND_OLDER_MESSAGES } from '~/store/reducers/user';
 import { RootState, store } from '~/store/store';
 import { sendMessage } from '~/store/actions/user';
+import { dbGetMessages } from '~/global/database';
 import { HomeStackParamList } from '~/../App';
 
 const todaysDate = new Date().toLocaleDateString();
@@ -36,16 +37,48 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     const [loading, setLoading] = useState(false);
     const [inputMessage, setInputMessage] = useState('');
     const [zoomMedia, setZoomMedia] = useState('');
+    const [offset, setOffset] = useState(DB_MSG_PAGE_SIZE);
+    const [hasMore, setHasMore] = useState(conversation.messages.length >= DB_MSG_PAGE_SIZE);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     // Memoize the reversed messages
     const reversedMessages = useMemo(() => {
         return [...conversation.messages].reverse();
     }, [conversation.messages]);
 
-    const handleSend = useCallback(async () => {
-        if (inputMessage.trim() === '') {
-            return;
+    const loadMoreMessages = useCallback(async () => {
+        if (loadingMore || !hasMore) return;
+
+        setLoadingMore(true);
+        Vibration.vibrate();
+        try {
+            // Load previous messages
+            const olderMessages = dbGetMessages(peer.phone_no, DB_MSG_PAGE_SIZE, offset);
+            if (olderMessages.length === 0) {
+                setHasMore(false);
+                return;
+            }
+            // Save in redux
+            store.dispatch(
+                APPEND_OLDER_MESSAGES({
+                    conversationId: peer.phone_no,
+                    messages: olderMessages,
+                }),
+            );
+            // Update state
+            setOffset(prev => prev + olderMessages.length);
+            if (olderMessages.length < DB_MSG_PAGE_SIZE) {
+                setHasMore(false);
+            }
+        } catch (err) {
+            console.error('Error loading more messages:', err);
+        } finally {
+            setLoadingMore(false);
         }
+    }, [loadingMore, hasMore, offset, peer.phone_no]);
+
+    const handleSend = useCallback(async () => {
+        if (inputMessage.trim() === '') return;
 
         try {
             setLoading(true);
@@ -65,9 +98,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
 
     const handleSendAudio = useCallback(
         async (data: string, duration: number) => {
-            if (data.trim() === '') {
-                return;
-            }
+            if (data.trim() === '') return;
 
             try {
                 setLoading(true);
@@ -91,9 +122,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
         try {
             setLoading(true);
             const { didCancel, assets } = await launchImageLibrary({ mediaType: 'photo', quality: 0.3 });
-            if (didCancel || !assets?.length) {
-                return;
-            }
+            if (didCancel || !assets?.length) return;
 
             // Render Camera page pre-filled with selected image
             props.navigation.navigate('CameraView', { data: { peer: peer, picturePath: assets[0].uri! } });
@@ -118,6 +147,24 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
         [],
     );
 
+    const renderListHeader = useCallback(() => {
+        if (loadingMore) {
+            return (
+                <View style={styles.footer}>
+                    <ActivityIndicator size="small" color="#77f777" />
+                </View>
+            );
+        }
+        if (hasMore) {
+            return (
+                <View style={styles.footer}>
+                    <Text style={{ color: '#969393' }}>Scroll up to load more</Text>
+                </View>
+            );
+        }
+        return null;
+    }, [loadingMore, hasMore]);
+
     const renderListFooter = useCallback(
         () => (
             <View style={styles.footer}>
@@ -140,8 +187,10 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                     startRenderingFromBottom: true,
                 }}
                 keyExtractor={t => t.id.toString()}
-                onStartReached={() => Vibration.vibrate()}
+                onStartReached={loadMoreMessages}
+                onStartReachedThreshold={0}
                 ListEmptyComponent={renderListEmpty}
+                ListHeaderComponent={renderListHeader}
                 ListFooterComponent={renderListFooter}
                 renderItem={({ item }) => (
                     <Message

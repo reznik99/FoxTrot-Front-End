@@ -205,6 +205,17 @@ export const userSlice = createSlice({
                 console.error('Error persisting decrypted message to SQLite:', err);
             }
         },
+        APPEND_OLDER_MESSAGES: (state, action: PayloadAction<{ conversationId: string; messages: message[] }>) => {
+            const { conversationId, messages } = action.payload;
+            if (messages.length === 0) {
+                return;
+            }
+            const conversation = state.conversations.get(conversationId);
+            if (conversation) {
+                // Append older messages to the end (messages are sorted newest first)
+                conversation.messages = [...conversation.messages, ...messages];
+            }
+        },
         RECV_CALL_OFFER: (state, action: PayloadAction<{ offer: RTCSessionDescription; caller: UserData }>) => {
             state.callOffer = action.payload?.offer;
             state.caller = action.payload?.caller;
@@ -250,6 +261,7 @@ export const {
     SEND_MESSAGE,
     RECV_MESSAGE,
     UPDATE_MESSAGE_DECRYPTED,
+    APPEND_OLDER_MESSAGES,
     RECV_CALL_OFFER,
     RECV_CALL_ANSWER,
     RECV_CALL_ICE_CANDIDATE,
