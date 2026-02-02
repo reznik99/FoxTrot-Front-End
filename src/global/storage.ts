@@ -6,6 +6,9 @@ import { Buffer } from 'buffer';
 const MMKV_KEY_SERVICE = 'foxtrot-mmkv-key';
 const MMKV_ENCRYPTION_MIGRATED_FLAG = 'mmkv-encryption-migrated';
 
+// MMKV storage is encrypted using AES-CFB-128.
+// Key: 16 bytes (128-bit), stored in device Keychain.
+
 let storage: MMKV | null = null;
 let storageInitPromise: Promise<MMKV> | null = null;
 
