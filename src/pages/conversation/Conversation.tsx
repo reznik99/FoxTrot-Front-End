@@ -1,5 +1,5 @@
 import React, { PureComponent, useState, useCallback, useMemo } from 'react';
-import { StyleSheet, Text, Pressable, View, Linking, ToastAndroid, Image } from 'react-native';
+import { StyleSheet, Text, Pressable, View, Linking, ToastAndroid, Image, Vibration } from 'react-native';
 import { ActivityIndicator, Icon, Modal, Portal } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -40,7 +40,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     const [inputMessage, setInputMessage] = useState('');
     const [zoomMedia, setZoomMedia] = useState('');
     const [offset, setOffset] = useState(PAGE_SIZE);
-    const [hasMore, setHasMore] = useState(true);
+    const [hasMore, setHasMore] = useState(conversation.messages.length >= PAGE_SIZE);
     const [loadingMore, setLoadingMore] = useState(false);
 
     // Memoize the reversed messages
@@ -49,25 +49,25 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     }, [conversation.messages]);
 
     const loadMoreMessages = useCallback(async () => {
-        if (loadingMore || !hasMore) {
-            return;
-        }
+        if (loadingMore || !hasMore) return;
 
         setLoadingMore(true);
+        Vibration.vibrate();
         try {
+            // Load previous messages
             const olderMessages = dbGetMessages(peer.phone_no, PAGE_SIZE, offset);
             if (olderMessages.length === 0) {
                 setHasMore(false);
                 return;
             }
-
+            // Save in redux
             store.dispatch(
                 APPEND_OLDER_MESSAGES({
                     conversationId: peer.phone_no,
                     messages: olderMessages,
                 }),
             );
-
+            // Update state
             setOffset(prev => prev + olderMessages.length);
             if (olderMessages.length < PAGE_SIZE) {
                 setHasMore(false);
@@ -80,9 +80,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     }, [loadingMore, hasMore, offset, peer.phone_no]);
 
     const handleSend = useCallback(async () => {
-        if (inputMessage.trim() === '') {
-            return;
-        }
+        if (inputMessage.trim() === '') return;
 
         try {
             setLoading(true);
@@ -102,9 +100,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
 
     const handleSendAudio = useCallback(
         async (data: string, duration: number) => {
-            if (data.trim() === '') {
-                return;
-            }
+            if (data.trim() === '') return;
 
             try {
                 setLoading(true);
@@ -128,9 +124,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
         try {
             setLoading(true);
             const { didCancel, assets } = await launchImageLibrary({ mediaType: 'photo', quality: 0.3 });
-            if (didCancel || !assets?.length) {
-                return;
-            }
+            if (didCancel || !assets?.length) return;
 
             // Render Camera page pre-filled with selected image
             props.navigation.navigate('CameraView', { data: { peer: peer, picturePath: assets[0].uri! } });
