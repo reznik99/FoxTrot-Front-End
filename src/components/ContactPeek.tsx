@@ -28,10 +28,11 @@ export default class ContactPeek extends Component<IProps, any> {
                     <Text style={globalStyle.textInfo}>{data.phone_no}</Text>
                 </View>
                 {loading && <ActivityIndicator />}
-                {isContact
-                    ? <IconButton size={25} icon="account" iconColor={PRIMARY} />
-                    : <IconButton size={25} icon="account-plus" iconColor={Colors.lightGreen300} />
-                }
+                {isContact ? (
+                    <IconButton size={25} icon="account" iconColor={PRIMARY} />
+                ) : (
+                    <IconButton size={25} icon="account-plus" iconColor={Colors.lightGreen300} />
+                )}
             </TouchableOpacity>
         );
     }
@@ -44,7 +45,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 10,
-    }, profilePicContainer: {
+    },
+    profilePicContainer: {
         overflow: 'hidden',
         backgroundColor: DARKHEADER,
         marginRight: 20,

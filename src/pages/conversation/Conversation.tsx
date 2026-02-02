@@ -321,9 +321,7 @@ class Message extends PureComponent<MProps, MState> {
                     break;
                 case 'MSG': // If message contains URL open it in browser
                     const messageChunks = this.state.decryptedMessage?.message?.split(' ') || [];
-                    const link = messageChunks.find(
-                        chunk => chunk.startsWith('https://') || chunk.startsWith('http://'),
-                    );
+                    const link = messageChunks.find(chunk => chunk.startsWith('https://') || chunk.startsWith('http://'));
                     if (link) {
                         Linking.openURL(link);
                     }

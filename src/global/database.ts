@@ -5,12 +5,7 @@ import QuickCrypto from 'react-native-quick-crypto';
 import { Buffer } from 'buffer';
 
 import { message, Conversation, UserData } from '~/store/reducers/user';
-import {
-    readFromStorage,
-    writeToStorage,
-    legacyReadFromAsyncStorage,
-    legacyDeleteFromAsyncStorage,
-} from '~/global/storage';
+import { readFromStorage, writeToStorage, legacyReadFromAsyncStorage, legacyDeleteFromAsyncStorage } from '~/global/storage';
 
 const DB_NAME = 'foxtrot.db';
 const DB_KEY_SERVICE = 'foxtrot-db-key';
@@ -208,10 +203,7 @@ export function dbGetMessages(conversationId: string, limit = 100, offset = 0): 
 export function dbUpdateMessageDecrypted(messageId: number, decryptedContent: string): void {
     const database = requireDb();
 
-    database.executeSync(`UPDATE messages SET message = ?, is_decrypted = 1 WHERE id = ?`, [
-        decryptedContent,
-        messageId,
-    ]);
+    database.executeSync(`UPDATE messages SET message = ?, is_decrypted = 1 WHERE id = ?`, [decryptedContent, messageId]);
 }
 
 // Conversations

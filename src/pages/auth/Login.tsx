@@ -20,7 +20,7 @@ type Credentials = {
     password: string;
     auth_token: string;
     time: number;
-}
+};
 
 export default function Login(props: StackScreenProps<AuthStackParamList, 'Login'>) {
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
@@ -41,10 +41,7 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
         // If user manually logged out, don't try autologin
         if (props.route.params?.data?.loggedOut) {
             if (props.route.params?.data?.errorMsg) {
-                Alert.alert('Unable to Login',
-                    props.route.params?.data?.errorMsg,
-                    [{ text: 'OK', onPress: () => { } }]
-                );
+                Alert.alert('Unable to Login', props.route.params?.data?.errorMsg, [{ text: 'OK', onPress: () => {} }]);
             }
             return console.debug('User logged out');
         }
@@ -73,7 +70,9 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
 
     const attemptAutoLogin = async (user_name: string) => {
         const creds = await loadCredentials(user_name);
-        if (!creds) { return; }
+        if (!creds) {
+            return;
+        }
 
         // If auth token is recent (<30min) then validate it
         if (millisecondsSince(new Date(creds.time)) < milliseconds.hour / 2) {
@@ -98,7 +97,9 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
                 accessControl: KeychainOpts.accessControl,
                 authenticationPrompt: KeychainOpts.authenticationPrompt,
             });
-            if (!res || res.username !== user_name) { return undefined; }
+            if (!res || res.username !== user_name) {
+                return undefined;
+            }
 
             const creds = JSON.parse(res.password);
             return { username: res.username, ...creds } as Credentials;
@@ -109,7 +110,9 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
     };
 
     const handleLogin = async (user_name: string, password_: string) => {
-        if (loading) { return; }
+        if (loading) {
+            return;
+        }
 
         Keyboard.dismiss();
         const loggedIn = await store.dispatch(logIn({ username: user_name, password: password_ })).unwrap();
@@ -128,17 +131,20 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
                 </View>
                 {loginErr && <Text style={styles.errorMsg}>{loginErr}</Text>}
 
-                {globalLoading
-                    ? <ActivityIndicator size="large" />
-                    : <View style={{ rowGap: 8 }}>
-                        <TextInput mode="outlined"
+                {globalLoading ? (
+                    <ActivityIndicator size="large" />
+                ) : (
+                    <View style={{ rowGap: 8 }}>
+                        <TextInput
+                            mode="outlined"
                             autoCapitalize="none"
                             onChangeText={val => setUsername(val.trim())}
                             value={username}
                             label="Username"
                             outlineColor={loginErr ? 'red' : undefined}
                         />
-                        <PasswordInput mode="outlined"
+                        <PasswordInput
+                            mode="outlined"
                             autoCapitalize="none"
                             onChangeText={val => setPassword(val.trim())}
                             value={password}
@@ -148,19 +154,28 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
 
                         {/* Actions */}
                         <View style={{ marginTop: 15, display: 'flex', alignItems: 'center' }}>
-                            <Button mode="contained"
+                            <Button
+                                mode="contained"
                                 icon="login"
                                 style={styles.button}
                                 loading={loading}
-                                onPress={() => handleLogin(username, password)}>Login</Button>
+                                onPress={() => handleLogin(username, password)}
+                            >
+                                Login
+                            </Button>
                             <Text style={{ paddingVertical: 10 }}>Or</Text>
-                            <Button mode="contained"
+                            <Button
+                                mode="contained"
                                 icon="account-plus"
                                 style={styles.buttonSecondary}
-                                onPress={() => props.navigation.navigate('Signup')}>Signup</Button>
+                                onPress={() => props.navigation.navigate('Signup')}
+                            >
+                                Signup
+                            </Button>
                         </View>
                         <View style={{ display: 'flex', alignItems: 'center' }}>
-                            <IconButton icon="fingerprint"
+                            <IconButton
+                                icon="fingerprint"
                                 size={50}
                                 iconColor={PRIMARY}
                                 onPress={() => attemptAutoLogin(username)}
@@ -168,9 +183,8 @@ export default function Login(props: StackScreenProps<AuthStackParamList, 'Login
                             />
                         </View>
                     </View>
-                }
+                )}
             </View>
         </ScrollView>
     );
 }
-

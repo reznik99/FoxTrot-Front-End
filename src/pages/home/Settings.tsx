@@ -106,11 +106,7 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
             // Parse PBKDF2 no. of iterations, salt, IV and Ciphertext and re-generate encryption key
             console.debug('Deriving key encryption key from password...');
             const [_, iter, salt, iv, ciphertext] = file.split('\n');
-            const derivedKEK = await deriveKeyFromPassword(
-                encPassword,
-                Buffer.from(salt, 'base64'),
-                parseInt(iter, 10),
-            );
+            const derivedKEK = await deriveKeyFromPassword(encPassword, Buffer.from(salt, 'base64'), parseInt(iter, 10));
 
             // Decrypt Keypair
             console.debug('Decrypting keypair file...');
@@ -128,16 +124,11 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
 
             // Store on device
             console.debug('Saving keys into TPM...');
-            await Keychain.setInternetCredentials(
-                API_URL,
-                `${user_data.phone_no}-keys`,
-                Buffer.from(Ikeys).toString(),
-                {
-                    storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
-                    server: API_URL,
-                    service: `${user_data.phone_no}-keys`,
-                },
-            );
+            await Keychain.setInternetCredentials(API_URL, `${user_data.phone_no}-keys`, Buffer.from(Ikeys).toString(), {
+                storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+                server: API_URL,
+                service: `${user_data.phone_no}-keys`,
+            });
 
             // Load into redux store
             console.debug('Loading keys into App...');

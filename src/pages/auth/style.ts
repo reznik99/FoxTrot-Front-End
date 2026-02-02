@@ -1,7 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { DARKHEADER, PRIMARY, SECONDARY } from '~/global/variables';
 
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -36,7 +35,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 30,
     },
-    title:{
+    title: {
         fontSize: 35,
     },
     subTitle: {

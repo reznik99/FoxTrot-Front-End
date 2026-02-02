@@ -123,9 +123,7 @@ describe('crypto.ts', () => {
             it('should throw error for message without separator', async () => {
                 const sessionKey = await createSessionKey(TEST_KEY_BASE64);
 
-                await expect(decrypt(sessionKey, 'noseparator')).rejects.toThrow(
-                    'Failed to find ":" separator in message',
-                );
+                await expect(decrypt(sessionKey, 'noseparator')).rejects.toThrow('Failed to find ":" separator in message');
             });
 
             it('should throw error for unknown version number', async () => {
