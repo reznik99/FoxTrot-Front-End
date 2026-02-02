@@ -38,3 +38,5 @@ export const ACCENT = '#6227e3';
 export const DARKHEADER = '#272a31';
 
 export const VibratePattern = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000];
+
+export const DB_MSG_PAGE_SIZE = 25;

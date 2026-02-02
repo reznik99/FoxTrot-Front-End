@@ -5,6 +5,7 @@ import QuickCrypto from 'react-native-quick-crypto';
 import { Buffer } from 'buffer';
 
 import { message, UserData } from '~/store/reducers/user';
+import { DB_MSG_PAGE_SIZE } from './variables';
 
 const DB_NAME = 'foxtrot.db';
 const DB_KEY_SERVICE = 'foxtrot-db-key';
@@ -178,7 +179,7 @@ export function dbSaveMessages(messages: message[], conversationId: string): voi
     );
 }
 
-export function dbGetMessages(conversationId: string, limit = 100, offset = 0): message[] {
+export function dbGetMessages(conversationId: string, limit = DB_MSG_PAGE_SIZE, offset = 0): message[] {
     const database = requireDb();
 
     const result = database.executeSync(

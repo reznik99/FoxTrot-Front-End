@@ -11,7 +11,7 @@ import Toast from 'react-native-toast-message';
 import FullScreenImage from '~/components/FullScreenImage';
 import AudioPlayer from '~/components/AudioPlayer';
 import Messaging from '~/components/Messaging';
-import { PRIMARY, SECONDARY } from '~/global/variables';
+import { DB_MSG_PAGE_SIZE, PRIMARY, SECONDARY } from '~/global/variables';
 import { decrypt } from '~/global/crypto';
 
 import { message, UserData, UPDATE_MESSAGE_DECRYPTED, APPEND_OLDER_MESSAGES } from '~/store/reducers/user';
@@ -19,8 +19,6 @@ import { RootState, store } from '~/store/store';
 import { sendMessage } from '~/store/actions/user';
 import { dbGetMessages } from '~/global/database';
 import { HomeStackParamList } from '~/../App';
-
-const PAGE_SIZE = 100;
 
 const todaysDate = new Date().toLocaleDateString();
 
@@ -39,8 +37,8 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
     const [loading, setLoading] = useState(false);
     const [inputMessage, setInputMessage] = useState('');
     const [zoomMedia, setZoomMedia] = useState('');
-    const [offset, setOffset] = useState(PAGE_SIZE);
-    const [hasMore, setHasMore] = useState(conversation.messages.length >= PAGE_SIZE);
+    const [offset, setOffset] = useState(DB_MSG_PAGE_SIZE);
+    const [hasMore, setHasMore] = useState(conversation.messages.length >= DB_MSG_PAGE_SIZE);
     const [loadingMore, setLoadingMore] = useState(false);
 
     // Memoize the reversed messages
@@ -55,7 +53,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
         Vibration.vibrate();
         try {
             // Load previous messages
-            const olderMessages = dbGetMessages(peer.phone_no, PAGE_SIZE, offset);
+            const olderMessages = dbGetMessages(peer.phone_no, DB_MSG_PAGE_SIZE, offset);
             if (olderMessages.length === 0) {
                 setHasMore(false);
                 return;
@@ -69,7 +67,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
             );
             // Update state
             setOffset(prev => prev + olderMessages.length);
-            if (olderMessages.length < PAGE_SIZE) {
+            if (olderMessages.length < DB_MSG_PAGE_SIZE) {
                 setHasMore(false);
             }
         } catch (err) {
@@ -190,7 +188,7 @@ export default function Conversation(props: StackScreenProps<HomeStackParamList,
                 }}
                 keyExtractor={t => t.id.toString()}
                 onStartReached={loadMoreMessages}
-                onStartReachedThreshold={0.5}
+                onStartReachedThreshold={0}
                 ListEmptyComponent={renderListEmpty}
                 ListHeaderComponent={renderListHeader}
                 ListFooterComponent={renderListFooter}
