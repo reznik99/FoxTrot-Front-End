@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, Dialog, Portal, Chip, Text, Divider, Switch, useTheme } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Button, Dialog, Portal, Chip, Text, Divider, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pick, types } from '@react-native-documents/picker';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -15,7 +14,7 @@ import { Buffer } from 'buffer';
 import { API_URL, DARKHEADER, KeychainOpts, SaltLenGCM, SaltLenPBKDF2 } from '~/global/variables';
 import { getReadExtPermission, getWriteExtPermission } from '~/global/permissions';
 import { deriveKeyFromPassword, exportKeypair } from '~/global/crypto';
-import { deleteFromStorage } from '~/global/storage';
+import { deleteFromStorage, getAllStorageKeys } from '~/global/storage';
 import globalStyle from '~/global/style';
 import { loadContacts, loadKeys } from '~/store/actions/user';
 import { logOut } from '~/store/actions/auth';
@@ -24,7 +23,6 @@ import { HomeStackParamList } from '~/../App';
 import PasswordInput from '~/components/PasswordInput';
 
 export default function Settings(props: StackScreenProps<HomeStackParamList, 'Settings'>) {
-
     const dispatch = useDispatch<AppDispatch>();
     const user_data = useSelector((state: RootState) => state.userReducer.user_data);
     const keypair = useSelector((state: RootState) => state.userReducer.keys);
@@ -36,25 +34,22 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
     const [hasPassword, setHasPassword] = useState(false);
     const [visibleDialog, setVisibleDialog] = useState('');
     const [encPassword, setEncPassword] = useState('');
-    const [showAllKeys, setShowAllKeys] = useState(false);
 
     const loadAllDeviceData = useCallback(() => {
-        AsyncStorage.getAllKeys()
-            .then(_keys => _keys.filter(key => showAllKeys || !key.includes('-chunk')))
-            .then(_keys => _keys.sort((a, b) => a.localeCompare(b, undefined, { numeric: true })))
-            .then(_keys => setKeys(_keys))
-            .catch(err => console.error('Error loading AsyncStorage items:', err));
+        const allKeys = getAllStorageKeys();
+        const sortedKeys = allKeys.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        setKeys(sortedKeys);
         Keychain.hasInternetCredentials({ server: API_URL, service: `${user_data.phone_no}-keys` })
             .then(_hasKeys => setHasIdentityKeys(Boolean(_hasKeys)))
             .catch(err => console.error('Error checking TPM for keys:', err));
         Keychain.hasGenericPassword({ server: API_URL, service: `${user_data.phone_no}-credentials` })
             .then(_hasPwd => setHasPassword(Boolean(_hasPwd)))
             .catch(err => console.error('Error checking TPM for password:', err));
-    }, [showAllKeys, user_data]);
+    }, [user_data]);
 
     useEffect(() => {
         loadAllDeviceData();
-    }, [showAllKeys, loadAllDeviceData]);
+    }, [loadAllDeviceData]);
 
     const resetApp = useCallback(async () => {
         // Require authentication before allowing deletion
@@ -66,26 +61,33 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
                 title: 'Authentication required',
             },
         });
-        if (!res || !res.password) { return; }
+        if (!res || !res.password) {
+            return;
+        }
 
         setVisibleDialog('');
         // Delete everything from the device
-        const allKeys = await AsyncStorage.getAllKeys()
+        const allKeys = getAllStorageKeys();
+        allKeys.forEach(key => deleteFromStorage(key));
         Promise.all([
-            ...allKeys.map(key => deleteFromStorage(key)),
             Keychain.resetInternetCredentials({ server: API_URL, service: `${user_data?.phone_no}-keys` }),
             Keychain.resetGenericPassword({ server: API_URL, service: `${user_data?.phone_no}-credentials` }),
             dispatch(logOut({ navigation: props.navigation as any })),
         ]);
     }, [user_data, props.navigation, dispatch]);
 
-    const resetValue = useCallback(async (key: string) => {
-        await deleteFromStorage(key);
-        setKeys(keys.filter(k => k !== key));
-    }, [keys]);
+    const resetValue = useCallback(
+        (key: string) => {
+            deleteFromStorage(key);
+            setKeys(keys.filter(k => k !== key));
+        },
+        [keys],
+    );
 
     const importKeys = async () => {
-        if (!encPassword?.trim()) { return; }
+        if (!encPassword?.trim()) {
+            return;
+        }
 
         try {
             const hasPermission = await getReadExtPermission();
@@ -95,14 +97,20 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
             // Read encrypted key file
             console.debug('Reading Encrypted keypair file...');
             const [fileSelected] = await pick({ type: types.plainText, mode: 'open' });
-            if (!fileSelected.uri) { throw new Error('Failed to pick file:' + fileSelected.error || 'unknown'); }
+            if (!fileSelected.uri) {
+                throw new Error('Failed to pick file:' + fileSelected.error || 'unknown');
+            }
 
             const file = await RNFS.readFile(fileSelected.uri);
 
             // Parse PBKDF2 no. of iterations, salt, IV and Ciphertext and re-generate encryption key
             console.debug('Deriving key encryption key from password...');
             const [_, iter, salt, iv, ciphertext] = file.split('\n');
-            const derivedKEK = await deriveKeyFromPassword(encPassword, Buffer.from(salt, 'base64'), parseInt(iter, 10));
+            const derivedKEK = await deriveKeyFromPassword(
+                encPassword,
+                Buffer.from(salt, 'base64'),
+                parseInt(iter, 10),
+            );
 
             // Decrypt Keypair
             console.debug('Decrypting keypair file...');
@@ -120,16 +128,23 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
 
             // Store on device
             console.debug('Saving keys into TPM...');
-            await Keychain.setInternetCredentials(API_URL, `${user_data.phone_no}-keys`, Buffer.from(Ikeys).toString(), {
-                storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
-                server: API_URL,
-                service: `${user_data.phone_no}-keys`,
-            });
+            await Keychain.setInternetCredentials(
+                API_URL,
+                `${user_data.phone_no}-keys`,
+                Buffer.from(Ikeys).toString(),
+                {
+                    storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+                    server: API_URL,
+                    service: `${user_data.phone_no}-keys`,
+                },
+            );
 
             // Load into redux store
             console.debug('Loading keys into App...');
             const success = await dispatch(loadKeys()).unwrap();
-            if (!success) { throw new Error('Failed to load imported keys into app'); }
+            if (!success) {
+                throw new Error('Failed to load imported keys into app');
+            }
 
             // TODO: Validate that public key locally matches public key on Key Server.
 
@@ -143,12 +158,9 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
                 text2: 'Messaging and Decryption can now be performed',
                 visibilityTime: 6000,
             });
-
         } catch (err: any) {
             console.error('Error importing user keys:', err);
-            Alert.alert('Failed to import keys', err.message ?? err.toString(),
-                [{ text: 'OK', onPress: () => { } }]
-            );
+            Alert.alert('Failed to import keys', err.message ?? err.toString(), [{ text: 'OK', onPress: () => {} }]);
         } finally {
             setVisibleDialog('');
             setEncPassword('');
@@ -157,7 +169,9 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
     };
 
     const exportKeys = async () => {
-        if (!encPassword?.trim() || !keypair) { return; }
+        if (!encPassword?.trim() || !keypair) {
+            return;
+        }
 
         try {
             const IKeys = await exportKeypair(keypair);
@@ -174,11 +188,16 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
             );
 
             // Store PBKDF2 no. of iterations, salt, IV and Ciphertext
-            const file = 'Foxtrot encrypted keys' + '\n'
-                + iter + '\n'
-                + Buffer.from(salt).toString('base64') + '\n'
-                + Buffer.from(iv).toString('base64') + '\n'
-                + Buffer.from(encryptedIKeys).toString('base64');
+            const file =
+                'Foxtrot encrypted keys' +
+                '\n' +
+                iter +
+                '\n' +
+                Buffer.from(salt).toString('base64') +
+                '\n' +
+                Buffer.from(iv).toString('base64') +
+                '\n' +
+                Buffer.from(encryptedIKeys).toString('base64');
             console.debug('File: \n', file);
 
             const hasPermission = await getWriteExtPermission();
@@ -199,9 +218,7 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
             });
         } catch (err: any) {
             console.error('Error exporting user keys:', err);
-            Alert.alert('Failed to export keys', err.message ?? err.toString(),
-                [{ text: 'OK', onPress: () => { } }]
-            );
+            Alert.alert('Failed to export keys', err.message ?? err.toString(), [{ text: 'OK', onPress: () => {} }]);
         } finally {
             setVisibleDialog('');
             setEncPassword('');
@@ -211,57 +228,71 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
     return (
         <View style={globalStyle.wrapper}>
             <ScrollView style={{ paddingHorizontal: 40, paddingTop: 15, paddingBottom: 15 + insets.bottom }}>
-
-                <Text variant="titleMedium" style={{ marginBottom: 10 }}>User Identity Keys</Text>
+                <Text variant="titleMedium" style={{ marginBottom: 10 }}>
+                    User Identity Keys
+                </Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Button mode="contained"
+                    <Button
+                        mode="contained"
                         icon="upload-circle"
                         onPress={() => setVisibleDialog('import')}
-                        loading={visibleDialog === 'import'}>
+                        loading={visibleDialog === 'import'}
+                    >
                         Import Keys
                     </Button>
-                    <Button mode="contained"
+                    <Button
+                        mode="contained"
                         icon="download-circle"
                         onPress={() => setVisibleDialog('export')}
-                        loading={visibleDialog === 'export'}>
+                        loading={visibleDialog === 'export'}
+                    >
                         Export Keys
                     </Button>
                 </View>
 
                 <Divider style={{ marginVertical: 15 }} />
 
-                <Text variant="titleMedium" style={{ marginBottom: 10 }}>User Data</Text>
+                <Text variant="titleMedium" style={{ marginBottom: 10 }}>
+                    User Data
+                </Text>
                 <View style={{ marginBottom: insets.bottom, gap: 5 }}>
                     <Text>Click entry to delete:</Text>
                     <View>
                         {/* KeyChain values */}
-                        {hasIdentityKeys && <Chip selected icon="key" style={{ backgroundColor: DARKHEADER }}>
-                            {user_data?.phone_no}-keys
-                        </Chip>}
-                        {hasPassword && <Chip selected icon="account-key" style={{ backgroundColor: DARKHEADER }}>
-                            {user_data?.phone_no}-credentials
-                        </Chip>}
+                        {hasIdentityKeys && (
+                            <Chip selected icon="key" style={{ backgroundColor: DARKHEADER }}>
+                                {user_data?.phone_no}-keys
+                            </Chip>
+                        )}
+                        {hasPassword && (
+                            <Chip selected icon="account-key" style={{ backgroundColor: DARKHEADER }}>
+                                {user_data?.phone_no}-credentials
+                            </Chip>
+                        )}
                         {/* Storage values */}
-                        {keys.map((key, idx) => <Chip icon="account" style={{ backgroundColor: DARKHEADER }}
-                            closeIcon="close"
-                            onClose={() => resetValue(key)}
-                            key={idx}>
-                            {key}
-                        </Chip>)}
+                        {keys.map((key, idx) => (
+                            <Chip
+                                icon="account"
+                                style={{ backgroundColor: DARKHEADER }}
+                                closeIcon="close"
+                                onClose={() => resetValue(key)}
+                                key={idx}
+                            >
+                                {key}
+                            </Chip>
+                        ))}
                     </View>
-                    <Button mode="contained"
+                    <Button
+                        mode="contained"
                         icon="alert-circle"
                         buttonColor={theme.colors.errorContainer}
                         textColor={theme.colors.error}
                         style={{ marginTop: 10 }}
                         onPress={() => setVisibleDialog('reset')}
-                        loading={visibleDialog === 'reset'}>
+                        loading={visibleDialog === 'reset'}
+                    >
                         Factory Reset App
                     </Button>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                        <Text>Show all db keys in storage</Text>
-                        <Switch value={showAllKeys} onValueChange={() => setShowAllKeys(!showAllKeys)} />
-                    </View>
                 </View>
 
                 <Divider style={{ marginVertical: 15 }} />
@@ -269,15 +300,19 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
 
             <Portal>
                 <Dialog visible={visibleDialog === 'reset'} onDismiss={() => setVisibleDialog('')}>
-                    <Dialog.Icon icon="flash-triangle" color='yellow' />
+                    <Dialog.Icon icon="flash-triangle" color="yellow" />
                     <Dialog.Title style={{ textAlign: 'center' }}>Factory Reset App</Dialog.Title>
                     <Dialog.Content>
                         <Text>All message data will be lost.</Text>
                         <Text>If you plan to login from another device. Ensure you have exported your Keys!</Text>
                     </Dialog.Content>
                     <Dialog.Actions style={globalStyle.spaceBetween}>
-                        <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
-                        <Button mode="contained" icon="delete" onPress={resetApp}>Clear Data</Button>
+                        <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>
+                            Cancel
+                        </Button>
+                        <Button mode="contained" icon="delete" onPress={resetApp}>
+                            Clear Data
+                        </Button>
                     </Dialog.Actions>
                 </Dialog>
 
@@ -285,16 +320,23 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
                     <Dialog.Icon icon="file-import" />
                     <Dialog.Title style={{ textAlign: 'center' }}>Import Identity Keys</Dialog.Title>
                     <Dialog.Content>
-                        <Text style={globalStyle.dialogText}>File selection will be prompted after decryption password is provided</Text>
-                        <PasswordInput label="Keypair decryption password"
+                        <Text style={globalStyle.dialogText}>
+                            File selection will be prompted after decryption password is provided
+                        </Text>
+                        <PasswordInput
+                            label="Keypair decryption password"
                             autoCapitalize="none"
                             onChangeText={setEncPassword}
                             value={encPassword}
                         />
                     </Dialog.Content>
                     <Dialog.Actions style={globalStyle.spaceBetween}>
-                        <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
-                        <Button mode="contained" onPress={importKeys} icon="upload" disabled={!encPassword?.trim()}>Import</Button>
+                        <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>
+                            Cancel
+                        </Button>
+                        <Button mode="contained" onPress={importKeys} icon="upload" disabled={!encPassword?.trim()}>
+                            Import
+                        </Button>
                     </Dialog.Actions>
                 </Dialog>
 
@@ -303,15 +345,25 @@ export default function Settings(props: StackScreenProps<HomeStackParamList, 'Se
                     <Dialog.Title style={{ textAlign: 'center' }}>Export Identity Keys</Dialog.Title>
                     <Dialog.Content>
                         <Text style={globalStyle.dialogText}>A weak password can result in account takeover!</Text>
-                        <PasswordInput label="Keypair encryption password"
+                        <PasswordInput
+                            label="Keypair encryption password"
                             autoCapitalize="none"
                             onChangeText={setEncPassword}
                             value={encPassword}
                         />
                     </Dialog.Content>
                     <Dialog.Actions style={globalStyle.spaceBetween}>
-                        <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>Cancel</Button>
-                        <Button mode="contained" onPress={exportKeys} icon="download" disabled={!encPassword?.trim() || !keypair}>Export</Button>
+                        <Button mode="contained-tonal" onPress={() => setVisibleDialog('')}>
+                            Cancel
+                        </Button>
+                        <Button
+                            mode="contained"
+                            onPress={exportKeys}
+                            icon="download"
+                            disabled={!encPassword?.trim() || !keypair}
+                        >
+                            Export
+                        </Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

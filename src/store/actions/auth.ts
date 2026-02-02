@@ -11,7 +11,7 @@ import { LOGGED_IN, LOGIN_ERROR_MSG, LOGOUT, SET_LOADING, SIGNED_UP, SIGNUP_ERRO
 import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '~/../App';
 import { StackNavigationProp } from '@react-navigation/stack';
 
-type logInParams = { username: string, password: string }
+type logInParams = { username: string; password: string };
 export const logIn = createAsyncThunk('logIn', async ({ username, password }: logInParams, thunkAPI) => {
     if (username === '' || password === '') {
         thunkAPI.dispatch(LOGIN_ERROR_MSG('Textfields cannot be blank!'));
@@ -28,7 +28,7 @@ export const logIn = createAsyncThunk('logIn', async ({ username, password }: lo
         console.debug('Saving user in storage');
         // Save user_data in phone storage
         const user_data = { pic: getAvatar(res.data.user_data?.id), ...res.data.user_data };
-        await writeToStorage('user_data', JSON.stringify(user_data));
+        writeToStorage('user_data', JSON.stringify(user_data));
 
         // Save password and JWT auth token in secure storage
         const secrets = {
@@ -46,84 +46,85 @@ export const logIn = createAsyncThunk('logIn', async ({ username, password }: lo
         // Save data in redux store
         thunkAPI.dispatch(LOGGED_IN({ token: res.data.token, user_data: user_data }));
         return true;
-    }
-    catch (err: any) {
+    } catch (err: any) {
         console.error('Error logging in:', err);
         thunkAPI.dispatch(LOGIN_ERROR_MSG(err.response?.data?.message || err.message));
-        Alert.alert('Unable to Login',
-            err.response?.data?.message || err.message,
-            [{ text: 'OK', onPress: () => { } }]
-        );
+        Alert.alert('Unable to Login', err.response?.data?.message || err.message, [{ text: 'OK', onPress: () => {} }]);
         return false;
-    }
-    finally {
+    } finally {
         thunkAPI.dispatch(SET_LOADING(false));
     }
 });
 
-type signUpParams = { username: string, password: string, rePassword: string }
-export const signUp = createAsyncThunk('signUp', async ({ username, password, rePassword }: signUpParams, thunkAPI): Promise<boolean> => {
-    if (!username || !password || !rePassword) {
-        thunkAPI.dispatch(SIGNUP_ERROR_MSG('Textfields cannot be blank!'));
-        return false;
-    } else if (password !== rePassword) {
-        thunkAPI.dispatch(SIGNUP_ERROR_MSG('Passwords do not match!'));
-        return false;
-    } else if (username.length <= 3) {
-        thunkAPI.dispatch(SIGNUP_ERROR_MSG('Username too short!'));
-        return false;
-    }
-    thunkAPI.dispatch(SIGNUP_ERROR_MSG(''));
-    try {
-        thunkAPI.dispatch(SET_LOADING(true));
+type signUpParams = { username: string; password: string; rePassword: string };
+export const signUp = createAsyncThunk(
+    'signUp',
+    async ({ username, password, rePassword }: signUpParams, thunkAPI): Promise<boolean> => {
+        if (!username || !password || !rePassword) {
+            thunkAPI.dispatch(SIGNUP_ERROR_MSG('Textfields cannot be blank!'));
+            return false;
+        } else if (password !== rePassword) {
+            thunkAPI.dispatch(SIGNUP_ERROR_MSG('Passwords do not match!'));
+            return false;
+        } else if (username.length <= 3) {
+            thunkAPI.dispatch(SIGNUP_ERROR_MSG('Username too short!'));
+            return false;
+        }
+        thunkAPI.dispatch(SIGNUP_ERROR_MSG(''));
+        try {
+            thunkAPI.dispatch(SET_LOADING(true));
 
-        const response = await axios.post(`${API_URL}/signup`, {
-            phone_no: username,
-            password: password,
-        });
-        // Save data in phone storage
-        await writeToStorage('user_data', JSON.stringify(response.data?.user_data || { phone_no: username }));
-        thunkAPI.dispatch(SIGNED_UP(response.data?.user_data || { phone_no: username }));
+            const response = await axios.post(`${API_URL}/signup`, {
+                phone_no: username,
+                password: password,
+            });
+            // Save data in phone storage
+            writeToStorage('user_data', JSON.stringify(response.data?.user_data || { phone_no: username }));
+            thunkAPI.dispatch(SIGNED_UP(response.data?.user_data || { phone_no: username }));
 
-        Toast.show({
-            type: 'success',
-            text1: 'Signed up successfully',
-            text2: `As ${username}`,
-            visibilityTime: 6000,
-        });
-        return true;
-    }
-    catch (err: any) {
-        console.error('Error signing up:', err);
-        thunkAPI.dispatch(SIGNUP_ERROR_MSG(err.response?.data?.message || err.message));
-        return false;
-    }
-    finally {
-        thunkAPI.dispatch(SET_LOADING(false));
-    }
-});
+            Toast.show({
+                type: 'success',
+                text1: 'Signed up successfully',
+                text2: `As ${username}`,
+                visibilityTime: 6000,
+            });
+            return true;
+        } catch (err: any) {
+            console.error('Error signing up:', err);
+            thunkAPI.dispatch(SIGNUP_ERROR_MSG(err.response?.data?.message || err.message));
+            return false;
+        } finally {
+            thunkAPI.dispatch(SET_LOADING(false));
+        }
+    },
+);
 
-export type RootNavigation = StackNavigationProp<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot', undefined>
+export type RootNavigation = StackNavigationProp<
+    HomeStackParamList & AuthStackParamList & RootDrawerParamList,
+    'FoxTrot',
+    undefined
+>;
 export const logOut = createAsyncThunk('logOut', async ({ navigation }: { navigation: RootNavigation }, thunkAPI) => {
     console.debug('Logging out');
     // Clear redux state
     thunkAPI.dispatch(LOGOUT(undefined));
     // Clear storage
-    await deleteFromStorage('user_data');
+    deleteFromStorage('user_data');
 
     navigation.replace('Login', { data: { loggedOut: true, errorMsg: '' } });
 });
 
 export function setupInterceptors(navigation: RootNavigation) {
     axios.interceptors.response.use(
-        (response) => response,
+        response => response,
         (error: AxiosError) => {
             if (error.response?.status === 403) {
                 // TODO: Re-authenticate instead of signing out
-                navigation.replace('Login', { data: { loggedOut: true, errorMsg: 'Session expired. Please re-authenticate.' } });
+                navigation.replace('Login', {
+                    data: { loggedOut: true, errorMsg: 'Session expired. Please re-authenticate.' },
+                });
             }
             return Promise.reject(error);
-        }
+        },
     );
 }
-
