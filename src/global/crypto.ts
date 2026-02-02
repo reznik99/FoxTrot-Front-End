@@ -1,14 +1,8 @@
 // Crypto
 import { Buffer } from 'buffer';
 import QuickCrypto, { CryptoKey as QCCryptoKey, RandomTypedArrays } from 'react-native-quick-crypto';
-import {
-    KeypairAlgorithm,
-    LegacySymmetricAlgorithm,
-    SaltLenCBC,
-    SaltLenGCM,
-    SymmetricAlgorithm,
-} from '~/global/variables';
-import { milliseconds } from '~/global/helper';
+import { KeypairAlgorithm, LegacySymmetricAlgorithm, SaltLenCBC, SaltLenGCM, SymmetricAlgorithm } from '~/global/variables';
+import { milliseconds } from './helper';
 
 interface exportedKeypair {
     privateKey: string;
@@ -54,10 +48,7 @@ export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKey
 }
 
 /** Generates a 256bit AES-GCM Encryption key for messages with a user */
-export async function generateSessionKeyECDH(
-    peerPublic: string,
-    userPrivate: CryptoKey | undefined,
-): Promise<QCCryptoKey> {
+export async function generateSessionKeyECDH(peerPublic: string, userPrivate: CryptoKey | undefined): Promise<QCCryptoKey> {
     if (!peerPublic) {
         throw new Error("Contacts's public key not present. ECDHE failed");
     }
@@ -135,9 +126,7 @@ export async function publicKeyFingerprint(peerPublic: string): Promise<string> 
 /** Encrypts a given message using the supplied AES Session Key (GCM) (generated from *generateSessionKeyECDH*) and returns it as a Base64 string. */
 export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise<string> {
     if (!sessionKey) {
-        throw new Error(
-            "SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.",
-        );
+        throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.");
     }
     const startTime = performance.now();
 
@@ -158,9 +147,7 @@ export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise
 /** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
 export async function decrypt(sessionKey: QCCryptoKey, encryptedMessageRaw: string): Promise<string> {
     if (!sessionKey) {
-        throw new Error(
-            "SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.",
-        );
+        throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.");
     }
 
     const [version, encryptedMessage] = extractVersioningFromMessage(encryptedMessageRaw);
@@ -404,10 +391,7 @@ export async function getKeyForDayOffset(state: RatchetState, targetOffset: numb
 }
 
 /** Encrypts a message using V2 ratchet format. Returns updated state and ciphertext. */
-export async function encryptV2(
-    state: RatchetState,
-    message: string,
-): Promise<{ state: RatchetState; ciphertext: string }> {
+export async function encryptV2(state: RatchetState, message: string): Promise<{ state: RatchetState; ciphertext: string }> {
     const todayOffset = getDayOffset(state.epoch, getTodayTimestamp());
 
     // Advance ratchet if needed

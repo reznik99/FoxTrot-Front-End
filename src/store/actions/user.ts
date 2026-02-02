@@ -5,27 +5,42 @@ import { getMessaging, getToken, registerDeviceForRemoteMessages } from '@react-
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
 import {
-    Conversation, message, ADD_CONTACT_SUCCESS, KEY_LOAD, LOAD_CONTACTS, LOAD_CONVERSATIONS,
-    SEND_MESSAGE, SET_LOADING, SET_REFRESHING, SYNC_FROM_STORAGE, TOKEN_VALID, UserData,
+    Conversation,
+    message,
+    ADD_CONTACT_SUCCESS,
+    KEY_LOAD,
+    LOAD_CONTACTS,
+    LOAD_CONVERSATIONS,
+    SEND_MESSAGE,
+    SET_LOADING,
+    SET_REFRESHING,
+    SYNC_FROM_STORAGE,
+    TOKEN_VALID,
+    UserData,
     TURN_CREDS,
 } from '~/store/reducers/user';
 import { importKeypair, exportKeypair, generateSessionKeyECDH, encrypt, generateIdentityKeypair } from '~/global/crypto';
 import { readFromStorage, writeToStorage } from '~/global/storage';
 import { getPushNotificationPermission } from '~/global/permissions';
+import { getDb, dbGetConversations, dbGetConversation, dbSaveMessage, dbSaveConversation } from '~/global/database';
 import { API_URL, KeypairAlgorithm } from '~/global/variables';
 import { AppDispatch, RootState } from '~/store/store';
 import { getAvatar } from '~/global/helper';
 
-const createDefaultAsyncThunk = createAsyncThunk.withTypes<{ state: RootState, dispatch: AppDispatch }>();
+const createDefaultAsyncThunk = createAsyncThunk.withTypes<{ state: RootState; dispatch: AppDispatch }>();
 
 export const loadKeys = createDefaultAsyncThunk('loadKeys', async (_, thunkAPI) => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
 
         const state = thunkAPI.getState().userReducer;
-        if (state.keys) { return true; }
+        if (state.keys) {
+            return true;
+        }
 
-        console.debug(`Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage for user ${state.user_data.phone_no}`);
+        console.debug(
+            `Loading '${KeypairAlgorithm.name} ${KeypairAlgorithm.namedCurve}' keys from secure storage for user ${state.user_data.phone_no}`,
+        );
         const credentials = await Keychain.getInternetCredentials(API_URL, {
             server: API_URL,
             service: `${state.user_data.phone_no}-keys`,
@@ -79,7 +94,6 @@ export const generateAndSyncKeys = createDefaultAsyncThunk<boolean>('generateAnd
         // Store keypair in memory
         thunkAPI.dispatch(KEY_LOAD(keyPair));
         return true;
-
     } catch (err: any) {
         await Keychain.resetInternetCredentials({ server: API_URL, service: `${state.user_data?.phone_no}-keys` });
         console.error('Error generating and syncing keys:', err);
@@ -101,6 +115,9 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
 
         const state = thunkAPI.getState().userReducer;
 
+        // Initialize database
+        await getDb();
+
         // Check last time we hit the API for messages
         const cachedLastChecked = (await readFromStorage(`messages-${state.user_data.id}-last-checked`)) || '0';
 
@@ -109,29 +126,33 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
 
         // Load bulk messages from storage if there aren't any in the redux state
         if (!state.conversations.size) {
-            try {
-                const cachedConversations = await readFromStorage(`messages-${state.user_data.id}`);
-                if (!cachedConversations) { throw new Error('No cached messages'); }
-
-                previousConversations = new Map(JSON.parse(cachedConversations));
-                console.debug('Loaded', previousConversations.size, 'conversations from storage. Last checked', lastChecked);
-            } catch (err: any) {
-                console.warn('Failed to load messages from storage: ', err);
+            // Load from SQLite
+            for (const conv of dbGetConversations()) {
+                const fullConv = dbGetConversation(conv.other_user.phone_no);
+                if (fullConv) {
+                    previousConversations.set(conv.other_user.phone_no, fullConv);
+                }
             }
+            console.debug('Loaded', previousConversations.size, 'conversations from SQLite. Last checked', lastChecked);
         } else {
             previousConversations = new Map(state.conversations);
             console.debug('Found', previousConversations.size, 'conversations in memory. Last checked', lastChecked);
         }
 
         // If no cached conversations, load all from API just in case.
-        if (!previousConversations.size) { lastChecked = 0; }
+        if (!previousConversations.size) {
+            lastChecked = 0;
+        }
 
         // Load new user messages
         const conversations = new Map(previousConversations);
-        const response = await axios.get<message[]>(`${API_URL}/getConversations/?since=${lastChecked}`, axiosBearerConfig(state.token));
+        const response = await axios.get<message[]>(
+            `${API_URL}/getConversations/?since=${lastChecked}`,
+            axiosBearerConfig(state.token),
+        );
 
-        response.data.toReversed().forEach((msg) => {
-            const peer = {
+        response.data.toReversed().forEach(msg => {
+            const peer: UserData = {
                 id: msg.sender_id,
                 phone_no: msg.sender,
                 pic: getAvatar(msg.sender_id),
@@ -156,27 +177,21 @@ export const loadMessages = createDefaultAsyncThunk('loadMessages', async (_, th
                     messages: [msg],
                 });
             }
+
+            // Save to SQLite
+            try {
+                dbSaveConversation(peer, new Date(msg.sent_at).getTime());
+                dbSaveMessage(msg, peer.phone_no);
+            } catch (err: any) {
+                console.error('Error saving message to SQLite:', err);
+            }
         });
         const newMessagesLoaded = response.data?.length;
         console.debug('Loaded', newMessagesLoaded, 'new messages from api');
 
         // Save all new conversations to redux state
         thunkAPI.dispatch(LOAD_CONVERSATIONS(conversations));
-
-        if (newMessagesLoaded > 0) {
-            // Save all conversations to local-storage so we don't reload them unnecessarily from the API
-            writeToStorage(`messages-${state.user_data.id}`, JSON.stringify(Array.from(conversations.entries())))
-                .catch(err => {
-                    console.error('Error writing messages to disk:', err);
-                    Toast.show({
-                        type: 'error',
-                        text1: 'Error writing messages to disk',
-                        text2: err.message ?? err.toString(),
-                        visibilityTime: 5000,
-                    });
-                });
-        }
-        await writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
+        writeToStorage(`messages-${state.user_data.id}-last-checked`, String(Date.now()));
     } catch (err: any) {
         console.error('Error loading messages:', err);
         Toast.show({
@@ -197,19 +212,20 @@ export const loadContacts = createDefaultAsyncThunk('loadContacts', async ({ ato
 
         // Load contacts
         const response = await axios.get<UserData[]>(`${API_URL}/getContacts`, axiosBearerConfig(state.token));
-        const contacts = await Promise.all<UserData>(response.data.map(async (contact) => {
-            try {
-                const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey);
-                console.debug('Generated session key for contact:', contact.phone_no);
-                return { ...contact, pic: getAvatar(contact.id), session_key };
-            } catch (err: any) {
-                console.warn('Failed to generate session key:', contact.phone_no, err.message || err);
-                return { ...contact, pic: getAvatar(contact.id) };
-            }
-        }));
+        const contacts = await Promise.all<UserData>(
+            response.data.map(async contact => {
+                try {
+                    const session_key = await generateSessionKeyECDH(contact.public_key || '', state.keys?.privateKey);
+                    console.debug('Generated session key for contact:', contact.phone_no);
+                    return { ...contact, pic: getAvatar(contact.id), session_key };
+                } catch (err: any) {
+                    console.warn('Failed to generate session key:', contact.phone_no, err.message || err);
+                    return { ...contact, pic: getAvatar(contact.id) };
+                }
+            }),
+        );
 
         thunkAPI.dispatch(LOAD_CONTACTS(contacts));
-
     } catch (err: any) {
         console.error('Error loading contacts:', err);
         Toast.show({
@@ -219,7 +235,9 @@ export const loadContacts = createDefaultAsyncThunk('loadContacts', async ({ ato
             visibilityTime: 5000,
         });
     } finally {
-        if (atomic) { thunkAPI.dispatch(SET_REFRESHING(false)); }
+        if (atomic) {
+            thunkAPI.dispatch(SET_REFRESHING(false));
+        }
     }
 });
 
@@ -243,38 +261,49 @@ export const addContact = createDefaultAsyncThunk('addContact', async ({ user }:
     }
 });
 
-export const searchUsers = createDefaultAsyncThunk<UserData[], { prefix: string }>('searchUsers', async ({ prefix }, thunkAPI) => {
-    try {
-        thunkAPI.dispatch({ type: 'SET_LOADING', payload: true });
-        const state = thunkAPI.getState().userReducer;
+export const searchUsers = createDefaultAsyncThunk<UserData[], { prefix: string }>(
+    'searchUsers',
+    async ({ prefix }, thunkAPI) => {
+        try {
+            thunkAPI.dispatch({ type: 'SET_LOADING', payload: true });
+            const state = thunkAPI.getState().userReducer;
 
-        const response = await axios.get<UserData[]>(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token));
+            const response = await axios.get<UserData[]>(`${API_URL}/searchUsers/${prefix}`, axiosBearerConfig(state.token));
 
-        // Append robot picture to users
-        const results = response.data.map((user) => (
-            { ...user, pic: getAvatar(user.id), isContact: state.contacts.some(contact => contact.id === user.id) }
-        ));
-        console.debug('Action: searchUsers, Prefix:', prefix, 'Results:', results);
-        return results;
-    } catch (err: any) {
-        console.error('Error searching users:', err);
-        return [];
-    } finally {
-        thunkAPI.dispatch({ type: 'SET_LOADING', payload: false });
-    }
-});
+            // Append robot picture to users
+            const results = response.data.map(user => ({
+                ...user,
+                pic: getAvatar(user.id),
+                isContact: state.contacts.some(contact => contact.id === user.id),
+            }));
+            console.debug('Action: searchUsers, Prefix:', prefix, 'Results:', results);
+            return results;
+        } catch (err: any) {
+            console.error('Error searching users:', err);
+            return [];
+        } finally {
+            thunkAPI.dispatch({ type: 'SET_LOADING', payload: false });
+        }
+    },
+);
 
-type sendMessageParams = { message: string, to_user: UserData }
+type sendMessageParams = { message: string; to_user: UserData };
 export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: sendMessageParams, thunkAPI) => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
         const state = thunkAPI.getState().userReducer;
 
-        if (!data.to_user?.session_key) { throw new Error('Missing session_key for ' + data.to_user?.phone_no); }
+        if (!data.to_user?.session_key) {
+            throw new Error('Missing session_key for ' + data.to_user?.phone_no);
+        }
 
         // Encrypt and send message
         const encryptedMessage = await encrypt(data.to_user.session_key, data.message);
-        await axios.post(`${API_URL}/sendMessage`, { message: encryptedMessage, contact_id: data.to_user.id, contact_phone_no: data.to_user.phone_no }, axiosBearerConfig(state.token));
+        await axios.post(
+            `${API_URL}/sendMessage`,
+            { message: encryptedMessage, contact_id: data.to_user.id, contact_phone_no: data.to_user.phone_no },
+            axiosBearerConfig(state.token),
+        );
 
         // Save message locally
         const localMessage = {
@@ -287,7 +316,7 @@ export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: s
                 sender_id: state.user_data.id,
                 reciever: data.to_user.phone_no,
                 reciever_id: data.to_user.id,
-                sent_at: (new Date()).toString(),
+                sent_at: new Date().toISOString(),
                 seen: false,
             },
         };
@@ -309,7 +338,9 @@ export const sendMessage = createDefaultAsyncThunk('sendMessage', async (data: s
 export const validateToken = createDefaultAsyncThunk('validateToken', async (token: string, thunkAPI) => {
     try {
         thunkAPI.dispatch(SET_LOADING(true));
-        if (!token) { return false; }
+        if (!token) {
+            return false;
+        }
 
         const res = await axios.get(`${API_URL}/validateToken`, axiosBearerConfig(token));
 
@@ -330,7 +361,9 @@ export const syncFromStorage = createDefaultAsyncThunk('syncFromStorage', async 
         console.debug('Loading user from local storage');
         // TODO: Load existing contacts from async storage
         const user_data = await readFromStorage('user_data');
-        if (!user_data) { return undefined; }
+        if (!user_data) {
+            return undefined;
+        }
 
         const payload = {
             user_data: JSON.parse(user_data) as UserData,
@@ -395,5 +428,5 @@ export const getTURNServerCreds = createDefaultAsyncThunk('getTURNServerCreds', 
 });
 
 function axiosBearerConfig(token: string) {
-    return { headers: { 'Authorization': `JWT ${token}` } };
+    return { headers: { Authorization: `JWT ${token}` } };
 }

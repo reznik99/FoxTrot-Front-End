@@ -1,76 +1,115 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createMMKV, type MMKV } from 'react-native-mmkv';
+import * as Keychain from 'react-native-keychain';
+import QuickCrypto from 'react-native-quick-crypto';
+import { Buffer } from 'buffer';
 
-const chunk_separator = '-chunk'; // Used if data is > 1Mib (1048576) 
+const MMKV_KEY_SERVICE = 'foxtrot-mmkv-key';
 
-// Returns all existing keys that belong to the given key (key + chunks)
-async function getRelatedKeys(key: string) {
-    // Get all keys, filter for the target keys and it's chunks, then sort the keys
-    return (await AsyncStorage.getAllKeys())
-        .filter(k => k === key || k.startsWith(key + chunk_separator))
-        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+// MMKV storage is encrypted using AES-CFB-128.
+// Key: 16 bytes (128-bit), stored in device Keychain.
+
+let storage: MMKV | null = null;
+let storageInitPromise: Promise<MMKV> | null = null;
+
+async function getMmkvKey(): Promise<string | null> {
+    try {
+        const credentials = await Keychain.getGenericPassword({ service: MMKV_KEY_SERVICE });
+        if (credentials && credentials.password) {
+            return credentials.password;
+        }
+    } catch (err) {
+        console.debug('No existing MMKV key found');
+    }
+    return null;
 }
 
-/**
- * Writes given data to given key in AsyncStorage. If data exceeds 1 MiB, it is split into chunks.
- * Chunks are stored with keys in the format 'key', 'key-chunk1', 'key-chunk2', ...
- * To read all chunks for a key, use `readFromStorage` function.
- * To delete all chunks for a key, use `deleteFromStorage` function.
- * @param key Unique key to store data under
- * @param data Stringified data to store
- */
-export async function writeToStorage(key: string, data: string) {
-    // 1. Clean up ALL previous chunks first
-    await deleteFromStorage(key);
-    // 2. Chunk data if greater than 1MiB
-    const chunks = data.match(/.{1,1048576}/g) || [data];
-    // 3. Prepare the batch
-    const keyValueSets: Array<[string, string]> = chunks.map((chunk, i) => {
-        const index = i === 0 ? '' : chunk_separator + i;
-        return [key + index, chunk];
+async function createMmkvKey(): Promise<string> {
+    const keyBytes = QuickCrypto.getRandomValues(new Uint8Array(16));
+    const key = Buffer.from(keyBytes).toString('hex');
+
+    await Keychain.setGenericPassword(MMKV_KEY_SERVICE, key, {
+        service: MMKV_KEY_SERVICE,
+        storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
     });
-    // 4. Write everything
-    await AsyncStorage.multiSet(keyValueSets);
-    console.debug('Wrote', chunks.length, 'chunk(s) to storage for', key);
+
+    console.debug('Generated and stored new MMKV encryption key');
+    return key;
 }
 
 /**
- * Reads data from given key from AsyncStorage.
- * It handles reading chunked data, previously stored with `writeToStorage` function.
- * @param key Unique key to find data under
+ * Gets the storage instance, initializing it with encryption if needed.
+ * Handles migration from unencrypted to encrypted storage on first run.
+ *
+ * Migration logic: If no key exists in Keychain, this is either a fresh install
+ * or an existing install with unencrypted data. We open unencrypted first,
+ * then recrypt with a new key. If a key exists, storage is already encrypted.
  */
-export async function readFromStorage(key: string) {
-    // 1. Get all relevant keys (e.g., 'myKey', 'myKey-chunk1', etc.)
-    const keys = await getRelatedKeys(key);
-    if (keys.length === 0) return null;
-    // 2. Fetch all chunks in parallel
-    const pairs = await AsyncStorage.multiGet(keys);
-    // 3. Join the values
-    const data = pairs.map(pair => pair[1]).join('');
-    console.debug('Read', keys.length, 'chunk(s) from storage for', key);
-    return data;
+async function getStorage(): Promise<MMKV> {
+    if (storage) {
+        return storage;
+    }
+
+    // Prevent concurrent initialization
+    if (storageInitPromise) {
+        return storageInitPromise;
+    }
+
+    storageInitPromise = (async () => {
+        const existingKey = await getMmkvKey();
+
+        if (existingKey) {
+            // Key exists, storage is already encrypted
+            storage = createMMKV({
+                id: 'foxtrot-storage',
+                encryptionKey: existingKey,
+            });
+            console.debug('MMKV storage opened with encryption');
+        } else {
+            // No key exists - fresh install or needs migration
+            // Open unencrypted first to preserve any existing data
+            storage = createMMKV({ id: 'foxtrot-storage' });
+            const hasExistingData = storage.getAllKeys().length > 0;
+
+            // Generate and store new key
+            const newKey = await createMmkvKey();
+
+            // Encrypt storage (migrates existing data if any)
+            storage.recrypt(newKey);
+            console.debug(
+                hasExistingData ? 'MMKV storage migrated to encrypted' : 'MMKV storage initialized with encryption',
+            );
+        }
+
+        return storage;
+    })();
+
+    return storageInitPromise;
 }
 
-/**
- * Reads data from given key from AsyncStorage, and deletes it afterwards.
- * It handles reading chunked data, previously stored with `writeToStorage` function.
- * @param key Unique key to find data under
- */
-export async function popFromStorage(key: string) {
-    // 1. Read from storage
-    const data = await readFromStorage(key);
-    if (data) {
-        // 2. Delete from storage if any data was returned
+export async function writeToStorage(key: string, value: string): Promise<void> {
+    const s = await getStorage();
+    s.set(key, value);
+}
+
+export async function readFromStorage(key: string): Promise<string | null> {
+    const s = await getStorage();
+    return s.getString(key) ?? null;
+}
+
+export async function deleteFromStorage(key: string): Promise<void> {
+    const s = await getStorage();
+    s.remove(key);
+}
+
+export async function popFromStorage(key: string): Promise<string | null> {
+    const value = await readFromStorage(key);
+    if (value !== null) {
         await deleteFromStorage(key);
     }
-    return data;
+    return value;
 }
-/**
- * Deletes data from AsyncStorage under given key.
- * It handles deleting chunked data, previously stored with `writeToStorage` function.
- * @param key Unique key to find data under
- */
-export async function deleteFromStorage(key: string) {
-    const keys = await getRelatedKeys(key);
-    await AsyncStorage.multiRemove(keys);
-    console.debug('Deleted', keys.length, 'chunk(s) from storage for', key);
+
+export async function getAllStorageKeys(): Promise<string[]> {
+    const s = await getStorage();
+    return s.getAllKeys();
 }

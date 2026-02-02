@@ -8,7 +8,14 @@ import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ConversationPeek from '~/components/ConversationPeek';
-import { loadMessages, loadContacts, generateAndSyncKeys, loadKeys, registerPushNotifications, getTURNServerCreds } from '~/store/actions/user';
+import {
+    loadMessages,
+    loadContacts,
+    generateAndSyncKeys,
+    loadKeys,
+    registerPushNotifications,
+    getTURNServerCreds,
+} from '~/store/actions/user';
 import { initializeWebsocket, destroyWebsocket, SocketMessage } from '~/store/actions/websocket';
 import { Conversation, UserData } from '~/store/reducers/user';
 import { setupInterceptors } from '~/store/actions/auth';
@@ -18,21 +25,18 @@ import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
 import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '~/../App';
 
-type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>
+type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>;
 
 export default function Home(props: IProps) {
     const insets = useSafeAreaInsets();
     const { conversations, loading, refreshing, socketErr } = useSelector((state: RootState) => state.userReducer);
     const [loadingMsg, setLoadingMsg] = useState('');
     const convos: Array<Conversation> = useMemo(() => {
-        return [...conversations.values()]
-            .map(convo => ({
-                ...convo,
-                _latest: convo.messages?.[0]?.sent_at
-                    ? new Date(convo.messages[0].sent_at).getTime()
-                    : 0,
-            }))
-            .sort((a, b) => b._latest - a._latest);
+        return [...conversations.values()].sort((a, b) => {
+            const aTime = a.messages?.[0]?.sent_at ? new Date(a.messages[0].sent_at).getTime() : 0;
+            const bTime = b.messages?.[0]?.sent_at ? new Date(b.messages[0].sent_at).getTime() : 0;
+            return bTime - aTime;
+        });
     }, [conversations]);
 
     useEffect(() => {
@@ -42,20 +46,19 @@ export default function Home(props: IProps) {
             // Start websocket connection to server
             await configureWebsocket();
             // [background] Get TURN credentials for proxying calls if peer-to-peer ICE fails
-            store.dispatch(getTURNServerCreds())
-                .then(async () => {
-                    // Check if user answered a call in the background
-                    const callerRaw = await popFromStorage('call_answered_in_background');
-                    if (callerRaw) {
-                        const data = JSON.parse(callerRaw || '{}') as { caller: UserData, data: SocketMessage };
-                        props.navigation.navigate('Call', {
-                            data: {
-                                peer_user: data.caller,
-                                video_enabled: data.data.type === 'video',
-                            },
-                        });
-                    }
-                });
+            store.dispatch(getTURNServerCreds()).then(async () => {
+                // Check if user answered a call in the background
+                const callerRaw = await popFromStorage('call_answered_in_background');
+                if (callerRaw) {
+                    const data = JSON.parse(callerRaw || '{}') as { caller: UserData; data: SocketMessage };
+                    props.navigation.navigate('Call', {
+                        data: {
+                            peer_user: data.caller,
+                            video_enabled: data.data.type === 'video',
+                        },
+                    });
+                }
+            });
             // Register Call Screen handler
             registerCallHandlers();
             // Load keys from TPM
@@ -83,10 +86,7 @@ export default function Home(props: IProps) {
 
     const loadMessagesAndContacts = useCallback(async () => {
         setLoadingMsg('Loading contacts & messages...');
-        await Promise.all([
-            store.dispatch(loadContacts({ atomic: false })),
-            store.dispatch(loadMessages()),
-        ]);
+        await Promise.all([store.dispatch(loadContacts({ atomic: false })), store.dispatch(loadMessages())]);
     }, []);
 
     const loadKeypair = useCallback(async () => {
@@ -99,16 +99,21 @@ export default function Home(props: IProps) {
         setLoadingMsg('Generating cryptographic keys...');
         const success = await store.dispatch(generateAndSyncKeys()).unwrap();
         if (!success) {
-            Alert.alert('Failed to generate keys', 'This account might have already logged into another device. Keys must be imported in the settings page.',
+            Alert.alert(
+                'Failed to generate keys',
+                'This account might have already logged into another device. Keys must be imported in the settings page.',
                 [
                     {
                         text: 'Logout',
-                        onPress: () => { props.navigation.navigate('Login', { data: { loggedOut: true, errorMsg: '' } }); },
-                    }, {
-                        text: 'OK',
-                        onPress: () => { },
+                        onPress: () => {
+                            props.navigation.navigate('Login', { data: { loggedOut: true, errorMsg: '' } });
+                        },
                     },
-                ]
+                    {
+                        text: 'OK',
+                        onPress: () => {},
+                    },
+                ],
             );
         }
         return success;
@@ -120,10 +125,10 @@ export default function Home(props: IProps) {
     }, []);
 
     const registerCallHandlers = useCallback(() => {
-        RNNotificationCall.addEventListener('answer', (info) => {
+        RNNotificationCall.addEventListener('answer', info => {
             console.debug('RNNotificationCall: User answered call', info.callUUID);
             RNNotificationCall.backToApp();
-            const data = JSON.parse(info.payload || '{}') as { caller: UserData, data: SocketMessage };
+            const data = JSON.parse(info.payload || '{}') as { caller: UserData; data: SocketMessage };
             props.navigation.navigate('Call', {
                 data: {
                     peer_user: data.caller,
@@ -131,7 +136,7 @@ export default function Home(props: IProps) {
                 },
             });
         });
-        RNNotificationCall.addEventListener('endCall', (info) => {
+        RNNotificationCall.addEventListener('endCall', info => {
             console.debug('RNNotificationCall: User ended call', info.callUUID);
             InCallManager.stopRingtone();
         });
@@ -139,53 +144,65 @@ export default function Home(props: IProps) {
 
     return (
         <View style={globalStyle.wrapper}>
-            <Snackbar visible={!!socketErr} style={{ zIndex: 100 }}
-                onDismiss={() => { }}
+            <Snackbar
+                visible={!!socketErr}
+                style={{ zIndex: 100 }}
+                onDismiss={() => {}}
                 action={{
                     label: 'Reconnect',
                     onPress: () => {
-                        configureWebsocket()
-                            .finally(() => setLoadingMsg(''));
+                        configureWebsocket().finally(() => setLoadingMsg(''));
                     },
-                }}>
+                }}
+            >
                 Connection to servers lost! Please try again later
             </Snackbar>
-            {
-                loading || loadingMsg
-                    ? <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <Text style={[globalStyle.errorMsg, { color: 'white', marginBottom: 10 }]}>{loadingMsg}</Text>
-                        <ActivityIndicator size="large" />
-                    </View>
-                    : <>
-                        <ScrollView refreshControl={
-                            <RefreshControl refreshing={refreshing}
+            {loading || loadingMsg ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={[globalStyle.errorMsg, { color: 'white', marginBottom: 10 }]}>{loadingMsg}</Text>
+                    <ActivityIndicator size="large" />
+                </View>
+            ) : (
+                <>
+                    <ScrollView
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
                                 onRefresh={() => {
-                                    loadMessagesAndContacts()
-                                        .finally(() => setLoadingMsg(''));
-                                }} />}>
-                            {convos?.length
-                                ? convos.map((convo, index) =>
-                                (<View key={index} >
+                                    loadMessagesAndContacts().finally(() => setLoadingMsg(''));
+                                }}
+                            />
+                        }
+                    >
+                        {convos?.length ? (
+                            convos.map((convo, index) => (
+                                <View key={index}>
                                     <ConversationPeek data={convo} navigation={props.navigation} />
                                     <Divider />
-                                </View>))
-                                : <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                                    <Text style={[globalStyle.errorMsg, { color: '#fff' }]}>No Conversations.</Text>
                                 </View>
-                            }
-                        </ScrollView>
+                            ))
+                        ) : (
+                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                                <Text style={[globalStyle.errorMsg, { color: '#fff' }]}>No Conversations.</Text>
+                            </View>
+                        )}
+                    </ScrollView>
 
-                        <FAB color="#fff"
-                            style={[globalStyle.fab, { backgroundColor: PRIMARY, marginBottom: globalStyle.fab.margin + insets.bottom }]}
-                            onPress={() => props.navigation.navigate('NewConversation')}
-                            icon={renderFABIcon}
-                        />
-                    </>
-            }
+                    <FAB
+                        color="#fff"
+                        style={[
+                            globalStyle.fab,
+                            { backgroundColor: PRIMARY, marginBottom: globalStyle.fab.margin + insets.bottom },
+                        ]}
+                        onPress={() => props.navigation.navigate('NewConversation')}
+                        icon={renderFABIcon}
+                    />
+                </>
+            )}
         </View>
     );
 }
 
-const renderFABIcon = (props: { size: number, color: string }) => {
+const renderFABIcon = (props: { size: number; color: string }) => {
     return <Icon source="message" color={props.color} size={props.size} />;
 };

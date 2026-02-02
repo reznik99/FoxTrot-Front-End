@@ -71,7 +71,7 @@ export interface CandidatePair {
 }
 
 export const getConnStats = async (peerConnection: RTCPeerConnection) => {
-    const stats = await peerConnection.getStats() as RTCStatsReport;
+    const stats = (await peerConnection.getStats()) as RTCStatsReport;
     const reports: Array<CandidatePair | LocalCandidate> = [];
     stats.forEach(report => {
         reports.push(report);

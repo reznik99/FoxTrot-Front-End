@@ -12,7 +12,6 @@ import { publicKeyFingerprint } from '~/global/crypto';
 import { AppDispatch, RootState } from '~/store/store';
 
 export default function Drawer(props: DrawerContentComponentProps) {
-
     const state = useSelector((_state: RootState) => _state.userReducer);
     const dispatch = useDispatch<AppDispatch>();
     const [showSecurityCode, setShowSecurityCode] = useState(false);
@@ -21,10 +20,7 @@ export default function Drawer(props: DrawerContentComponentProps) {
     const copySecurityCode = useCallback(() => {
         setShowSecurityCode(false);
         Clipboard.setString(securityCode);
-        ToastAndroid.show(
-            'Security Code Copied',
-            ToastAndroid.SHORT
-        );
+        ToastAndroid.show('Security Code Copied', ToastAndroid.SHORT);
     }, [securityCode]);
 
     const loadSecurityCode = useCallback(async () => {
@@ -40,42 +36,56 @@ export default function Drawer(props: DrawerContentComponentProps) {
     return (
         <DrawerContentScrollView contentContainerStyle={{ height: '100%', backgroundColor: SECONDARY }} {...props}>
             <ScrollView contentContainerStyle={{ flex: 1, flexDirection: 'column' }}>
-
                 <View style={[styles.profileContainer]}>
-                    <Avatar.Image size={120} source={{ uri: state.user_data.pic }} style={{ backgroundColor: DARKHEADER, marginBottom: 25 }} />
+                    <Avatar.Image
+                        size={120}
+                        source={{ uri: state.user_data.pic }}
+                        style={{ backgroundColor: DARKHEADER, marginBottom: 25 }}
+                    />
                     <View style={{ backgroundColor: DARKHEADER, width: '100%' }}>
                         <View style={styles.profileInfo}>
-                            <Chip icon="phone-forward" style={{ backgroundColor: DARKHEADER }}>{state.user_data?.phone_no}</Chip>
+                            <Chip icon="phone-forward" style={{ backgroundColor: DARKHEADER }}>
+                                {state.user_data?.phone_no}
+                            </Chip>
                         </View>
                         <View style={styles.profileInfo}>
-                            <Chip icon="account" style={{ backgroundColor: DARKHEADER }}>Contacts: {state.contacts?.length}</Chip>
+                            <Chip icon="account" style={{ backgroundColor: DARKHEADER }}>
+                                Contacts: {state.contacts?.length}
+                            </Chip>
                         </View>
                         <View style={styles.profileInfo}>
-                            <Chip icon="account-key" style={{ backgroundColor: DARKHEADER }}>Keys: {KeypairAlgorithm.name + ' ' + KeypairAlgorithm.namedCurve}</Chip>
+                            <Chip icon="account-key" style={{ backgroundColor: DARKHEADER }}>
+                                Keys: {KeypairAlgorithm.name + ' ' + KeypairAlgorithm.namedCurve}
+                            </Chip>
                         </View>
                     </View>
                 </View>
 
                 <View>
-                    <DrawerItem inactiveTintColor={PRIMARY}
+                    <DrawerItem
+                        inactiveTintColor={PRIMARY}
                         label="Security Code"
                         onPress={() => loadSecurityCode()}
                         icon={renderLockIcon}
                     />
-                    <DrawerItem inactiveTintColor={PRIMARY}
+                    <DrawerItem
+                        inactiveTintColor={PRIMARY}
                         label="Settings"
-                        onPress={() => { props.navigation.navigate('Settings'); props.navigation.closeDrawer(); }}
+                        onPress={() => {
+                            props.navigation.navigate('Settings');
+                            props.navigation.closeDrawer();
+                        }}
                         icon={renderCogIcon}
                     />
-                    <DrawerItem inactiveTintColor="#fff"
+                    <DrawerItem
+                        inactiveTintColor="#fff"
                         label="Logout"
                         style={{ borderTopWidth: 1, borderTopColor: '#e3e1e1', backgroundColor: DARKHEADER }}
                         onPress={() => dispatch(logOut({ navigation: props.navigation as any }))}
                         icon={renderLogoutIcon}
                     />
                 </View>
-
-            </ScrollView >
+            </ScrollView>
 
             <Portal>
                 <Dialog visible={showSecurityCode} onDismiss={() => setShowSecurityCode(false)}>
@@ -83,22 +93,31 @@ export default function Drawer(props: DrawerContentComponentProps) {
                     <Dialog.Title style={{ textAlign: 'center' }}>Your Security Code</Dialog.Title>
                     <Dialog.Content>
                         {securityCode.match(/.{1,24}/g)?.map((val, idx) => (
-                            <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>{val}</Text>
+                            <Text key={idx} style={{ fontFamily: 'Roboto', textAlign: 'center' }}>
+                                {val}
+                            </Text>
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions style={{ justifyContent: 'space-evenly' }}>
-                        <Button mode="contained-tonal"
+                        <Button
+                            mode="contained-tonal"
                             onPress={() => setShowSecurityCode(false)}
-                            style={{ paddingHorizontal: 15 }}>Close</Button>
-                        <Button mode="contained"
+                            style={{ paddingHorizontal: 15 }}
+                        >
+                            Close
+                        </Button>
+                        <Button
+                            mode="contained"
                             onPress={() => copySecurityCode()}
                             icon="content-copy"
-                            style={{ paddingHorizontal: 15 }}>Copy</Button>
+                            style={{ paddingHorizontal: 15 }}
+                        >
+                            Copy
+                        </Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
-
-        </DrawerContentScrollView >
+        </DrawerContentScrollView>
     );
 }
 
@@ -114,14 +133,14 @@ const styles = StyleSheet.create({
     },
 });
 
-const renderLockIcon = ({ size, color }: { size: number, color: string }) => {
+const renderLockIcon = ({ size, color }: { size: number; color: string }) => {
     return <Icon source="lock" color={color} size={size} />;
 };
 
-const renderCogIcon = ({ size, color }: { size: number, color: string }) => {
+const renderCogIcon = ({ size, color }: { size: number; color: string }) => {
     return <Icon source="cog" color={color} size={size} />;
 };
 
-const renderLogoutIcon = ({ size, color }: { size: number, color: string }) => {
+const renderLogoutIcon = ({ size, color }: { size: number; color: string }) => {
     return <Icon source="logout" color={color} size={size} />;
 };

@@ -10,12 +10,13 @@ export const store = configureStore({
     reducer: {
         userReducer: userSlice.reducer,
     },
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware({
-        serializableCheck: false,
-    }),
+    middleware: getDefaultMiddleware =>
+        getDefaultMiddleware({
+            serializableCheck: false,
+        }),
 });
 
 type AppStore = typeof store;
-export type GetState = AppStore['getState']
+export type GetState = AppStore['getState'];
 export type AppDispatch = AppStore['dispatch'];
 export type RootState = ReturnType<GetState>;

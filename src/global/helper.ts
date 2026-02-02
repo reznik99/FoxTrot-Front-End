@@ -1,4 +1,3 @@
-
 export const milliseconds = {
     second: 1_000,
     minute: 60 * 1_000,
@@ -11,7 +10,9 @@ export function millisecondsSince(datetime: Date) {
 }
 
 export function humanTime(lastTime: string | number | Date) {
-    if (!lastTime) { return null; }
+    if (!lastTime) {
+        return null;
+    }
 
     const diff = millisecondsSince(new Date(lastTime));
     if (diff < milliseconds.minute) {
@@ -19,12 +20,11 @@ export function humanTime(lastTime: string | number | Date) {
     } else if (diff < milliseconds.hour) {
         return `${Math.round(diff / 1000 / 60)} m ago`;
     } else if (diff < milliseconds.day) {
-        return `${Math.round((diff / 1000 / 60 / 60))} h ago`;
+        return `${Math.round(diff / 1000 / 60 / 60)} h ago`;
     } else {
         return new Date(lastTime).toLocaleDateString();
     }
 }
-
 
 export function getAvatar(identifier: string | number) {
     return `https://robohash.org/${identifier}`;
