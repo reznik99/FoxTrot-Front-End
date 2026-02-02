@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer';
 import QuickCrypto from 'react-native-quick-crypto';
-import { encrypt, decrypt, initRatchetState, encryptV2, decryptV2, advanceRatchetToDay, RatchetState } from '../crypto';
+import { encrypt, decrypt, initRatchetState, encryptV2, decryptV2, advanceRatchetToDay } from '../crypto';
 
 // Hardcoded test key (256-bit AES key)
 const TEST_KEY_BASE64 = '5ZFymSUme/8XA3T7f+FbGX7te8ri8N7iOQ5iHvyr/+A=';
