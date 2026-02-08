@@ -159,12 +159,12 @@ export const userSlice = createSlice({
                 contact = {
                     id: data.sender_id,
                     phone_no: data.sender,
-                    last_seen: Number(data.sent_at),
+                    last_seen: new Date(data.sent_at).getTime(),
                     online: true,
                     pic: getAvatar(data.sender_id),
                 };
             }
-            contact.last_seen = Number(data.sent_at);
+            contact.last_seen = new Date(data.sent_at).getTime();
             contact.online = true;
             // Update conversation
             if (conversationR) {
