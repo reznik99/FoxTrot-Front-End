@@ -319,7 +319,7 @@ class Message extends PureComponent<MProps, MState> {
                 return (
                     <Text style={styles.text}>
                         <Text selectable>{messageChunks.slice(0, linkIndex).join(' ')}</Text>
-                        <Text selectable style={{ color: 'blue' }}>
+                        <Text selectable style={{ color: '#82B1FF' }}>
                             {linkIndex > 0 ? ' ' : ''}
                             {messageChunks[linkIndex]}
                             {linkIndex < messageChunks.length - 1 ? ' ' : ''}
@@ -456,8 +456,6 @@ const styles = StyleSheet.create({
     message: {
         padding: 15,
         borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     received: {
         alignSelf: 'flex-start',

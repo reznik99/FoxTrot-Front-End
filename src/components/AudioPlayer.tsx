@@ -4,8 +4,7 @@ import { Icon, Text } from 'react-native-paper';
 import Sound from 'react-native-nitro-sound';
 import RNFS, { CachesDirectoryPath } from 'react-native-fs';
 
-import CustomKeyboardAvoidingView from '~/components/CustomKeyboardAvoidingView';
-import { DARKHEADER, PRIMARY, SECONDARY } from '~/global/variables';
+import { DARKHEADER, PRIMARY } from '~/global/variables';
 
 type IProps = {
     audioData: string;
@@ -59,48 +58,46 @@ export default function AudioPlayer(props: IProps) {
     }, []);
 
     return (
-        <CustomKeyboardAvoidingView>
+        <View style={styles.audioContainer}>
             {/* Audio data controls */}
-            <View style={styles.audioContainer}>
-                <View style={styles.inputContainer}>
-                    <Text>{Sound.mmssss(audioPlaybackTime ? ~~audioPlaybackTime : ~~props.audioDuration)}</Text>
-                    {playingAudio ? (
-                        <TouchableOpacity style={styles.button} onPress={stopAudio}>
-                            <Icon source="pause" color={PRIMARY} size={25} />
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity style={styles.button} onPress={playAudio}>
-                            <Icon source="play" color={PRIMARY} size={25} />
-                        </TouchableOpacity>
-                    )}
-                </View>
-                {/* Audio playback indicator */}
-                <View style={{ width: '75%' }}>
-                    <View
-                        style={{
-                            width: `${(audioPlaybackTime / props.audioDuration) * 100}%`, // TODO: send length
-                            height: 1,
-                            backgroundColor: playingAudio ? SECONDARY : 'transparent',
-                        }}
-                    />
-                </View>
+            <View style={styles.inputContainer}>
+                <Text>{Sound.mmssss(audioPlaybackTime ? ~~audioPlaybackTime : ~~props.audioDuration)}</Text>
+                {playingAudio ? (
+                    <TouchableOpacity style={styles.button} onPress={stopAudio}>
+                        <Icon source="pause" color={PRIMARY} size={25} />
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity style={styles.button} onPress={playAudio}>
+                        <Icon source="play" color={PRIMARY} size={25} />
+                    </TouchableOpacity>
+                )}
             </View>
-        </CustomKeyboardAvoidingView>
+            {/* Audio playback indicator */}
+            <View style={{ flex: 1 }}>
+                <View
+                    style={{
+                        width: `${(audioPlaybackTime / props.audioDuration) * 100}%`,
+                        height: 2,
+                        backgroundColor: playingAudio ? PRIMARY : 'transparent',
+                    }}
+                />
+            </View>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     audioContainer: {
         flexDirection: 'column',
-        width: '100%',
+        flex: 1,
         paddingHorizontal: 10,
         backgroundColor: DARKHEADER,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        width: '100%',
-        paddingVertical: 10,
+        justifyContent: 'space-around',
+        paddingVertical: 0,
     },
     button: {
         padding: 10,
