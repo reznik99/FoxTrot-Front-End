@@ -208,6 +208,14 @@ export function dbUpdateMessageDecrypted(messageId: number, decryptedContent: st
     database.executeSync(`UPDATE messages SET message = ?, is_decrypted = 1 WHERE id = ?`, [decryptedContent, messageId]);
 }
 
+export function dbMarkMessagesSeen(messageIds: number[]): void {
+    if (messageIds.length === 0) return;
+
+    const database = requireDb();
+    const placeholders = messageIds.map(() => '?').join(', ');
+    database.executeSync(`UPDATE messages SET seen = 1 WHERE id IN (${placeholders})`, messageIds);
+}
+
 // Conversations
 
 export function dbSaveConversation(peer: UserData, updatedAt: number): void {

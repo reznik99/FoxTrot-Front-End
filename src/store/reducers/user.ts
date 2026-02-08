@@ -3,7 +3,7 @@ import { CryptoKey as QCCryptoKey } from 'react-native-quick-crypto';
 import { RTCIceCandidate } from 'react-native-webrtc';
 import { getAvatar } from '~/global/helper';
 import { writeToStorage } from '~/global/storage';
-import { dbSaveMessage, dbSaveConversation, dbUpdateMessageDecrypted } from '~/global/database';
+import { dbSaveMessage, dbSaveConversation, dbUpdateMessageDecrypted, dbMarkMessagesSeen } from '~/global/database';
 
 export interface State {
     tokenValid: boolean;
@@ -205,6 +205,25 @@ export const userSlice = createSlice({
                 console.error('Error persisting decrypted message to SQLite:', err);
             }
         },
+        MARK_MESSAGES_SEEN: (state, action: PayloadAction<{ conversationId: string; messageIds: number[] }>) => {
+            const { conversationId, messageIds } = action.payload;
+            if (messageIds.length === 0) return;
+
+            const conversation = state.conversations.get(conversationId);
+            if (conversation) {
+                const idSet = new Set(messageIds);
+                conversation.messages.forEach(msg => {
+                    if (idSet.has(msg.id)) {
+                        msg.seen = true;
+                    }
+                });
+            }
+            try {
+                dbMarkMessagesSeen(messageIds);
+            } catch (err) {
+                console.error('Error persisting seen status to SQLite:', err);
+            }
+        },
         APPEND_OLDER_MESSAGES: (state, action: PayloadAction<{ conversationId: string; messages: message[] }>) => {
             const { conversationId, messages } = action.payload;
             if (messages.length === 0) {
@@ -261,6 +280,7 @@ export const {
     SEND_MESSAGE,
     RECV_MESSAGE,
     UPDATE_MESSAGE_DECRYPTED,
+    MARK_MESSAGES_SEEN,
     APPEND_OLDER_MESSAGES,
     RECV_CALL_OFFER,
     RECV_CALL_ANSWER,
