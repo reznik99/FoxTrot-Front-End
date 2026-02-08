@@ -429,8 +429,8 @@ class Message extends PureComponent<MProps, MState> {
                                     ? item.message
                                     : item.message?.substring(0, 197).padEnd(200, '...')}
                             </Text>
-                            <View style={{ position: 'absolute', zIndex: 10 }}>
-                                <Icon source="lock" color="#000" size={25} />
+                            <View style={{ position: 'absolute', zIndex: 10, left: '50%', top: '50%' }}>
+                                <Icon source="lock" color="#00ff00" size={25} />
                             </View>
                         </>
                     )}
