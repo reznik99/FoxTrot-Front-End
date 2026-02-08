@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 import Sound from 'react-native-nitro-sound';
@@ -15,40 +15,37 @@ type IProps = {
 export default function AudioPlayer(props: IProps) {
     const [audioPlaybackTime, setAudioPlaybackTime] = useState(0);
     const [playingAudio, setPlayingAudio] = useState(false);
-    const [audioFilePath, setAudioFilePath] = useState('');
+    const audioFilePathRef = useRef('');
 
+    // Cleanup temp file on unmount
     useEffect(() => {
-        const filePath = CachesDirectoryPath + Date.now();
-        async function writeAudioToCache() {
-            try {
-                await RNFS.writeFile(filePath, props.audioData, 'base64');
-                setAudioFilePath(filePath);
-            } catch (err) {
-                console.error('write audio message err:', err);
-            }
-        }
-        if (props.audioData) {
-            writeAudioToCache();
-        }
         return () => {
-            RNFS.unlink(filePath)
-                .then(() => console.debug('Cleaned up temp audio message file'))
-                .catch(err => console.error('audio message file cleanup err:', err));
+            if (audioFilePathRef.current) {
+                RNFS.unlink(audioFilePathRef.current)
+                    .then(() => console.debug('Cleaned up temp audio message file'))
+                    .catch(err => console.error('audio message file cleanup err:', err));
+            }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const playAudio = useCallback(async () => {
         try {
+            // Lazy-load: write audio to cache on first play
+            if (!audioFilePathRef.current) {
+                const filePath = CachesDirectoryPath + Date.now();
+                await RNFS.writeFile(filePath, props.audioData, 'base64');
+                audioFilePathRef.current = filePath;
+            }
+
             await Sound.setVolume(1.0);
-            await Sound.startPlayer(audioFilePath);
+            await Sound.startPlayer(audioFilePathRef.current);
             Sound.addPlayBackListener(e => setAudioPlaybackTime(e.currentPosition));
             Sound.addPlaybackEndListener(() => setPlayingAudio(false));
             setPlayingAudio(true);
         } catch (err) {
             console.error(err); // Show error
         }
-    }, [audioFilePath]);
+    }, [props.audioData]);
 
     const stopAudio = useCallback(async () => {
         try {
