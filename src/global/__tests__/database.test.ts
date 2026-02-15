@@ -29,6 +29,7 @@ jest.mock('@op-engineering/op-sqlite', () => ({ open: jest.fn() }));
 jest.mock('react-native-keychain', () => ({
     getGenericPassword: jest.fn().mockResolvedValue({ password: 'test-key' }),
     setGenericPassword: jest.fn().mockResolvedValue(true),
+    ACCESS_CONTROL: { BIOMETRY_ANY_OR_DEVICE_PASSCODE: 'BiometryAnyOrDevicePasscode' },
     ACCESSIBLE: { WHEN_UNLOCKED_THIS_DEVICE_ONLY: '' },
     STORAGE_TYPE: { AES_GCM_NO_AUTH: '' },
 }));

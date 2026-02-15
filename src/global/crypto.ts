@@ -1,12 +1,8 @@
 // Crypto
 import { Buffer } from 'buffer';
-import QuickCrypto, { CryptoKey as QCCryptoKey, RandomTypedArrays } from 'react-native-quick-crypto';
+import QuickCrypto from 'react-native-quick-crypto';
+import type { RandomTypedArrays } from 'react-native-quick-crypto';
 import { KeypairAlgorithm, LegacySymmetricAlgorithm, SaltLenCBC, SaltLenGCM, SymmetricAlgorithm } from '~/global/variables';
-
-export interface QCKeyPair {
-    privateKey: QCCryptoKey;
-    publicKey: QCCryptoKey;
-}
 
 interface exportedKeypair {
     privateKey: string;
@@ -14,12 +10,12 @@ interface exportedKeypair {
 }
 
 /** Generates an Identity Keypair for this account/device */
-export async function generateIdentityKeypair(): Promise<QCKeyPair> {
-    return (await QuickCrypto.subtle.generateKey(KeypairAlgorithm, true, ['deriveKey'])) as QCKeyPair;
+export async function generateIdentityKeypair(): Promise<CryptoKeyPair> {
+    return (await QuickCrypto.subtle.generateKey(KeypairAlgorithm, true, ['deriveKey'])) as CryptoKeyPair;
 }
 
 /** Imports an Identity Keypair into a usable QuickCrypto form */
-export async function importKeypair(keyPair: exportedKeypair): Promise<QCKeyPair> {
+export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKeyPair> {
     const privateKey = await QuickCrypto.subtle.importKey(
         'pkcs8',
         Buffer.from(keyPair.privateKey, 'base64'),
@@ -39,7 +35,7 @@ export async function importKeypair(keyPair: exportedKeypair): Promise<QCKeyPair
 }
 
 /** Exports an Identity Keypair into JSON form containing Public and Private Key in DER Base64 */
-export async function exportKeypair(keyPair: QCKeyPair): Promise<exportedKeypair> {
+export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKeypair> {
     const privBytes = Buffer.from((await QuickCrypto.subtle.exportKey('spki', keyPair.publicKey)) as ArrayBuffer);
     const pubBytes = Buffer.from((await QuickCrypto.subtle.exportKey('pkcs8', keyPair.privateKey)) as ArrayBuffer);
     return {
@@ -49,10 +45,7 @@ export async function exportKeypair(keyPair: QCKeyPair): Promise<exportedKeypair
 }
 
 /** Generates a 256bit AES-GCM Encryption key for messages with a user */
-export async function generateSessionKeyECDH(
-    peerPublic: string,
-    userPrivate: QCCryptoKey | undefined,
-): Promise<QCCryptoKey> {
+export async function generateSessionKeyECDH(peerPublic: string, userPrivate: CryptoKey | undefined): Promise<CryptoKey> {
     if (!peerPublic) {
         throw new Error("Contacts's public key not present. ECDHE failed");
     }
@@ -85,7 +78,7 @@ export async function deriveKeyFromPassword(
     password: string,
     salt: RandomTypedArrays,
     iterations: number,
-): Promise<QCCryptoKey> {
+): Promise<CryptoKey> {
     // Derive Key from password using PBKDF2
     const keyMaterial = await QuickCrypto.subtle.importKey('raw', Buffer.from(password), 'PBKDF2', false, [
         'deriveBits',
@@ -117,7 +110,7 @@ export async function publicKeyFingerprint(peerPublic: string): Promise<string> 
 }
 
 /** Encrypts a given message using the supplied AES Session Key (GCM) (generated from *generateSessionKeyECDH*) and returns it as a Base64 string. */
-export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise<string> {
+export async function encrypt(sessionKey: CryptoKey, message: string): Promise<string> {
     if (!sessionKey) {
         throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.");
     }
@@ -138,7 +131,7 @@ export async function encrypt(sessionKey: QCCryptoKey, message: string): Promise
 }
 
 /** Decrypts a given base64 message using the supplied AES Session Key (generated from *generateSessionKeyECDH*) and returns it as a string. */
-export async function decrypt(sessionKey: QCCryptoKey, encryptedMessageRaw: string): Promise<string> {
+export async function decrypt(sessionKey: CryptoKey, encryptedMessageRaw: string): Promise<string> {
     if (!sessionKey) {
         throw new Error("SessionKey isn't initialized. Please import your Identity Keys exported from you previous device.");
     }
@@ -156,7 +149,7 @@ export async function decrypt(sessionKey: QCCryptoKey, encryptedMessageRaw: stri
 }
 
 /** Decrypts a given base64 message using the supplied AES-GCM Session Key */
-async function decryptGCM(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
+async function decryptGCM(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
     const startTime = performance.now();
     const [iv, ciphertext] = encryptedMessage.split(':');
     const plaintext = await QuickCrypto.subtle.decrypt(
@@ -170,7 +163,7 @@ async function decryptGCM(sessionKey: QCCryptoKey, encryptedMessage: string): Pr
 }
 
 /** Decrypts a given base64 message using the supplied AES Session Key */
-async function decryptLegacyCBC(sessionKey: QCCryptoKey, encryptedMessage: string): Promise<string> {
+async function decryptLegacyCBC(sessionKey: CryptoKey, encryptedMessage: string): Promise<string> {
     const startTime = performance.now();
 
     const newSessionKey = await QuickCrypto.subtle.importKey(
