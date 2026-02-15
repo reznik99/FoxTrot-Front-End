@@ -3,32 +3,33 @@ import { Buffer } from 'buffer';
 import QuickCrypto, { CryptoKey as QCCryptoKey, RandomTypedArrays } from 'react-native-quick-crypto';
 import { KeypairAlgorithm, LegacySymmetricAlgorithm, SaltLenCBC, SaltLenGCM, SymmetricAlgorithm } from '~/global/variables';
 
+export interface QCKeyPair {
+    privateKey: QCCryptoKey;
+    publicKey: QCCryptoKey;
+}
+
 interface exportedKeypair {
     privateKey: string;
     publicKey: string;
 }
 
 /** Generates an Identity Keypair for this account/device */
-export async function generateIdentityKeypair(): Promise<CryptoKeyPair> {
-    // react-native-quick-crypto ✅
-    const keyPair = await crypto.subtle.generateKey(KeypairAlgorithm, true, ['deriveKey']);
-    return keyPair;
+export async function generateIdentityKeypair(): Promise<QCKeyPair> {
+    return (await QuickCrypto.subtle.generateKey(KeypairAlgorithm, true, ['deriveKey'])) as QCKeyPair;
 }
 
-/** Imports an Identity Keypair into a usable Webcrypto form */
-export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKeyPair> {
-    // react-native-quick-crypto ✅
-    const privateKey = await crypto.subtle.importKey(
+/** Imports an Identity Keypair into a usable QuickCrypto form */
+export async function importKeypair(keyPair: exportedKeypair): Promise<QCKeyPair> {
+    const privateKey = await QuickCrypto.subtle.importKey(
         'pkcs8',
-        Buffer.from(keyPair.privateKey, 'base64').buffer,
+        Buffer.from(keyPair.privateKey, 'base64'),
         KeypairAlgorithm,
         true,
         ['deriveKey', 'deriveBits'],
     );
-    // react-native-quick-crypto ✅
-    const publicKey = await crypto.subtle.importKey(
+    const publicKey = await QuickCrypto.subtle.importKey(
         'spki',
-        Buffer.from(keyPair.publicKey, 'base64').buffer,
+        Buffer.from(keyPair.publicKey, 'base64'),
         KeypairAlgorithm,
         true,
         [],
@@ -38,52 +39,45 @@ export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKey
 }
 
 /** Exports an Identity Keypair into JSON form containing Public and Private Key in DER Base64 */
-export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKeypair> {
-    // react-native-quick-crypto ✅
+export async function exportKeypair(keyPair: QCKeyPair): Promise<exportedKeypair> {
+    const privBytes = Buffer.from((await QuickCrypto.subtle.exportKey('spki', keyPair.publicKey)) as ArrayBuffer);
+    const pubBytes = Buffer.from((await QuickCrypto.subtle.exportKey('pkcs8', keyPair.privateKey)) as ArrayBuffer);
     return {
-        publicKey: Buffer.from(await crypto.subtle.exportKey('spki', keyPair.publicKey)).toString('base64'),
-        privateKey: Buffer.from(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)).toString('base64'),
+        publicKey: privBytes.toString('base64'),
+        privateKey: pubBytes.toString('base64'),
     };
 }
 
 /** Generates a 256bit AES-GCM Encryption key for messages with a user */
-export async function generateSessionKeyECDH(peerPublic: string, userPrivate: CryptoKey | undefined): Promise<QCCryptoKey> {
+export async function generateSessionKeyECDH(
+    peerPublic: string,
+    userPrivate: QCCryptoKey | undefined,
+): Promise<QCCryptoKey> {
     if (!peerPublic) {
         throw new Error("Contacts's public key not present. ECDHE failed");
     }
     if (!userPrivate) {
         throw new Error('User private key not loaded. ECDHE failed');
     }
-    // react-native-quick-crypto ✅
-    const publicKey = await crypto.subtle.importKey(
+    const publicKey = await QuickCrypto.subtle.importKey(
         'spki',
-        Buffer.from(peerPublic, 'base64').buffer,
+        Buffer.from(peerPublic, 'base64'),
         KeypairAlgorithm,
         true,
         [],
     );
 
-    // https://github.com/margelo/react-native-quick-crypto/blob/main/.docs/implementation-coverage.md
-    // react-native-quick-crypto ❌
-    const sessionKey = await crypto.subtle.deriveKey(
+    return await QuickCrypto.subtle.deriveKey(
         {
             name: KeypairAlgorithm.name,
             public: publicKey,
             namedCurve: KeypairAlgorithm.namedCurve,
-        } as any,
+        },
         userPrivate,
         SymmetricAlgorithm,
         true,
         ['encrypt', 'decrypt'],
     );
-
-    const rawSessionKey = await crypto.subtle.exportKey('raw', sessionKey);
-    const newSessionKey = await QuickCrypto.subtle.importKey('raw', rawSessionKey, SymmetricAlgorithm, true, [
-        'encrypt',
-        'decrypt',
-    ]);
-
-    return newSessionKey;
 }
 
 /** Derives a 256bit AES-GCM Key Encryption key from a password and salt. Allows customising PBKDF2 difficulty through *Iterations* parameter */

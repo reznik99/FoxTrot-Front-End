@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { CryptoKey as QCCryptoKey } from 'react-native-quick-crypto';
 import { RTCIceCandidate } from 'react-native-webrtc';
+import { QCKeyPair } from '~/global/crypto';
 import { getAvatar } from '~/global/helper';
 import { writeToStorage } from '~/global/storage';
 import { dbSaveMessage, dbSaveConversation, dbUpdateMessageDecrypted, dbMarkMessagesSeen } from '~/global/database';
@@ -8,7 +9,7 @@ import { dbSaveMessage, dbSaveConversation, dbUpdateMessageDecrypted, dbMarkMess
 export interface State {
     tokenValid: boolean;
     token: string;
-    keys?: CryptoKeyPair;
+    keys?: QCKeyPair;
     user_data: UserData;
     contacts: UserData[];
     conversations: Map<string, Conversation>;
@@ -102,7 +103,7 @@ export const userSlice = createSlice({
         SYNC_FROM_STORAGE: (state, action: PayloadAction<{ user_data: UserData }>) => {
             state.user_data = action.payload.user_data;
         },
-        KEY_LOAD: (state, action: PayloadAction<CryptoKeyPair>) => {
+        KEY_LOAD: (state, action: PayloadAction<QCKeyPair>) => {
             state.keys = action.payload;
         },
         TOKEN_VALID: (state, action: PayloadAction<{ token: string; valid: boolean }>) => {

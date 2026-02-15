@@ -49,8 +49,6 @@
         "react-native-toast-message": "^2.3.3",
         "react-native-vision-camera": "^4.7.3",
         "react-native-webrtc": "~124.0.7",
-        "react-native-webview": "~13.16.0",
-        "react-native-webview-crypto": "~0.0.28",
         "react-redux": "~9.2.0"
     },
     "devDependencies": {
