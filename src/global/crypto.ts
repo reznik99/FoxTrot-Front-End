@@ -37,11 +37,11 @@ export async function importKeypair(keyPair: exportedKeypair): Promise<WebCrypto
 
 /** Exports an Identity Keypair into JSON form containing Public and Private Key in DER Base64 */
 export async function exportKeypair(keyPair: WebCryptoKeyPair): Promise<exportedKeypair> {
-    const privBytes = Buffer.from((await QuickCrypto.subtle.exportKey('spki', keyPair.publicKey)) as ArrayBuffer);
-    const pubBytes = Buffer.from((await QuickCrypto.subtle.exportKey('pkcs8', keyPair.privateKey)) as ArrayBuffer);
+    const pubBytes = Buffer.from((await QuickCrypto.subtle.exportKey('spki', keyPair.publicKey)) as ArrayBuffer);
+    const privBytes = Buffer.from((await QuickCrypto.subtle.exportKey('pkcs8', keyPair.privateKey)) as ArrayBuffer);
     return {
-        publicKey: privBytes.toString('base64'),
-        privateKey: pubBytes.toString('base64'),
+        publicKey: pubBytes.toString('base64'),
+        privateKey: privBytes.toString('base64'),
     };
 }
 
