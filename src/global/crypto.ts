@@ -1,7 +1,8 @@
 // Crypto
 import { Buffer } from 'buffer';
 import QuickCrypto from 'react-native-quick-crypto';
-import type { RandomTypedArrays } from 'react-native-quick-crypto';
+import type { CryptoKey } from 'react-native-quick-crypto/src/keys/classes';
+import type { WebCryptoKeyPair, RandomTypedArrays } from 'react-native-quick-crypto';
 import { KeypairAlgorithm, LegacySymmetricAlgorithm, SaltLenCBC, SaltLenGCM, SymmetricAlgorithm } from '~/global/variables';
 
 interface exportedKeypair {
@@ -10,12 +11,12 @@ interface exportedKeypair {
 }
 
 /** Generates an Identity Keypair for this account/device */
-export async function generateIdentityKeypair(): Promise<CryptoKeyPair> {
-    return (await QuickCrypto.subtle.generateKey(KeypairAlgorithm, true, ['deriveKey'])) as CryptoKeyPair;
+export async function generateIdentityKeypair(): Promise<WebCryptoKeyPair> {
+    return (await QuickCrypto.subtle.generateKey(KeypairAlgorithm, true, ['deriveKey'])) as WebCryptoKeyPair;
 }
 
 /** Imports an Identity Keypair into a usable QuickCrypto form */
-export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKeyPair> {
+export async function importKeypair(keyPair: exportedKeypair): Promise<WebCryptoKeyPair> {
     const privateKey = await QuickCrypto.subtle.importKey(
         'pkcs8',
         Buffer.from(keyPair.privateKey, 'base64'),
@@ -35,7 +36,7 @@ export async function importKeypair(keyPair: exportedKeypair): Promise<CryptoKey
 }
 
 /** Exports an Identity Keypair into JSON form containing Public and Private Key in DER Base64 */
-export async function exportKeypair(keyPair: CryptoKeyPair): Promise<exportedKeypair> {
+export async function exportKeypair(keyPair: WebCryptoKeyPair): Promise<exportedKeypair> {
     const privBytes = Buffer.from((await QuickCrypto.subtle.exportKey('spki', keyPair.publicKey)) as ArrayBuffer);
     const pubBytes = Buffer.from((await QuickCrypto.subtle.exportKey('pkcs8', keyPair.privateKey)) as ArrayBuffer);
     return {
