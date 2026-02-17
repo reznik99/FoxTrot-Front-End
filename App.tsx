@@ -1,4 +1,5 @@
 import 'react-native-gesture-handler';
+import 'react-native-quick-base64';
 import React from 'react';
 import { StatusBar } from 'react-native';
 import { Provider } from 'react-redux';
@@ -19,8 +20,6 @@ import PushNotification from 'react-native-push-notification';
 import QuickCrypto from 'react-native-quick-crypto';
 import { Buffer } from 'buffer';
 
-// Crypto
-import WebviewCrypto from 'react-native-webview-crypto';
 global.Buffer = global.Buffer || Buffer;
 
 // App
@@ -198,7 +197,6 @@ export default function App() {
     return (
         <Provider store={store}>
             <PaperProvider theme={darkTheme}>
-                <WebviewCrypto />
                 <StatusBar backgroundColor={DARKHEADER} barStyle="light-content" />
                 <AuthNavigator />
                 <Toast />

@@ -1,15 +1,17 @@
 {
     "name": "foxtrot",
-    "version": "1.18.2",
+    "version": "1.18.3",
     "private": true,
     "scripts": {
-        "android": "react-native run-android",
+        "android": "react-native run-android --no-packager && react-native start",
         "ios": "react-native run-ios",
         "lint": "prettier --write \"src/**/*.{js,ts,tsx}\" \"*.{js,ts}\" && eslint . --fix",
         "start": "react-native start",
         "test": "jest",
         "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage"
+        "test:coverage": "jest --coverage",
+        "postinstall": "patch-package",
+        "patch": "patch-package --exclude 'android/build|android/\\.cxx'"
     },
     "dependencies": {
         "@likashefqet/react-native-image-zoom": "^4.3.0",
@@ -40,6 +42,7 @@
         "react-native-nitro-sound": "~0.2.10",
         "react-native-paper": "^5.14.5",
         "react-native-push-notification": "^8.1.1",
+        "react-native-quick-base64": "^2.2.2",
         "react-native-quick-crypto": "^1.0.11",
         "react-native-reanimated": "~3.18.2",
         "react-native-safe-area-context": "~5.4.1",
@@ -49,8 +52,6 @@
         "react-native-toast-message": "^2.3.3",
         "react-native-vision-camera": "^4.7.3",
         "react-native-webrtc": "~124.0.7",
-        "react-native-webview": "~13.16.0",
-        "react-native-webview-crypto": "~0.0.28",
         "react-redux": "~9.2.0"
     },
     "devDependencies": {
@@ -75,6 +76,7 @@
         "babel-plugin-module-resolver": "~5.0.2",
         "eslint": "^8.19.0",
         "jest": "^30.2.0",
+        "patch-package": "^8.0.1",
         "prettier": "~2.8.8",
         "sql.js": "^1.13.0",
         "ts-jest": "^29.4.6",
