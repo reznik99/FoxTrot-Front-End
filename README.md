@@ -61,11 +61,12 @@ Identity keys can be exported encrypted with a password-derived key (PBKDF2, 100
 # Install dependencies
 npm install
 
-# Start Metro bundler
-npm start
+# Run tests
+npm test
 
 # Run on Android
 npm run android
+
 ```
 
 Requires Node >= 20.
