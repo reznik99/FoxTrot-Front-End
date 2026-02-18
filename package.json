@@ -1,6 +1,6 @@
 {
     "name": "foxtrot",
-    "version": "1.18.3",
+    "version": "1.18.4",
     "private": true,
     "scripts": {
         "android": "react-native run-android --no-packager && react-native start",
@@ -38,7 +38,7 @@
         "react-native-mmkv": "^4.1.2",
         "react-native-nitro-modules": "^0.32.1",
         "react-native-nitro-sound": "~0.2.10",
-        "react-native-paper": "^5.14.5",
+        "react-native-paper": "^5.15.0",
         "react-native-push-notification": "^8.1.1",
         "react-native-quick-base64": "^2.2.2",
         "react-native-quick-crypto": "^1.0.12",
@@ -72,10 +72,10 @@
         "@types/sql.js": "^1.4.9",
         "babel-jest": "^30.2.0",
         "babel-plugin-module-resolver": "~5.0.2",
-        "eslint": "^8.19.0",
+        "eslint": "^8.57.1",
         "jest": "^30.2.0",
         "prettier": "~2.8.8",
-        "sql.js": "^1.13.0",
+        "sql.js": "^1.14.0",
         "ts-jest": "^29.4.6",
         "typescript": "~5.9.3"
     },
