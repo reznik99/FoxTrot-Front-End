@@ -264,7 +264,7 @@ class Call extends React.Component<Props, State> {
                 peer_id: String(this.state.peerUser.id),
                 peer_pic: this.state.peerUser.pic,
                 direction: this.props.callOffer ? 'incoming' : 'outgoing',
-                call_type: this.state.videoEnabled ? 'video' : 'audio',
+                call_type: this.props.route.params.data?.video_enabled ? 'video' : 'audio',
                 status: 'answered',
                 duration: Math.floor(this.state.callTime),
                 started_at: new Date(this.state.startTime).toISOString(),

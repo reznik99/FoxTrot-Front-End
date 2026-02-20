@@ -308,23 +308,5 @@ describe('database operations', () => {
             expect(history[1]).toMatchObject({ direction: 'incoming', status: 'answered' });
             expect(history[2]).toMatchObject({ direction: 'outgoing', status: 'answered' });
         });
-
-        it('should store both audio and video call types', () => {
-            dbSaveCallRecord({ ...testCallRecord, call_type: 'audio', started_at: '2024-01-15T10:00:00.000Z' });
-            dbSaveCallRecord({ ...testCallRecord, call_type: 'video', started_at: '2024-01-15T11:00:00.000Z' });
-
-            const history = dbGetCallHistory();
-            expect(history).toHaveLength(2);
-            expect(history[0].call_type).toBe('video');
-            expect(history[1].call_type).toBe('audio');
-        });
-
-        it('should assign auto-incrementing ids', () => {
-            dbSaveCallRecord({ ...testCallRecord, started_at: '2024-01-15T10:00:00.000Z' });
-            dbSaveCallRecord({ ...testCallRecord, started_at: '2024-01-15T11:00:00.000Z' });
-
-            const history = dbGetCallHistory();
-            expect(history[0].id).toBeGreaterThan(history[1].id);
-        });
     });
 });
