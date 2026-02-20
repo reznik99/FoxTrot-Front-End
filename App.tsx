@@ -148,10 +148,8 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
         return console.error('Caller data is not defined');
     }
 
-    let callWasAnswered = false;
     RNNotificationCall.addEventListener('answer', async info => {
         console.debug('RNNotificationCall: User answered call', info.callUUID);
-        callWasAnswered = true;
         RNNotificationCall.backToApp();
         if (!info.payload) {
             console.error('Background notification data is not defined after call-screen passthrough:', info);
@@ -186,23 +184,21 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
                 smallIcon: 'foxtrot',
             });
         }
-        // Save missed/declined call record (skip if answered — Call.tsx handles that)
-        if (!callWasAnswered) {
-            try {
-                await getDb();
-                dbSaveCallRecord({
-                    peer_phone: caller.phone_no,
-                    peer_id: String(caller.id),
-                    peer_pic: caller.pic,
-                    direction: 'incoming',
-                    call_type: eventData.type || 'audio',
-                    status: 'missed',
-                    duration: 0,
-                    started_at: new Date().toISOString(),
-                });
-            } catch (err) {
-                console.error('Failed to save missed call record in background:', err);
-            }
+        // endCall only fires when the call is declined or times out (never after answer)
+        try {
+            await getDb();
+            dbSaveCallRecord({
+                peer_phone: caller.phone_no,
+                peer_id: String(caller.id),
+                peer_pic: caller.pic,
+                direction: 'incoming',
+                call_type: eventData.type || 'audio',
+                status: 'missed',
+                duration: 0,
+                started_at: new Date().toISOString(),
+            });
+        } catch (err) {
+            console.error('Failed to save missed call record in background:', err);
         }
         // Delete storage info about caller so they don't get routed to call screen on next app open
         await deleteFromStorage('call_answered_in_background');

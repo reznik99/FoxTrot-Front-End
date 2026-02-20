@@ -137,10 +137,10 @@ export default function Home(props: IProps) {
                 },
             });
         });
+        // endCall only fires when the call is declined or times out (never after answer)
         RNNotificationCall.addEventListener('endCall', info => {
             console.debug('RNNotificationCall: User ended call', info.callUUID);
             InCallManager.stopRingtone();
-            // Save missed/declined call record
             try {
                 const data = JSON.parse(info.payload || '{}') as { caller: UserData; data: SocketMessage };
                 if (data.caller) {
