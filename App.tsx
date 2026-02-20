@@ -68,6 +68,12 @@ export type HomeTabParamList = {
     Calls: undefined;
 };
 const Tab = createBottomTabNavigator<HomeTabParamList>();
+const renderMessagesIcon = ({ color, size }: { color: string; size: number }) => (
+    <Icon source="message-text" color={color} size={size} />
+);
+const renderCallsIcon = ({ color, size }: { color: string; size: number }) => (
+    <Icon source="phone" color={color} size={size} />
+);
 const HomeTabs = () => {
     const [unseenCount, setUnseenCount] = useState(0);
     const refreshBadge = useCallback(() => {
@@ -92,14 +98,14 @@ const HomeTabs = () => {
                 name="Messages"
                 component={Home}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Icon source="message-text" color={color} size={size} />,
+                    tabBarIcon: renderMessagesIcon,
                 }}
             />
             <Tab.Screen
                 name="Calls"
                 component={CallHistory}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Icon source="phone" color={color} size={size} />,
+                    tabBarIcon: renderCallsIcon,
                     tabBarBadge: unseenCount > 0 ? unseenCount : undefined,
                 }}
             />

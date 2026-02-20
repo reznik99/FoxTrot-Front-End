@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native';
 import { Divider, FAB, ActivityIndicator, Snackbar, Icon } from 'react-native-paper';
 import RNNotificationCall from 'react-native-full-screen-notification-incoming-call';
-import { StackScreenProps } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
 import InCallManager from 'react-native-incall-manager';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,11 +24,9 @@ import { popFromStorage } from '~/global/storage';
 import { dbSaveCallRecord } from '~/global/database';
 import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
-import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '~/../App';
 
-type IProps = StackScreenProps<HomeStackParamList & AuthStackParamList & RootDrawerParamList, 'FoxTrot'>;
-
-export default function Home(props: IProps) {
+export default function Home() {
+    const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
     const { conversations, loading, refreshing, socketErr } = useSelector((state: RootState) => state.userReducer);
     const [loadingMsg, setLoadingMsg] = useState('');
@@ -52,7 +50,7 @@ export default function Home(props: IProps) {
                 const callerRaw = await popFromStorage('call_answered_in_background');
                 if (callerRaw) {
                     const data = JSON.parse(callerRaw || '{}') as { caller: UserData; data: SocketMessage };
-                    props.navigation.navigate('Call', {
+                    navigation.navigate('Call', {
                         data: {
                             peer_user: data.caller,
                             video_enabled: data.data.type === 'video',
@@ -74,7 +72,7 @@ export default function Home(props: IProps) {
             // Load new messages from backend and old messages from storage
             await loadMessagesAndContacts();
             // Setup axios interceptors
-            setupInterceptors(props.navigation);
+            setupInterceptors(navigation);
             setLoadingMsg('');
         };
         initLoad();
@@ -107,7 +105,7 @@ export default function Home(props: IProps) {
                     {
                         text: 'Logout',
                         onPress: () => {
-                            props.navigation.navigate('Login', { data: { loggedOut: true, errorMsg: '' } });
+                            navigation.navigate('Login', { data: { loggedOut: true, errorMsg: '' } });
                         },
                     },
                     {
@@ -118,7 +116,7 @@ export default function Home(props: IProps) {
             );
         }
         return success;
-    }, [props.navigation]);
+    }, [navigation]);
 
     const configureWebsocket = useCallback(async () => {
         setLoadingMsg('Initializing websocket...');
@@ -130,7 +128,7 @@ export default function Home(props: IProps) {
             console.debug('RNNotificationCall: User answered call', info.callUUID);
             RNNotificationCall.backToApp();
             const data = JSON.parse(info.payload || '{}') as { caller: UserData; data: SocketMessage };
-            props.navigation.navigate('Call', {
+            navigation.navigate('Call', {
                 data: {
                     peer_user: data.caller,
                     video_enabled: data.data.type === 'video',
@@ -159,7 +157,7 @@ export default function Home(props: IProps) {
                 console.error('Failed to save missed call record:', err);
             }
         });
-    }, [props.navigation]);
+    }, [navigation]);
 
     return (
         <View style={globalStyle.wrapper}>
@@ -196,7 +194,7 @@ export default function Home(props: IProps) {
                         {convos?.length ? (
                             convos.map((convo, index) => (
                                 <View key={index}>
-                                    <ConversationPeek data={convo} navigation={props.navigation} />
+                                    <ConversationPeek data={convo} navigation={navigation} />
                                     <Divider />
                                 </View>
                             ))
@@ -213,7 +211,7 @@ export default function Home(props: IProps) {
                             globalStyle.fab,
                             { backgroundColor: PRIMARY, marginBottom: globalStyle.fab.margin + insets.bottom },
                         ]}
-                        onPress={() => props.navigation.navigate('NewConversation')}
+                        onPress={() => navigation.navigate('NewConversation')}
                         icon={renderFABIcon}
                     />
                 </>
