@@ -70,15 +70,6 @@ export default function Drawer(props: DrawerContentComponentProps) {
                     />
                     <DrawerItem
                         inactiveTintColor={PRIMARY}
-                        label="Call History"
-                        onPress={() => {
-                            props.navigation.navigate('CallHistory');
-                            props.navigation.closeDrawer();
-                        }}
-                        icon={renderPhoneClockIcon}
-                    />
-                    <DrawerItem
-                        inactiveTintColor={PRIMARY}
                         label="Settings"
                         onPress={() => {
                             props.navigation.navigate('Settings');
@@ -144,10 +135,6 @@ const styles = StyleSheet.create({
 
 const renderLockIcon = ({ size, color }: { size: number; color: string }) => {
     return <Icon source="lock" color={color} size={size} />;
-};
-
-const renderPhoneClockIcon = ({ size, color }: { size: number; color: string }) => {
-    return <Icon source="phone-clock" color={color} size={size} />;
 };
 
 const renderCogIcon = ({ size, color }: { size: number; color: string }) => {

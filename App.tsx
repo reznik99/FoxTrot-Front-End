@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import 'react-native-quick-base64';
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { StatusBar } from 'react-native';
 import { Provider } from 'react-redux';
 import { Provider as PaperProvider, MD3DarkTheme, Icon } from 'react-native-paper';
@@ -12,6 +12,7 @@ import {
     StackHeaderProps,
 } from '@react-navigation/stack';
 import { createDrawerNavigator, DrawerContentComponentProps, DrawerNavigationOptions } from '@react-navigation/drawer';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Toast from 'react-native-toast-message';
 import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging'; // Push Notifications
 import RNNotificationCall, { DeclinePayload } from 'react-native-full-screen-notification-incoming-call';
@@ -36,12 +37,12 @@ import {
     Settings,
     CallHistory,
 } from './src';
-import { PRIMARY, SECONDARY, ACCENT, DARKHEADER, VibratePattern } from '~/global/variables';
+import { PRIMARY, SECONDARY, SECONDARY_LITE, ACCENT, DARKHEADER, VibratePattern } from '~/global/variables';
 import Drawer from '~/components/Drawer';
 import HeaderConversation from '~/components/HeaderConversation';
 import { UserData } from '~/store/reducers/user';
 import { deleteFromStorage, writeToStorage } from '~/global/storage';
-import { getDb, dbSaveCallRecord } from '~/global/database';
+import { getDb, dbSaveCallRecord, dbGetUnseenCallCount } from '~/global/database';
 import { getAvatar } from '~/global/helper';
 import { SocketMessage } from '~/store/actions/websocket';
 
@@ -61,6 +62,51 @@ const animationDefaults: StackNavigationOptions = {
     gestureDirection: 'horizontal',
 };
 
+// Bottom tabs inside the drawer
+export type HomeTabParamList = {
+    Messages: undefined;
+    Calls: undefined;
+};
+const Tab = createBottomTabNavigator<HomeTabParamList>();
+const HomeTabs = () => {
+    const [unseenCount, setUnseenCount] = useState(0);
+    const refreshBadge = useCallback(() => {
+        try {
+            setUnseenCount(dbGetUnseenCallCount());
+        } catch {
+            setUnseenCount(0);
+        }
+    }, []);
+    return (
+        <Tab.Navigator
+            screenOptions={{
+                headerShown: false,
+                tabBarStyle: { backgroundColor: DARKHEADER, borderTopColor: '#333' },
+                tabBarActiveTintColor: PRIMARY,
+                tabBarInactiveTintColor: SECONDARY_LITE,
+                tabBarBadgeStyle: { backgroundColor: '#e53935' },
+            }}
+            screenListeners={{ state: refreshBadge }}
+        >
+            <Tab.Screen
+                name="Messages"
+                component={Home}
+                options={{
+                    tabBarIcon: ({ color, size }) => <Icon source="message-text" color={color} size={size} />,
+                }}
+            />
+            <Tab.Screen
+                name="Calls"
+                component={CallHistory}
+                options={{
+                    tabBarIcon: ({ color, size }) => <Icon source="phone" color={color} size={size} />,
+                    tabBarBadge: unseenCount > 0 ? unseenCount : undefined,
+                }}
+            />
+        </Tab.Navigator>
+    );
+};
+
 export type RootDrawerParamList = {
     FoxTrot: undefined;
 };
@@ -68,7 +114,7 @@ const AppNavigator = createDrawerNavigator<RootDrawerParamList>();
 const AppDrawer = () => {
     return (
         <AppNavigator.Navigator screenOptions={{ swipeEdgeWidth: 200 }} drawerContent={renderDrawerContent}>
-            <AppNavigator.Screen name="FoxTrot" component={Home} options={defaultHeaderOptions} />
+            <AppNavigator.Screen name="FoxTrot" component={HomeTabs} options={defaultHeaderOptions} />
         </AppNavigator.Navigator>
     );
 };
@@ -82,7 +128,6 @@ export type HomeStackParamList = {
     Call: { data: { peer_user: UserData; video_enabled: boolean } };
     CameraView: { data: { peer: UserData; picturePath: string } };
     Settings: undefined;
-    CallHistory: undefined;
 };
 const HomeStack = createStackNavigator<HomeStackParamList>();
 const HomeNavigator = () => {
@@ -95,7 +140,6 @@ const HomeNavigator = () => {
             <HomeStack.Screen name="Call" component={Call as any} options={renderHeaderConversation} />
             <HomeStack.Screen name="CameraView" component={CameraView} options={{ title: 'Camera' }} />
             <HomeStack.Screen name="Settings" component={Settings} options={{ title: 'Settings' }} />
-            <HomeStack.Screen name="CallHistory" component={CallHistory} options={{ title: 'Call History' }} />
         </HomeStack.Navigator>
     );
 };

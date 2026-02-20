@@ -1,18 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native';
 import { Divider, Button, Icon } from 'react-native-paper';
-import { StackScreenProps } from '@react-navigation/stack';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 import CallHistoryItem from '~/components/CallHistoryItem';
-import { dbGetCallHistory, dbClearCallHistory } from '~/global/database';
+import { dbGetCallHistory, dbClearCallHistory, dbMarkAllCallsSeen } from '~/global/database';
 import { CallRecord } from '~/store/reducers/user';
 import { SECONDARY_LITE } from '~/global/variables';
 import globalStyle from '~/global/style';
-import { HomeStackParamList } from '~/../App';
 
-type IProps = StackScreenProps<HomeStackParamList, 'CallHistory'>;
-
-export default function CallHistory(props: IProps) {
+export default function CallHistory() {
+    const navigation = useNavigation<any>();
     const [records, setRecords] = useState<CallRecord[]>([]);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -25,9 +23,12 @@ export default function CallHistory(props: IProps) {
         }
     }, []);
 
-    useEffect(() => {
-        loadHistory();
-    }, [loadHistory]);
+    useFocusEffect(
+        useCallback(() => {
+            loadHistory();
+            dbMarkAllCallsSeen();
+        }, [loadHistory]),
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -55,23 +56,16 @@ export default function CallHistory(props: IProps) {
 
     return (
         <View style={globalStyle.wrapper}>
-            <ScrollView
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            >
+            <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
                 {records.length > 0 ? (
                     <>
                         {records.map((record, index) => (
                             <View key={record.id ?? index}>
-                                <CallHistoryItem record={record} navigation={props.navigation} />
+                                <CallHistoryItem record={record} navigation={navigation} />
                                 <Divider />
                             </View>
                         ))}
-                        <Button
-                            mode="text"
-                            textColor="#e53935"
-                            onPress={onClearHistory}
-                            style={{ marginVertical: 20 }}
-                        >
+                        <Button mode="text" textColor="#e53935" onPress={onClearHistory} style={{ marginVertical: 20 }}>
                             Clear Call History
                         </Button>
                     </>

@@ -63,6 +63,7 @@ export interface CallRecord {
     status: 'answered' | 'missed';
     duration: number;
     started_at: string;
+    seen: boolean;
 }
 
 export interface TURNCredentials {

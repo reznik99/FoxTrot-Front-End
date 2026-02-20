@@ -54,6 +54,8 @@ import {
     dbSaveCallRecord,
     dbGetCallHistory,
     dbClearCallHistory,
+    dbGetUnseenCallCount,
+    dbMarkAllCallsSeen,
 } from '../database';
 
 // Sample test data
@@ -214,7 +216,7 @@ describe('database operations', () => {
     });
 
     describe('calls', () => {
-        const testCallRecord: Omit<CallRecord, 'id'> = {
+        const testCallRecord: Omit<CallRecord, 'id' | 'seen'> = {
             peer_phone: '+1111111111',
             peer_id: '101',
             peer_pic: 'https://example.com/pic1.jpg',
@@ -307,6 +309,27 @@ describe('database operations', () => {
             expect(history[0]).toMatchObject({ direction: 'incoming', status: 'missed', duration: 0 });
             expect(history[1]).toMatchObject({ direction: 'incoming', status: 'answered' });
             expect(history[2]).toMatchObject({ direction: 'outgoing', status: 'answered' });
+        });
+
+        it('should count unseen call records', () => {
+            dbSaveCallRecord({ ...testCallRecord, started_at: '2024-01-15T10:00:00.000Z' });
+            dbSaveCallRecord({ ...testCallRecord, started_at: '2024-01-15T11:00:00.000Z' });
+
+            expect(dbGetUnseenCallCount()).toBe(2);
+        });
+
+        it('should mark all calls as seen', () => {
+            dbSaveCallRecord({ ...testCallRecord, started_at: '2024-01-15T10:00:00.000Z' });
+            dbSaveCallRecord({ ...testCallRecord, started_at: '2024-01-15T11:00:00.000Z' });
+
+            expect(dbGetUnseenCallCount()).toBe(2);
+
+            dbMarkAllCallsSeen();
+
+            expect(dbGetUnseenCallCount()).toBe(0);
+
+            const history = dbGetCallHistory();
+            expect(history.every(r => r.seen === true)).toBe(true);
         });
     });
 });

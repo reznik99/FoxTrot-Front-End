@@ -39,7 +39,7 @@ export default function CallHistoryItem({ record, navigation }: IProps) {
     const duration = formatDuration(record.duration);
 
     const onPress = () => {
-        navigation.navigate('Call', {
+        navigation.navigate('Conversation', {
             data: {
                 peer_user: {
                     id: record.peer_id,
@@ -48,18 +48,13 @@ export default function CallHistoryItem({ record, navigation }: IProps) {
                     last_seen: 0,
                     online: false,
                 },
-                video_enabled: record.call_type === 'video',
             },
         });
     };
 
     return (
         <TouchableOpacity style={styles.container} onPress={onPress}>
-            <Avatar.Image
-                size={45}
-                source={{ uri: record.peer_pic }}
-                style={styles.avatar}
-            />
+            <Avatar.Image size={45} source={{ uri: record.peer_pic }} style={styles.avatar} />
             <View style={styles.info}>
                 <Text style={[globalStyle.textInfo, record.status === 'missed' && styles.missedText]}>
                     {record.peer_phone}
