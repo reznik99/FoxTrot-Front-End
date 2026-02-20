@@ -9,7 +9,7 @@ import { DB_MSG_PAGE_SIZE } from './variables';
 
 const DB_NAME = 'foxtrot.db';
 const DB_KEY_SERVICE = 'foxtrot-db-key';
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 2;
 
 // SQLite database is encrypted using SQLCipher (AES-256-CBC with HMAC-SHA512).
 // Key: 32 bytes (256-bit), stored in device Keychain.
@@ -120,7 +120,6 @@ function initializeSchema(): void {
             is_decrypted INTEGER DEFAULT 0
         )
     `);
-
     database.executeSync(`
         CREATE INDEX IF NOT EXISTS idx_messages_conversation
         ON messages(conversation_id, sent_at DESC)
@@ -154,20 +153,10 @@ function initializeSchema(): void {
             seen INTEGER DEFAULT 0
         )
     `);
-
     database.executeSync(`
         CREATE INDEX IF NOT EXISTS idx_calls_started_at
         ON calls(started_at DESC)
     `);
-
-    // Migration: v2 → v3: add seen column to calls table
-    if (currentVersion === 2) {
-        try {
-            database.executeSync('ALTER TABLE calls ADD COLUMN seen INTEGER DEFAULT 0');
-        } catch (_) {
-            // Column may already exist
-        }
-    }
 
     if (currentVersion === undefined) {
         database.executeSync('INSERT INTO schema_version (version) VALUES (?)', [SCHEMA_VERSION]);
