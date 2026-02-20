@@ -53,6 +53,18 @@ export interface message {
     is_decrypted?: boolean;
 }
 
+export interface CallRecord {
+    id: number;
+    peer_phone: string;
+    peer_id: string;
+    peer_pic?: string;
+    direction: 'incoming' | 'outgoing';
+    call_type: 'audio' | 'video';
+    status: 'answered' | 'missed';
+    duration: number;
+    started_at: string;
+}
+
 export interface TURNCredentials {
     username: string;
     credential: string;

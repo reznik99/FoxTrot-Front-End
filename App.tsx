@@ -24,12 +24,24 @@ global.Buffer = global.Buffer || Buffer;
 
 // App
 import { store } from '~/store/store';
-import { Login, Signup, Home, Conversation, NewConversation, AddContact, Call, CameraView, Settings } from './src';
+import {
+    Login,
+    Signup,
+    Home,
+    Conversation,
+    NewConversation,
+    AddContact,
+    Call,
+    CameraView,
+    Settings,
+    CallHistory,
+} from './src';
 import { PRIMARY, SECONDARY, ACCENT, DARKHEADER, VibratePattern } from '~/global/variables';
 import Drawer from '~/components/Drawer';
 import HeaderConversation from '~/components/HeaderConversation';
 import { UserData } from '~/store/reducers/user';
 import { deleteFromStorage, writeToStorage } from '~/global/storage';
+import { getDb, dbSaveCallRecord } from '~/global/database';
 import { getAvatar } from '~/global/helper';
 import { SocketMessage } from '~/store/actions/websocket';
 
@@ -70,6 +82,7 @@ export type HomeStackParamList = {
     Call: { data: { peer_user: UserData; video_enabled: boolean } };
     CameraView: { data: { peer: UserData; picturePath: string } };
     Settings: undefined;
+    CallHistory: undefined;
 };
 const HomeStack = createStackNavigator<HomeStackParamList>();
 const HomeNavigator = () => {
@@ -82,6 +95,7 @@ const HomeNavigator = () => {
             <HomeStack.Screen name="Call" component={Call as any} options={renderHeaderConversation} />
             <HomeStack.Screen name="CameraView" component={CameraView} options={{ title: 'Camera' }} />
             <HomeStack.Screen name="Settings" component={Settings} options={{ title: 'Settings' }} />
+            <HomeStack.Screen name="CallHistory" component={CallHistory} options={{ title: 'Call History' }} />
         </HomeStack.Navigator>
     );
 };
@@ -134,8 +148,10 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
         return console.error('Caller data is not defined');
     }
 
+    let callWasAnswered = false;
     RNNotificationCall.addEventListener('answer', async info => {
         console.debug('RNNotificationCall: User answered call', info.callUUID);
+        callWasAnswered = true;
         RNNotificationCall.backToApp();
         if (!info.payload) {
             console.error('Background notification data is not defined after call-screen passthrough:', info);
@@ -169,6 +185,24 @@ setBackgroundMessageHandler(messaging, async remoteMessage => {
                 largeIcon: 'foxtrot',
                 smallIcon: 'foxtrot',
             });
+        }
+        // Save missed/declined call record (skip if answered — Call.tsx handles that)
+        if (!callWasAnswered) {
+            try {
+                await getDb();
+                dbSaveCallRecord({
+                    peer_phone: caller.phone_no,
+                    peer_id: String(caller.id),
+                    peer_pic: caller.pic,
+                    direction: 'incoming',
+                    call_type: eventData.type || 'audio',
+                    status: 'missed',
+                    duration: 0,
+                    started_at: new Date().toISOString(),
+                });
+            } catch (err) {
+                console.error('Failed to save missed call record in background:', err);
+            }
         }
         // Delete storage info about caller so they don't get routed to call screen on next app open
         await deleteFromStorage('call_answered_in_background');

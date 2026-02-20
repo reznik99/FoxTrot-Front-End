@@ -4,12 +4,12 @@ import * as Keychain from 'react-native-keychain';
 import QuickCrypto from 'react-native-quick-crypto';
 import { Buffer } from 'buffer';
 
-import { message, UserData } from '~/store/reducers/user';
+import { CallRecord, message, UserData } from '~/store/reducers/user';
 import { DB_MSG_PAGE_SIZE } from './variables';
 
 const DB_NAME = 'foxtrot.db';
 const DB_KEY_SERVICE = 'foxtrot-db-key';
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 // SQLite database is encrypted using SQLCipher (AES-256-CBC with HMAC-SHA512).
 // Key: 32 bytes (256-bit), stored in device Keychain.
@@ -137,6 +137,26 @@ function initializeSchema(): void {
             peer_last_seen INTEGER DEFAULT 0,
             updated_at INTEGER NOT NULL
         )
+    `);
+
+    // Calls table - stores call history records
+    database.executeSync(`
+        CREATE TABLE IF NOT EXISTS calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            peer_phone TEXT NOT NULL,
+            peer_id TEXT NOT NULL,
+            peer_pic TEXT,
+            direction TEXT NOT NULL,
+            call_type TEXT NOT NULL,
+            status TEXT NOT NULL,
+            duration INTEGER NOT NULL DEFAULT 0,
+            started_at TEXT NOT NULL
+        )
+    `);
+
+    database.executeSync(`
+        CREATE INDEX IF NOT EXISTS idx_calls_started_at
+        ON calls(started_at DESC)
     `);
 
     if (currentVersion === undefined) {
@@ -284,4 +304,52 @@ export function dbGetConversation(peerPhone: string): { other_user: UserData; me
         },
         messages: dbGetMessages(peerPhone),
     };
+}
+
+// Calls
+
+export function dbSaveCallRecord(record: Omit<CallRecord, 'id'>): void {
+    const database = requireDb();
+
+    database.executeSync(
+        `INSERT INTO calls (peer_phone, peer_id, peer_pic, direction, call_type, status, duration, started_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+            record.peer_phone,
+            record.peer_id,
+            record.peer_pic || null,
+            record.direction,
+            record.call_type,
+            record.status,
+            record.duration,
+            record.started_at,
+        ],
+    );
+}
+
+export function dbGetCallHistory(limit = 50, offset = 0): CallRecord[] {
+    const database = requireDb();
+
+    const result = database.executeSync(
+        `SELECT id, peer_phone, peer_id, peer_pic, direction, call_type, status, duration, started_at
+         FROM calls ORDER BY datetime(started_at) DESC LIMIT ? OFFSET ?`,
+        [limit, offset],
+    );
+
+    return (result.rows || []).map(row => ({
+        id: row.id as number,
+        peer_phone: row.peer_phone as string,
+        peer_id: row.peer_id as string,
+        peer_pic: (row.peer_pic as string) || undefined,
+        direction: row.direction as CallRecord['direction'],
+        call_type: row.call_type as CallRecord['call_type'],
+        status: row.status as CallRecord['status'],
+        duration: row.duration as number,
+        started_at: row.started_at as string,
+    }));
+}
+
+export function dbClearCallHistory(): void {
+    const database = requireDb();
+    database.executeSync('DELETE FROM calls');
 }

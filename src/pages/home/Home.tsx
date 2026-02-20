@@ -21,6 +21,7 @@ import { Conversation, UserData } from '~/store/reducers/user';
 import { setupInterceptors } from '~/store/actions/auth';
 import { RootState, store } from '~/store/store';
 import { popFromStorage } from '~/global/storage';
+import { dbSaveCallRecord } from '~/global/database';
 import { PRIMARY } from '~/global/variables';
 import globalStyle from '~/global/style';
 import { AuthStackParamList, HomeStackParamList, RootDrawerParamList } from '~/../App';
@@ -139,6 +140,24 @@ export default function Home(props: IProps) {
         RNNotificationCall.addEventListener('endCall', info => {
             console.debug('RNNotificationCall: User ended call', info.callUUID);
             InCallManager.stopRingtone();
+            // Save missed/declined call record
+            try {
+                const data = JSON.parse(info.payload || '{}') as { caller: UserData; data: SocketMessage };
+                if (data.caller) {
+                    dbSaveCallRecord({
+                        peer_phone: data.caller.phone_no,
+                        peer_id: String(data.caller.id),
+                        peer_pic: data.caller.pic,
+                        direction: 'incoming',
+                        call_type: data.data?.type || 'audio',
+                        status: 'missed',
+                        duration: 0,
+                        started_at: new Date().toISOString(),
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to save missed call record:', err);
+            }
         });
     }, [props.navigation]);
 
